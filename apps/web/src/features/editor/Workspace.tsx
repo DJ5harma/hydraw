@@ -18,7 +18,18 @@ export function Workspace({ session }: { session: BoardSession }) {
   const { editor, storage } = session;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const snapshot = useEditorSnapshot(editor);
-  const { center, selectTool, keyboard } = createEditorControls(editor, canvasRef);
+  const [actionError, setActionError] = useState<string | null>(null);
+  function duplicate() {
+    try {
+      editor.duplicateSelection();
+      setActionError(null);
+    } catch (cause) {
+      setActionError(
+        cause instanceof Error ? cause.message : "This selection could not be duplicated.",
+      );
+    }
+  }
+  const { center, selectTool, keyboard } = createEditorControls(editor, canvasRef, duplicate);
   const { saveState, saveError, recovery, recoveryWarning, persistence } = useBoardPersistence(
     editor,
     storage,
@@ -42,6 +53,14 @@ export function Workspace({ session }: { session: BoardSession }) {
         }}
         canRestore={recovery !== null}
       />
+      {actionError && (
+        <div className="storage-warning selection-warning" role="alert">
+          {actionError}
+          <button onClick={() => setActionError(null)} aria-label="Dismiss selection error">
+            Dismiss
+          </button>
+        </div>
+      )}
       {saveError && (
         <div className="storage-warning" role="alert">
           {saveError} Export your work before closing. Existing stored data has been left untouched
@@ -68,7 +87,7 @@ export function Workspace({ session }: { session: BoardSession }) {
             )}
           <CanvasControls editor={editor} center={center} />
         </section>
-        <BoardInspector editor={editor} center={center} />
+        <BoardInspector editor={editor} center={center} onDuplicate={duplicate} />
       </div>
       {transfer && (
         <BoardTransferDialog

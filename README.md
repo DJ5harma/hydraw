@@ -35,7 +35,10 @@ The Dockerfile builds React and Hono together. The runtime image contains the bu
 
 - Draw rectangles, select and move them, change their fill, and delete them.
 - Resize with eight edge/corner handles or edit X, Y, width and height in the inspector. Dragging across the opposite edge keeps dimensions positive. Invalid numeric edits stay out of saved documents.
-- Undo/redo committed local actions. A continuous drag creates one undo step; Escape cancels it.
+- Shift-click objects on the canvas or in the object list to toggle selection. Drag empty canvas to select fully enclosed nodes and arrows; Shift + drag adds enclosed objects. Ctrl/⌘ A or Select all objects selects the whole board.
+- Drag a selected object or use arrow keys to move a selection together. Bindings stay attached, and one common movement delta preserves spacing at coordinate limits.
+- Duplicate selection with Ctrl/⌘ D or the inspector button. Copies get fresh identities and a 24-unit offset. Connections between copied nodes are included automatically; copied connections to unselected nodes become free endpoints.
+- Undo/redo committed local actions. Group movement, duplication and deletion each create one undo step. Escape cancels a gesture; cancelling a marquee restores the prior selection, while Escape outside a gesture clears selection.
 - Pan using the hand tool, wheel, middle mouse button, or Space + drag. Zoom using the controls or Ctrl/⌘ + wheel.
 - Create a centered rectangle with Enter on the canvas or Add rectangle in the inspector. Move a selection with arrow keys; Shift moves by 10. V/R/C/T/H switch tools.
 - Create wrapped multiline text with T + click or Add text. Double-click text, press Enter with it selected, or use Edit text in the inspector to edit. Enter inserts a new line; Ctrl/⌘ Enter or clicking away commits one undoable edit; Escape cancels it.
@@ -79,7 +82,7 @@ Individual commands: `pnpm run check`, `pnpm test`, `pnpm run build`, and `pnpm 
 
 ## Current limits
 
-This milestone supports one local board, rectangles, standalone plain text and straight connectors. Import requires writable local storage to preserve a recovery copy. Multiselection, SVG/PNG export, cloud storage, authentication, collaboration and hosted deployment are still planned. Undo history is session-local and resets after reload, import or restore. History retains at most 100 transactions containing changed records rather than full-board snapshots. Transaction application is atomic and checks expected prior values. These are local edit preconditions; server revisions, authorization and collaborative rebase are not implemented yet.
+This milestone supports one local board, rectangles, standalone plain text, straight connectors, multiselection and duplication. Import requires writable local storage to preserve a recovery copy. SVG/PNG export, cloud storage, authentication, collaboration and hosted deployment are still planned. Undo history is session-local and resets after reload, import or restore. History retains at most 100 transactions containing changed records rather than full-board snapshots. Transaction application is atomic and checks expected prior values. These are local edit preconditions; server revisions, authorization and collaborative rebase are not implemented yet.
 
 An already loaded page can edit without network access. Offline application startup is not supported yet. Desktop Chromium is verified; other browsers, pen/touch behavior and accessibility need further testing. The responsive layout is an early shell, not a claim of full mobile editor support.
 
@@ -87,4 +90,6 @@ Text has one system font family; custom fonts, rich text, rectangle labels and a
 
 Connector routing is straight, with automatic perimeter attachments. Elbow routing, custom ports, self-loops and connector labels are future work. Edges render beneath nodes and share a separate collection; no arbitrary node/edge stacking controls yet. Current limits are 5,000 shapes, 5,000 connectors and 2 MB imported files.
 
-Next milestone: multiselection and duplication. See [ADR 0002](docs/adr/0002-container-and-transactions.md) for packaging and editor transactions, and [ADR 0003](docs/adr/0003-local-import-and-recovery.md) for import and persistence boundaries. [ADR 0004](docs/adr/0004-text-and-document-versioning.md) covers text layout and editing; [ADR 0005](docs/adr/0005-bound-connectors.md) defines connector bindings, graph transactions and deletion.
+Selection currently supports translation, duplication and deletion. Group resizing/rotation, alignment, distribution, clipboard transfer and bulk styling are future work. Selection itself is transient and is not persisted or recorded in document history.
+
+Next milestone: alignment and distribution. See [ADR 0002](docs/adr/0002-container-and-transactions.md) for packaging and editor transactions, and [ADR 0003](docs/adr/0003-local-import-and-recovery.md) for import and persistence boundaries. [ADR 0004](docs/adr/0004-text-and-document-versioning.md) covers text layout and editing; [ADR 0005](docs/adr/0005-bound-connectors.md) defines connector bindings, graph transactions and deletion. [ADR 0006](docs/adr/0006-selection-and-duplication.md) defines selection and graph duplication.

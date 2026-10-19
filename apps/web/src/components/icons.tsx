@@ -1,5 +1,6 @@
 type IconName =
   | "select"
+  | "duplicate"
   | "connector"
   | "rectangle"
   | "text"
@@ -25,6 +26,12 @@ const paths: Record<IconName, React.ReactNode> = {
   ),
   select: <path d="m5 3 13 9-6 1-3 6-4-16Z" />,
   text: <path d="M4 5V3h16v2M12 3v18M8 21h8" />,
+  duplicate: (
+    <>
+      <rect x="8" y="8" width="12" height="12" rx="2" />
+      <path d="M16 8V4H4v12h4" />
+    </>
+  ),
   connector: <path d="M4 20 20 4M9 4h11v11" />,
   rectangle: <rect x="4" y="4" width="16" height="16" rx="3" />,
   hand: (

@@ -4,10 +4,12 @@ import { clamp, handlePoint, resizeRectangle, screenToWorld } from "./geometry.t
 import type { ResizeHandle } from "./geometry.ts";
 import type { Camera, EditorSnapshot } from "./types.ts";
 
+import type { SelectionGesture } from "./selection.ts";
 import type { ConnectorGesture } from "./connector-interactions.ts";
 import { previewConnectorGesture } from "./connector-interactions.ts";
 
 export type Gesture =
+  | SelectionGesture
   | ConnectorGesture
   | { kind: "draw"; start: Point; id: string }
   | { kind: "move"; start: Point; shape: Shape }
@@ -15,7 +17,7 @@ export type Gesture =
   | { kind: "pan"; start: Point; camera: Camera };
 
 export function previewGesture(
-  gesture: Gesture,
+  gesture: Exclude<Gesture, SelectionGesture>,
   screen: Point,
   camera: Camera,
   fill: Fill,

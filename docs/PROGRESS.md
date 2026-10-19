@@ -60,4 +60,16 @@ Implemented on 20 October 2026:
 - Save/reload, export, reviewed import and recovery retain connectors. Invalid imported graphs preserve the current board.
 - 52 unit/server tests and 42 development/production browser checks passed. Connector domain and interaction logic received focused Luna review; desktop drawing and narrow-screen toolbar layouts were visually inspected. No runtime dependencies added.
 
-Next: multiselection and duplication. Keep each slice runnable and verified before expanding.
+## Milestone 6 — multiselection and duplication
+
+Implemented on 20 October 2026:
+
+- Canonical immutable selection identities with a derived single-object identity, keeping geometry, text and connector tools restricted to exactly one selected object.
+- Shift-click toggles membership on canvas or in the object list. Marquee selection supports either drag direction and additive Shift + drag; cancellation restores prior membership. Select All has both keyboard and visible controls.
+- Group drag previews stay separate from the document; pointer completion or a keyboard nudge applies one transaction. A common constrained delta preserves group spacing at coordinate limits, and connectors resolve against all moved node previews.
+- Independent graph duplication through Ctrl/⌘ D or the inspector. Fresh node/edge identities, copied internal connections, remapped bindings and detached external endpoints. One undo removes the entire copy; capacity or identity failures preserve the existing document.
+- Mixed selection deletion cascades incident edges once and restores original collection order through one inverse. Selection is pruned when objects disappear and cleared on board replacement.
+- Focused selection geometry/gesture helpers and a separate renderer for selection outlines and marquees. Inspector sections now retain their content height and scroll without the footer overlapping object-list entries; the keyboard-reference panel also scrolls in short viewports.
+- 65 unit/server tests and 50 development/production browser checks cover graph operations, Shift-click, reverse/additive marquees, group move/cancel, duplicate/undo/redo, text-input shortcut isolation and saved copies after reload. Focused Luna reviews found no remaining operation or interaction defects. No runtime dependencies added.
+
+Next: alignment and distribution. Keep each slice runnable and verified before expanding.

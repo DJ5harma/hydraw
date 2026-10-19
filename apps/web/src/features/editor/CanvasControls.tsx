@@ -34,7 +34,7 @@ export function CanvasControls({ editor, center }: { editor: Editor; center: () 
                 ? "Click to place text"
                 : snapshot.tool === "hand"
                   ? "Drag to explore your canvas"
-                  : "Select and drag to move"}
+                  : "Drag to move · Shift-click or drag empty space to select"}
           <span> · </span>Hold <kbd>Space</kbd> to pan
         </p>
         <button
@@ -60,7 +60,11 @@ export function CanvasControls({ editor, center }: { editor: Editor; center: () 
               ["Edit selected text", "Enter"],
               ["Save text draft", "Ctrl/⌘ Enter"],
               ["Create centered rectangle", "Enter"],
-              ["Move selected object", "Arrow keys"],
+              ["Move selection", "Arrow keys"],
+              ["Toggle object selection", "Shift + click"],
+              ["Select enclosed objects", "Drag empty space"],
+              ["Select all", "Ctrl/⌘ A"],
+              ["Duplicate selection", "Ctrl/⌘ D"],
               ["Move by 10", "Shift + Arrow"],
               ["Delete selected object", "Delete"],
               ["Undo / redo", "Ctrl/⌘ Z / Shift Z"],

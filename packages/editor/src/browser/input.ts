@@ -38,7 +38,7 @@ export function bindCanvasInput(canvas: HTMLCanvasElement, editor: Editor, sched
       canvas.focus({ preventScroll: true });
       activePointer = event.pointerId;
       canvas.setPointerCapture(event.pointerId);
-      editor.begin(point(event), spacePressed || event.button === 1);
+      editor.begin(point(event), spacePressed || event.button === 1, event.shiftKey);
     },
     options,
   );
@@ -85,7 +85,10 @@ export function bindCanvasInput(canvas: HTMLCanvasElement, editor: Editor, sched
         spacePressed = true;
         schedule();
       }
-      if (event.key === "Escape") cancel();
+      if (event.key === "Escape") {
+        if (editor.getSnapshot().interacting) event.stopPropagation();
+        cancel();
+      }
     },
     options,
   );

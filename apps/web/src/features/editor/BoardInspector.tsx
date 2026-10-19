@@ -7,27 +7,51 @@ import { TextStyleControls } from "./TextStyleControls.tsx";
 import { ConnectorInspector } from "./ConnectorInspector.tsx";
 import { GeometryFields } from "./GeometryFields.tsx";
 const fillNames = ["Blue", "Sage", "Sand", "Rose", "White"];
-export function BoardInspector({ editor, center }: { editor: Editor; center: () => Point }) {
+export function BoardInspector({
+  editor,
+  center,
+  onDuplicate,
+}: {
+  editor: Editor;
+  center: () => Point;
+  onDuplicate: () => void;
+}) {
   const snapshot = useEditorSnapshot(editor);
   const selected = snapshot.document.shapes.find((shape) => shape.id === snapshot.selectedId);
   const selectedConnector = snapshot.document.connectors.find(
     (connector) => connector.id === snapshot.selectedId,
   );
+  const selectedIds = new Set(snapshot.selectedIds);
+  const multiple = selectedIds.size > 1;
   return (
     <aside className="inspector" aria-label="Board inspector">
       <div className="inspector-heading">
         <h2>
-          {selectedConnector
-            ? "Connector"
-            : selected?.type === "text"
-              ? "Text"
-              : selected
-                ? "Rectangle"
-                : "Your canvas"}
+          {multiple
+            ? `${selectedIds.size} objects`
+            : selectedConnector
+              ? "Connector"
+              : selected?.type === "text"
+                ? "Text"
+                : selected
+                  ? "Rectangle"
+                  : "Your canvas"}
         </h2>
-        <span className="small-label">{selected || selectedConnector ? "SELECTED" : "LOCAL"}</span>
+        <span className="small-label">{selectedIds.size ? "SELECTED" : "LOCAL"}</span>
       </div>
-      {selectedConnector ? (
+      {multiple ? (
+        <section className="inspector-section">
+          <h3>SELECTION</h3>
+          <p className="inspector-note">
+            Drag a selected object or use arrow keys to move the selection. Shift-click to add or
+            remove objects.
+          </p>
+          <button className="delete-button" onClick={() => editor.removeSelection()}>
+            <Icon name="trash" />
+            Delete selection
+          </button>
+        </section>
+      ) : selectedConnector ? (
         <ConnectorInspector
           connector={selectedConnector}
           document={snapshot.document}
@@ -69,6 +93,18 @@ export function BoardInspector({ editor, center }: { editor: Editor; center: () 
           </button>
         </section>
       )}
+      {selectedIds.size > 0 && (
+        <section className="inspector-section selection-actions">
+          <button className="file-button" onClick={onDuplicate}>
+            <Icon name="duplicate" />
+            Duplicate selection
+          </button>
+          <p className="inspector-note">Ctrl/⌘ D · Connected copies keep their internal arrows.</p>
+          <button className="add-object" onClick={() => editor.select(null)}>
+            Clear selection
+          </button>
+        </section>
+      )}
       <section className="inspector-section objects-section">
         <div className="objects-heading">
           <h3>
@@ -87,9 +123,9 @@ export function BoardInspector({ editor, center }: { editor: Editor; center: () 
             {snapshot.document.shapes.map((shape, index) => (
               <li key={shape.id}>
                 <button
-                  className={snapshot.selectedId === shape.id ? "selected-object" : ""}
-                  aria-pressed={snapshot.selectedId === shape.id}
-                  onClick={() => editor.select(shape.id)}
+                  className={selectedIds.has(shape.id) ? "selected-object" : ""}
+                  aria-pressed={selectedIds.has(shape.id)}
+                  onClick={(event) => editor.select(shape.id, event.shiftKey)}
                 >
                   <span
                     aria-hidden="true"
@@ -112,9 +148,9 @@ export function BoardInspector({ editor, center }: { editor: Editor; center: () 
             {snapshot.document.connectors.map((connector, index) => (
               <li key={connector.id}>
                 <button
-                  className={snapshot.selectedId === connector.id ? "selected-object" : ""}
-                  aria-pressed={snapshot.selectedId === connector.id}
-                  onClick={() => editor.select(connector.id)}
+                  className={selectedIds.has(connector.id) ? "selected-object" : ""}
+                  aria-pressed={selectedIds.has(connector.id)}
+                  onClick={(event) => editor.select(connector.id, event.shiftKey)}
                 >
                   <span
                     aria-hidden="true"
@@ -128,6 +164,11 @@ export function BoardInspector({ editor, center }: { editor: Editor; center: () 
               </li>
             ))}
           </ul>
+        )}
+        {snapshot.document.shapes.length + snapshot.document.connectors.length > 0 && (
+          <button className="add-object" onClick={() => editor.selectAll()}>
+            Select all objects
+          </button>
         )}
         <button className="add-object" onClick={() => editor.addRectangle(center())}>
           <Icon name="plus" />

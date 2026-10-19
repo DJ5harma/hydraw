@@ -3,6 +3,7 @@ import type { Editor, Tool } from "@hydraw/editor";
 export function createEditorControls(
   editor: Editor,
   canvasRef: RefObject<HTMLCanvasElement | null>,
+  duplicate: () => void,
 ) {
   function center() {
     const rect = canvasRef.current?.getBoundingClientRect();
@@ -14,7 +15,7 @@ export function createEditorControls(
     canvasRef.current?.focus();
   }
 
-  const keyboard = createKeyboardHandler(editor, center, selectTool);
+  const keyboard = createKeyboardHandler(editor, center, selectTool, duplicate);
   return { center, selectTool, keyboard };
 }
 
@@ -22,6 +23,7 @@ function createKeyboardHandler(
   editor: Editor,
   center: () => { x: number; y: number },
   selectTool: (tool: Tool) => void,
+  duplicate: () => void,
 ) {
   return (event: ReactKeyboardEvent) => {
     const target = event.target;
@@ -32,7 +34,13 @@ function createKeyboardHandler(
       return;
     const mod = event.metaKey || event.ctrlKey;
     const key = event.key.toLowerCase();
-    if (mod && key === "z") {
+    if (mod && key === "a") {
+      event.preventDefault();
+      editor.selectAll();
+    } else if (mod && key === "d") {
+      event.preventDefault();
+      duplicate();
+    } else if (mod && key === "z") {
       event.preventDefault();
       if (event.shiftKey) editor.redo();
       else editor.undo();

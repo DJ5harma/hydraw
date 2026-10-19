@@ -1,5 +1,9 @@
 import {
   decodeDocument,
+  deleteObjectsTransaction,
+  duplicateObjects,
+  translateObjects,
+  updateObjectsTransaction,
   connectorTransaction,
   deleteShapeTransaction,
   MAX_CONNECTORS,
@@ -25,27 +29,34 @@ import type {
   Shape,
   TextShape,
 } from "@hydraw/document";
-import {
-  endpointAt,
-  hitConnector,
-  hitConnectorEnd,
-  translateConnector,
-} from "./connector-interactions.ts";
+import { endpointAt, hitConnector, hitConnectorEnd } from "./connector-interactions.ts";
 import type { ConnectorEnd } from "./connector-interactions.ts";
 import { clamp, hitResizeHandle, screenToWorld } from "./geometry.ts";
 import type { ResizeHandle } from "./geometry.ts";
 import { previewGesture } from "./gestures.ts";
 import type { Gesture } from "./gestures.ts";
+import { objectIds, previewSelectionGesture } from "./selection.ts";
 import { layoutText } from "./text-layout.ts";
 import type { TextMeasurer } from "./text-layout.ts";
 import { TransactionHistory } from "./history.ts";
 import type { EditorChromeSnapshot, EditorSnapshot, Tool } from "./types.ts";
 
 function chromeSnapshot(snapshot: EditorSnapshot): EditorChromeSnapshot {
-  const { document, selectedId, tool, fill, interacting, textEditing, canUndo, canRedo } = snapshot;
+  const {
+    document,
+    selectedId,
+    selectedIds,
+    tool,
+    fill,
+    interacting,
+    textEditing,
+    canUndo,
+    canRedo,
+  } = snapshot;
   return {
     document,
     selectedId,
+    selectedIds,
     tool,
     fill,
     interacting,
@@ -77,6 +88,7 @@ export class Editor {
     this.snapshot = {
       document: this.prepareDocument(document),
       revision: 0,
+      selectedIds: Object.freeze([]),
       selectedId: null,
       tool: "select",
       fill: "#e7eefb",
@@ -85,6 +97,8 @@ export class Editor {
       bindingTargetId: null,
       activeEndpoint: null,
       preview: null,
+      selectionPreview: null,
+      marquee: null,
       textEditing: null,
       interacting: false,
       activeHandle: null,
@@ -103,10 +117,23 @@ export class Editor {
     };
   };
 
-  private publish(patch: Partial<EditorSnapshot>): void {
+  private publish(patch: Partial<Omit<EditorSnapshot, "selectedId">>): void {
+    let selectedIds = patch.selectedIds ?? this.snapshot.selectedIds;
+    if (patch.document) {
+      const valid = new Set(objectIds(patch.document));
+      selectedIds = selectedIds.filter((id) => valid.has(id));
+    }
+    if (
+      selectedIds.length === this.snapshot.selectedIds.length &&
+      selectedIds.every((id, index) => id === this.snapshot.selectedIds[index])
+    )
+      selectedIds = this.snapshot.selectedIds;
+    else selectedIds = Object.freeze([...selectedIds]);
     this.snapshot = {
       ...this.snapshot,
       ...patch,
+      selectedIds,
+      selectedId: selectedIds.length === 1 ? selectedIds[0]! : null,
       canUndo: this.history.canUndo,
       canRedo: this.history.canRedo,
     };
@@ -162,13 +189,15 @@ export class Editor {
     this.publish({
       document,
       revision: this.snapshot.revision + 1,
-      selectedId: null,
+      selectedIds: [],
       tool: "select",
       camera: { x: 0, y: 0, zoom: 1 },
       connectorPreview: null,
       bindingTargetId: null,
       activeEndpoint: null,
       preview: null,
+      selectionPreview: null,
+      marquee: null,
       textEditing: null,
       interacting: false,
       activeHandle: null,
@@ -222,7 +251,7 @@ export class Editor {
       arrowhead: "arrow",
     };
     this.commitConnector("Create connector", null, connector);
-    this.publish({ selectedId: connector.id, tool: "select" });
+    this.publish({ selectedIds: [connector.id], tool: "select" });
   }
 
   setConnectorStyle(style: Partial<Pick<Connector, "color" | "arrowhead">>): void {
@@ -267,17 +296,45 @@ export class Editor {
     this.publish({ tool });
   }
 
-  select(id: string | null): void {
+  select(id: string | null, additive = false): void {
     this.finishTextEditing();
     this.cancelGesture();
+    const valid = id !== null && objectIds(this.snapshot.document).includes(id);
+    const current = this.snapshot.selectedIds;
     this.publish({
-      selectedId:
-        this.snapshot.document.shapes.some((shape) => shape.id === id) ||
-        this.snapshot.document.connectors.some((connector) => connector.id === id)
-          ? id
-          : null,
+      selectedIds: !valid
+        ? additive
+          ? current
+          : []
+        : additive
+          ? current.includes(id!)
+            ? current.filter((selected) => selected !== id)
+            : [...current, id!]
+          : [id!],
       tool: "select",
     });
+  }
+
+  selectMany(ids: readonly string[]): void {
+    this.finishTextEditing();
+    this.cancelGesture();
+    const valid = new Set(objectIds(this.snapshot.document));
+    this.publish({ selectedIds: [...new Set(ids)].filter((id) => valid.has(id)), tool: "select" });
+  }
+
+  selectAll(): void {
+    this.finishTextEditing();
+    this.cancelGesture();
+    this.publish({ selectedIds: objectIds(this.snapshot.document), tool: "select" });
+  }
+
+  duplicateSelection(): void {
+    this.assertWritable();
+    this.finishTextEditing();
+    this.cancelGesture();
+    const result = duplicateObjects(this.snapshot.document, this.snapshot.selectedIds, this.makeId);
+    this.commit(result.transaction);
+    if (result.transaction) this.publish({ selectedIds: result.ids, tool: "select" });
   }
 
   setFill(fill: Fill): void {
@@ -326,7 +383,7 @@ export class Editor {
       fill,
     };
     this.commitShape("Create rectangle", null, shape);
-    this.publish({ selectedId: shape.id, tool: "select" });
+    this.publish({ selectedIds: [shape.id], tool: "select" });
   }
 
   private fitText(shape: TextShape): TextShape {
@@ -354,7 +411,7 @@ export class Editor {
       textAlign: "left",
       color: "#243e33",
     });
-    this.publish({ selectedId: null, tool: "select", textEditing: { before: null, draft } });
+    this.publish({ selectedIds: [], tool: "select", textEditing: { before: null, draft } });
   }
 
   editTextAt(screen: Point): void {
@@ -372,7 +429,7 @@ export class Editor {
     const shape = this.snapshot.document.shapes.find((shape) => shape.id === id);
     if (shape?.type === "text")
       this.publish({
-        selectedId: id,
+        selectedIds: [shape.id],
         tool: "select",
         textEditing: { before: shape, draft: shape },
       });
@@ -395,12 +452,13 @@ export class Editor {
     const { before, draft } = editing;
     const after = draft.text.trim() ? draft : null;
     this.commitShape(before ? "Edit text" : "Create text", before, after);
-    this.publish({ textEditing: null, selectedId: after?.id ?? null });
+    this.publish({ textEditing: null, selectedIds: after ? [after.id] : [] });
   }
 
   cancelTextEditing(): void {
     const editing = this.snapshot.textEditing;
-    if (editing) this.publish({ textEditing: null, selectedId: editing.before?.id ?? null });
+    if (editing)
+      this.publish({ textEditing: null, selectedIds: editing.before ? [editing.before.id] : [] });
   }
 
   setTextStyle(
@@ -414,18 +472,16 @@ export class Editor {
   }
 
   nudgeSelection(dx: number, dy: number): void {
+    this.finishTextEditing();
+    this.cancelGesture();
     const connector = this.selectedConnector();
-    if (connector) {
-      this.cancelGesture();
-      this.commitConnector("Move connector", connector, translateConnector(connector, dx, dy));
+    if (connector && (connector.start.type === "binding" || connector.end.type === "binding"))
       return;
-    }
-    const shape = this.selectedShape();
-    if (shape)
-      this.setGeometry({
-        x: clamp(shape.x + dx, -MAX_COORDINATE, MAX_COORDINATE),
-        y: clamp(shape.y + dy, -MAX_COORDINATE, MAX_COORDINATE),
-      });
+    const updates = translateObjects(this.snapshot.document, this.snapshot.selectedIds, {
+      x: dx,
+      y: dy,
+    });
+    this.commit(updateObjectsTransaction(this.snapshot.document, "Move selection", updates));
   }
 
   getResizeHandleAt(screen: Point): ResizeHandle | null {
@@ -435,7 +491,7 @@ export class Editor {
       : null;
   }
 
-  begin(screen: Point, pan = false): void {
+  begin(screen: Point, pan = false, additive = false): void {
     if (this.documentLocked) return;
     this.finishTextEditing();
     this.cancelGesture();
@@ -461,7 +517,7 @@ export class Editor {
       const id = this.makeId();
       this.gesture = { kind: "connect", id, start };
       this.publish({
-        selectedId: null,
+        selectedIds: [],
         interacting: true,
         activeEndpoint: "end",
         bindingTargetId: start.type === "binding" ? start.shapeId : null,
@@ -484,10 +540,39 @@ export class Editor {
       this.gesture = { kind: "draw", start: point, id };
       this.publish({
         interacting: true,
-        selectedId: null,
+        selectedIds: [],
         preview: rectangleBetween(id, point, point, fill),
       });
     } else {
+      const shape = hitTest(document.shapes, raw);
+      const edge = shape ? undefined : hitConnector(document, raw, 7 / camera.zoom);
+      const hitId = shape?.id ?? edge?.id;
+      if (additive && hitId) {
+        this.select(hitId, true);
+        return;
+      }
+      if (
+        !hitId &&
+        (additive || !this.getConnectorEndpointAt(screen)) &&
+        !this.getResizeHandleAt(screen)
+      ) {
+        this.gesture = { kind: "marquee", start: raw, before: this.snapshot.selectedIds, additive };
+        this.publish({
+          selectedIds: additive ? this.snapshot.selectedIds : [],
+          marquee: { ...raw, width: 0, height: 0 },
+          interacting: true,
+        });
+        return;
+      }
+      if (
+        hitId &&
+        this.snapshot.selectedIds.length > 1 &&
+        this.snapshot.selectedIds.includes(hitId)
+      ) {
+        this.gesture = { kind: "move-selection", start: raw, ids: this.snapshot.selectedIds };
+        this.publish({ interacting: true });
+        return;
+      }
       const endpoint = this.getConnectorEndpointAt(screen);
       const connector = this.selectedConnector();
       if (endpoint && connector) {
@@ -502,15 +587,13 @@ export class Editor {
         this.publish({ interacting: true, activeHandle: handle });
         return;
       }
-      const shape = hitTest(document.shapes, point);
-      const edge = shape ? undefined : hitConnector(document, raw, 7 / camera.zoom);
       this.gesture = shape
         ? { kind: "move", start: point, shape }
         : edge?.start.type === "point" && edge.end.type === "point"
           ? { kind: "move-connector", connector: edge, start: raw }
           : null;
       this.publish({
-        selectedId: shape?.id ?? edge?.id ?? null,
+        selectedIds: hitId ? [hitId] : [],
         interacting: this.gesture !== null,
       });
     }
@@ -518,6 +601,17 @@ export class Editor {
 
   move(screen: Point): void {
     if (this.gesture) {
+      if (this.gesture.kind === "marquee" || this.gesture.kind === "move-selection") {
+        this.publish(
+          previewSelectionGesture(
+            this.gesture,
+            screen,
+            this.snapshot.camera,
+            this.snapshot.document,
+          ),
+        );
+        return;
+      }
       const patch = previewGesture(
         this.gesture,
         screen,
@@ -535,9 +629,13 @@ export class Editor {
 
   finish(): void {
     const gesture = this.gesture;
-    const { preview, camera, connectorPreview } = this.snapshot;
+    const { preview, camera, connectorPreview, selectionPreview } = this.snapshot;
     this.gesture = null;
-    if (
+    if (gesture?.kind === "move-selection" && selectionPreview) {
+      this.commit(
+        updateObjectsTransaction(this.snapshot.document, "Move selection", selectionPreview),
+      );
+    } else if (
       (gesture?.kind === "connect" ||
         gesture?.kind === "reconnect" ||
         gesture?.kind === "move-connector") &&
@@ -562,7 +660,7 @@ export class Editor {
           gesture.kind === "connect" ? null : gesture.connector,
           connectorPreview,
         );
-        this.publish({ selectedId: connectorPreview.id, tool: "select" });
+        this.publish({ selectedIds: [connectorPreview.id], tool: "select" });
       }
     } else if (
       gesture?.kind === "draw" &&
@@ -573,7 +671,7 @@ export class Editor {
       preview.height * camera.zoom >= 3
     ) {
       this.commitShape("Create rectangle", null, preview);
-      this.publish({ selectedId: preview.id, tool: "select" });
+      this.publish({ selectedIds: [preview.id], tool: "select" });
     } else if ((gesture?.kind === "move" || gesture?.kind === "resize") && preview) {
       this.commitShape(
         gesture.kind === "resize" ? "Resize object" : "Move object",
@@ -583,6 +681,8 @@ export class Editor {
     }
     this.publish({
       preview: null,
+      selectionPreview: null,
+      marquee: null,
       connectorPreview: null,
       bindingTargetId: null,
       activeEndpoint: null,
@@ -593,16 +693,21 @@ export class Editor {
 
   cancelGesture(): void {
     if (!this.gesture) return;
+    const selectedIds =
+      this.gesture.kind === "marquee" ? this.gesture.before : this.snapshot.selectedIds;
     const camera = this.gesture.kind === "pan" ? this.gesture.camera : this.snapshot.camera;
     this.gesture = null;
     this.publish({
       preview: null,
+      selectionPreview: null,
+      marquee: null,
       connectorPreview: null,
       bindingTargetId: null,
       activeEndpoint: null,
       interacting: false,
       activeHandle: null,
       camera,
+      selectedIds,
     });
   }
 
@@ -627,12 +732,8 @@ export class Editor {
   removeSelection(): void {
     this.finishTextEditing();
     this.cancelGesture();
-    const shape = this.selectedShape();
-    const connector = this.selectedConnector();
-    if (connector) this.commitConnector("Delete connector", connector, null);
-    else if (shape) this.commitShape("Delete object", shape, null);
-    else return;
-    this.publish({ selectedId: null });
+    this.commit(deleteObjectsTransaction(this.snapshot.document, this.snapshot.selectedIds));
+    this.publish({ selectedIds: [] });
   }
 
   undo(): void {
@@ -648,11 +749,6 @@ export class Editor {
     this.cancelGesture();
     const document = this.history[direction](this.snapshot.document);
     if (!document) return;
-    const selectedId =
-      document.shapes.some((shape) => shape.id === this.snapshot.selectedId) ||
-      document.connectors.some((connector) => connector.id === this.snapshot.selectedId)
-        ? this.snapshot.selectedId
-        : null;
-    this.publish({ document, selectedId, revision: this.snapshot.revision + 1 });
+    this.publish({ document, revision: this.snapshot.revision + 1 });
   }
 }

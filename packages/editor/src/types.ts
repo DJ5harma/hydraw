@@ -1,4 +1,12 @@
-import type { BoardDocument, Fill, Shape, TextShape, Connector } from "@hydraw/document";
+import type {
+  BoardDocument,
+  Fill,
+  Shape,
+  TextShape,
+  Connector,
+  Bounds,
+  ObjectUpdates,
+} from "@hydraw/document";
 import type { ConnectorEnd } from "./connector-interactions.ts";
 import type { ResizeHandle } from "./geometry.ts";
 
@@ -7,11 +15,15 @@ export type Camera = Readonly<{ x: number; y: number; zoom: number }>;
 export type EditorSnapshot = Readonly<{
   document: BoardDocument;
   revision: number;
+  selectedIds: readonly string[];
+  /** Exactly one selected identity; single-object tools use this derived value. */
   selectedId: string | null;
   tool: Tool;
   fill: Fill;
   camera: Camera;
   preview: Shape | null;
+  selectionPreview: ObjectUpdates | null;
+  marquee: Bounds | null;
   connectorPreview: Connector | null;
   bindingTargetId: string | null;
   activeEndpoint: ConnectorEnd | null;
@@ -24,6 +36,8 @@ export type EditorSnapshot = Readonly<{
 export type EditorChromeSnapshot = Omit<
   EditorSnapshot,
   | "preview"
+  | "selectionPreview"
+  | "marquee"
   | "camera"
   | "revision"
   | "activeHandle"

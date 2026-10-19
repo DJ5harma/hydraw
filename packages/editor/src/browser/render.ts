@@ -1,6 +1,7 @@
 import type { Rectangle, Shape, TextShape } from "@hydraw/document";
 import { drawConnector, drawConnectorHandles } from "./render-connectors.ts";
-import { handlePoint, resizeHandles } from "../geometry.ts";
+import { selectionScene } from "../selection.ts";
+import { drawSelection } from "./render-selection.ts";
 import { layoutText, TEXT_FONT_FAMILY, TEXT_LINE_HEIGHT, TEXT_PADDING } from "../text-layout.ts";
 import type { Camera, EditorSnapshot } from "../types.ts";
 
@@ -77,7 +78,7 @@ export function renderScene(
   const { width, height, dpr } = viewport;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, width, height);
-  const { camera, preview, document, selectedId } = snapshot;
+  const { camera, selectedId } = snapshot;
   let spacing = 24 * camera.zoom;
   while (spacing < 14) spacing *= 2;
   ctx.fillStyle = "#d5d9df";
@@ -85,23 +86,21 @@ export function renderScene(
     for (let y = ((camera.y % spacing) + spacing) % spacing; y < height; y += spacing)
       ctx.fillRect(x, y, 1.2, 1.2);
   }
-  const nodePreview = snapshot.textEditing?.draft ?? preview;
-  const sceneShapes = nodePreview
-    ? document.shapes.map((shape) => (shape.id === nodePreview.id ? nodePreview : shape))
-    : document.shapes;
-  const connectorPreview = snapshot.connectorPreview;
-  for (const connector of document.connectors)
-    if (connector.id !== connectorPreview?.id)
-      drawConnector(ctx, connector, sceneShapes, camera, connector.id === selectedId);
-  if (connectorPreview) drawConnector(ctx, connectorPreview, sceneShapes, camera, true);
-  for (const shape of document.shapes) {
-    if (preview?.id !== shape.id && snapshot.textEditing?.draft.id !== shape.id)
-      drawShape(ctx, shape, camera, viewport);
-  }
-  if (preview) drawShape(ctx, preview, camera, viewport);
+  const { shapes: sceneShapes, connectors: sceneConnectors } = selectionScene(snapshot);
+  const selectedIds = new Set(snapshot.selectedIds);
+  for (const connector of sceneConnectors)
+    drawConnector(
+      ctx,
+      connector,
+      sceneShapes,
+      camera,
+      selectedIds.has(connector.id) || connector.id === snapshot.connectorPreview?.id,
+    );
+  for (const shape of sceneShapes)
+    if (snapshot.textEditing?.draft.id !== shape.id) drawShape(ctx, shape, camera, viewport);
   const selectedConnector =
-    connectorPreview ?? document.connectors.find((connector) => connector.id === selectedId);
-  if (selectedConnector && (snapshot.tool === "select" || connectorPreview))
+    snapshot.connectorPreview ?? sceneConnectors.find((connector) => connector.id === selectedId);
+  if (selectedConnector && (snapshot.tool === "select" || snapshot.connectorPreview))
     drawConnectorHandles(ctx, selectedConnector, sceneShapes, camera);
   const bindingTarget = sceneShapes.find((shape) => shape.id === snapshot.bindingTargetId);
   if (bindingTarget) {
@@ -116,26 +115,5 @@ export function renderScene(
     );
     ctx.setLineDash([]);
   }
-  const selected =
-    snapshot.textEditing?.draft ??
-    preview ??
-    document.shapes.find((shape) => shape.id === selectedId);
-  if (!selected) return;
-  ctx.strokeStyle = "#3568db";
-  ctx.lineWidth = 1;
-  ctx.strokeRect(
-    selected.x * camera.zoom + camera.x,
-    selected.y * camera.zoom + camera.y,
-    selected.width * camera.zoom,
-    selected.height * camera.zoom,
-  );
-  if (snapshot.tool !== "select" || snapshot.textEditing) return;
-  for (const handle of resizeHandles(selected)) {
-    const point = handlePoint(selected, handle);
-    const x = point.x * camera.zoom + camera.x;
-    const y = point.y * camera.zoom + camera.y;
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(x - 3, y - 3, 6, 6);
-    ctx.strokeRect(x - 3, y - 3, 6, 6);
-  }
+  drawSelection(ctx, snapshot, sceneShapes, sceneConnectors);
 }

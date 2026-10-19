@@ -401,6 +401,7 @@ kbd {
   overflow-y: auto;
 }
 .inspector-heading {
+  flex-shrink: 0;
   height: 73px;
   padding: 0 22px;
   display: flex;
@@ -421,6 +422,7 @@ kbd {
   letter-spacing: 0.7px;
 }
 .inspector-section {
+  flex-shrink: 0;
   margin: 0 22px;
   padding: 24px 0;
   border-top: 1px solid #edf0e9;
@@ -599,6 +601,7 @@ kbd {
   height: 13px;
 }
 .inspector-footer {
+  flex-shrink: 0;
   margin: auto 22px 25px;
   padding-top: 32px;
   color: #a5ad9b;
@@ -619,6 +622,8 @@ kbd {
   font-size: 7px;
 }
 .shortcuts {
+  max-height: calc(100% - 96px);
+  overflow-y: auto;
   position: absolute;
   bottom: 64px;
   right: 22px;
@@ -1078,4 +1083,28 @@ kbd {
 .connector-thumbnail svg {
   width: 14px;
   height: 14px;
+}
+
+.selection-actions .file-button {
+  width: 100%;
+  justify-content: center;
+}
+.selection-actions .file-button svg {
+  width: 15px;
+  height: 15px;
+}
+.selection-actions .inspector-note {
+  margin-top: 10px;
+}
+.selection-warning {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.selection-warning button {
+  border: 0;
+  background: none;
+  color: inherit;
+  text-decoration: underline;
 }
