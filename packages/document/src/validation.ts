@@ -1,5 +1,6 @@
 import {
   MAX_SHAPES,
+  MAX_CONNECTORS,
   MAX_DOCUMENT_BYTES,
   MAX_COORDINATE,
   MAX_SIZE,
@@ -9,7 +10,16 @@ import {
   MIN_FONT_SIZE,
   MAX_FONT_SIZE,
 } from "./model.ts";
-import type { Fill, Rectangle, BoardDocument, Shape, TextShape, TextColor } from "./model.ts";
+import type {
+  Fill,
+  Rectangle,
+  BoardDocument,
+  Shape,
+  TextShape,
+  TextColor,
+  Connector,
+  Endpoint,
+} from "./model.ts";
 
 function record(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -25,7 +35,11 @@ export function isFill(value: unknown): value is Fill {
 
 /** Decode into new, known fields so persisted data never leaks arbitrary properties. */
 export function decodeDocument(value: unknown): BoardDocument {
-  if (!record(value) || value.format !== "hydraw" || (value.version !== 0 && value.version !== 1)) {
+  if (
+    !record(value) ||
+    value.format !== "hydraw" ||
+    (value.version !== 0 && value.version !== 1 && value.version !== 2)
+  ) {
     throw new Error("This board uses an unsupported Hydraw format.");
   }
   if (!Array.isArray(value.shapes) || value.shapes.length > MAX_SHAPES) {
@@ -40,7 +54,21 @@ export function decodeDocument(value: unknown): BoardDocument {
     ids.add(shape.id);
     return shape;
   });
-  return Object.freeze({ format: "hydraw", version: 1, name, shapes: Object.freeze(shapes) });
+  if (
+    valueVersion !== 2 &&
+    value.connectors !== undefined &&
+    (!Array.isArray(value.connectors) || value.connectors.length !== 0)
+  )
+    throw new Error("Connectors require Hydraw version 2.");
+  const connectors = decodeConnectors(valueVersion === 2 ? value.connectors : []);
+  assertConnectorGraph(shapes, connectors);
+  return Object.freeze({
+    format: "hydraw",
+    version: 2,
+    name,
+    shapes: Object.freeze(shapes),
+    connectors: Object.freeze(connectors),
+  });
 }
 
 export function parseDocument(json: string): BoardDocument {
@@ -142,4 +170,70 @@ function hasControlCharacters(text: string): boolean {
     if ((code < 32 && code !== 10) || code === 127) return true;
   }
   return false;
+}
+
+export function decodeEndpoint(value: unknown): Endpoint {
+  if (record(value)) {
+    if (
+      value.type === "point" &&
+      finite(value.x, -MAX_COORDINATE, MAX_COORDINATE) &&
+      finite(value.y, -MAX_COORDINATE, MAX_COORDINATE)
+    )
+      return Object.freeze({ type: "point", x: value.x, y: value.y });
+    if (
+      value.type === "binding" &&
+      typeof value.shapeId === "string" &&
+      value.shapeId.length > 0 &&
+      value.shapeId.length <= 100
+    )
+      return Object.freeze({ type: "binding", shapeId: value.shapeId });
+  }
+  throw new Error("This board contains an invalid connector endpoint.");
+}
+
+export function decodeConnector(value: unknown): Connector {
+  if (
+    !record(value) ||
+    value.type !== "connector" ||
+    typeof value.id !== "string" ||
+    !value.id ||
+    value.id.length > 100 ||
+    !isTextColor(value.color) ||
+    (value.arrowhead !== "arrow" && value.arrowhead !== "none")
+  )
+    throw new Error("This board contains an invalid connector.");
+  const start = decodeEndpoint(value.start);
+  const end = decodeEndpoint(value.end);
+  if (start.type === "binding" && end.type === "binding" && start.shapeId === end.shapeId)
+    throw new Error("Connectors cannot bind both ends to the same object yet.");
+  return Object.freeze({
+    id: value.id,
+    type: "connector",
+    start,
+    end,
+    color: value.color,
+    arrowhead: value.arrowhead,
+  });
+}
+
+function decodeConnectors(value: unknown): Connector[] {
+  if (!Array.isArray(value) || value.length > MAX_CONNECTORS)
+    throw new Error("This board exceeds the supported connector limits.");
+  return value.map((connector: unknown) => decodeConnector(connector));
+}
+
+/** Validate only the completed graph, so a transaction can remove nodes and edges atomically. */
+export function assertConnectorGraph(
+  shapes: readonly Shape[],
+  connectors: readonly Connector[],
+): void {
+  const shapeIds = new Set(shapes.map((shape) => shape.id));
+  const ids = new Set(shapeIds);
+  for (const connector of connectors) {
+    if (ids.has(connector.id)) throw new Error("This board contains invalid duplicate object IDs.");
+    ids.add(connector.id);
+    for (const endpoint of [connector.start, connector.end])
+      if (endpoint.type === "binding" && !shapeIds.has(endpoint.shapeId))
+        throw new Error("A connector refers to a missing object.");
+  }
 }

@@ -81,7 +81,7 @@ test("previews an import, persists it, and swaps recovery boards across reloads"
   await expect(page.getByRole("textbox", { name: "Board name" })).toHaveValue(imported.name);
   await expect(page.getByRole("button", { name: "Undo", exact: true })).toBeDisabled();
   expect(await stored(page)).toEqual({
-    primary: { ...imported, version: 1 },
+    primary: { ...imported, version: 2, connectors: [] },
     recovery: original.primary,
   });
   await page.reload();
@@ -91,14 +91,14 @@ test("previews an import, persists it, and swaps recovery boards across reloads"
   await expect(page.getByRole("textbox", { name: "Board name" })).toHaveValue("Original board");
   expect(await stored(page)).toEqual({
     primary: original.primary,
-    recovery: { ...imported, version: 1 },
+    recovery: { ...imported, version: 2, connectors: [] },
   });
   await page.reload();
   await page.getByRole("button", { name: "Restore previous board" }).click();
   await page.getByRole("button", { name: "Restore board", exact: true }).click();
   await expect(page.getByRole("textbox", { name: "Board name" })).toHaveValue(imported.name);
   expect(await stored(page)).toEqual({
-    primary: { ...imported, version: 1 },
+    primary: { ...imported, version: 2, connectors: [] },
     recovery: original.primary,
   });
 });
@@ -240,7 +240,7 @@ test("an unreadable recovery copy does not strand or overwrite a valid current b
   await openImported(page);
   await expect(page.getByRole("alert")).toHaveCount(0);
   expect(await stored(page)).toMatchObject({
-    primary: { ...imported, version: 1 },
+    primary: { ...imported, version: 2, connectors: [] },
     recovery: { name: "Original board" },
   });
 });

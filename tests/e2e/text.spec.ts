@@ -44,7 +44,7 @@ test("creates multiline Unicode text, cancels an inline edit, and undoes one com
   await createText(page, "Architecture\nこんにちは 👩‍💻");
   await expect(page.getByRole("button", { name: /^Text 1/ })).toBeVisible();
   const before = await exported(page);
-  expect(before.version).toBe(1);
+  expect(before.version).toBe(2);
   expect(before.shapes[0]).toMatchObject({
     text: "Architecture\nこんにちは 👩‍💻",
     type: "text",
