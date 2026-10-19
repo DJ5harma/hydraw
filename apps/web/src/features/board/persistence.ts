@@ -9,6 +9,7 @@ type PersistenceSnapshot = Readonly<{
   saveError: string | null;
   recovery: BoardDocument | null;
   replacing: boolean;
+  recoveryWarning: string | null;
 }>;
 
 /** One queue for autosave and board replacement; acknowledgements follow storage commits. */
@@ -31,6 +32,7 @@ export class BoardPersistence {
       saveError: initialError,
       recovery: storage?.recovery ?? null,
       replacing: false,
+      recoveryWarning: storage?.recoveryWarning ?? null,
     };
   }
 
@@ -79,7 +81,7 @@ export class BoardPersistence {
         "Import needs local storage so a recovery copy can be saved. Export your current work and enable local storage first.",
       );
     if (this.snapshot.replacing) throw new Error("A board replacement is already in progress.");
-    const unlock = this.editor.lockDocument();
+    const lock = this.editor.lockDocument();
     const previous = this.getDocument();
     this.publish({ replacing: true });
     try {
@@ -87,14 +89,19 @@ export class BoardPersistence {
         await this.storage!.replace(previous, document);
         this.applyingReplacement = true;
         try {
-          this.editor.replaceDocument(document);
+          lock.replace(document);
         } finally {
           this.applyingReplacement = false;
         }
-        this.publish({ recovery: previous, saveState: "saved", saveError: null });
+        this.publish({
+          recovery: previous,
+          recoveryWarning: null,
+          saveState: "saved",
+          saveError: null,
+        });
       });
     } finally {
-      unlock();
+      lock.release();
       this.publish({ replacing: false });
     }
   }

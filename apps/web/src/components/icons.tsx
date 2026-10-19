@@ -5,6 +5,8 @@ type IconName =
   | "undo"
   | "redo"
   | "download"
+  | "upload"
+  | "recover"
   | "minus"
   | "plus"
   | "trash"
@@ -12,6 +14,13 @@ type IconName =
   | "arrow"
   | "check";
 const paths: Record<IconName, React.ReactNode> = {
+  upload: <path d="M12 15V3m-5 5 5-5 5 5M4 16v4h16v-4" />,
+  recover: (
+    <>
+      <path d="M3 10a9 9 0 1 1 1 7M3 4v6h6" />
+      <path d="M12 7v5l3 2" />
+    </>
+  ),
   select: <path d="m5 3 13 9-6 1-3 6-4-16Z" />,
   rectangle: <rect x="4" y="4" width="16" height="16" rx="3" />,
   hand: (

@@ -8,6 +8,21 @@ function setup() {
 }
 
 describe("editor transactions", () => {
+  it("requires an active replacement lease and does not let an old release unlock a newer lease", () => {
+    const editor = setup();
+    editor.addRectangle({ x: 100, y: 100 });
+    const first = editor.lockDocument();
+    first.release();
+    const second = editor.lockDocument();
+    first.release();
+    expect(() => editor.rename("Blocked")).toThrow("replacement");
+    expect(() => first.replace(createDocument())).toThrow("released");
+    second.replace({ ...createDocument(), name: "Replacement" });
+    expect(editor.getSnapshot().canUndo).toBe(false);
+    second.release();
+    editor.rename("Editable");
+    expect(editor.getSnapshot().document.name).toBe("Editable");
+  });
   it("commits a zoomed resize once, cancels previews, and restores dimensions through history", () => {
     const editor = setup();
     editor.addRectangle({ x: 200, y: 150 });

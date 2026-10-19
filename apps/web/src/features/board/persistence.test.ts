@@ -13,6 +13,7 @@ function setup() {
   const storage: LocalBoard = {
     document: primary,
     recovery: null,
+    recoveryWarning: null,
     close() {},
     async save(document) {
       writes.push(`save:${document.name}`);

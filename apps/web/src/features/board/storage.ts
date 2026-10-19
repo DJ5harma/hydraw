@@ -4,6 +4,7 @@ import type { BoardDocument } from "@hydraw/document";
 export type LocalBoard = {
   document: BoardDocument;
   recovery: BoardDocument | null;
+  recoveryWarning: string | null;
   replace: (previous: BoardDocument, next: BoardDocument) => Promise<void>;
   save: (document: BoardDocument) => Promise<void>;
   close: () => void;
@@ -103,7 +104,16 @@ export async function openLocalBoard(signal: AbortSignal): Promise<LocalBoard> {
     });
     const document =
       stored.primary === undefined ? createDocument() : decodeDocument(stored.primary);
-    const recovery = stored.recovery === undefined ? null : decodeDocument(stored.recovery);
+    let recovery: BoardDocument | null = null;
+    let recoveryWarning: string | null = null;
+    if (stored.recovery !== undefined) {
+      try {
+        recovery = decodeDocument(stored.recovery);
+      } catch {
+        recoveryWarning =
+          "The previous recovery copy could not be read. Your current board is available. Opening another board will replace that unreadable recovery copy.";
+      }
+    }
     function write(records: readonly (readonly [string, BoardDocument])[]): Promise<void> {
       return new Promise((resolve, reject) => {
         const transaction = database.transaction("boards", "readwrite");
@@ -124,6 +134,7 @@ export async function openLocalBoard(signal: AbortSignal): Promise<LocalBoard> {
     return {
       document,
       recovery,
+      recoveryWarning,
       save: (next) => write([["primary", decodeDocument(next)]]),
       replace: (previous, next) =>
         write([

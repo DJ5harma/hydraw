@@ -40,6 +40,8 @@ The Dockerfile builds React and Hono together. The runtime image contains the bu
 - Create a centered rectangle with Enter on the canvas or Add rectangle in the inspector. Move a selection with arrow keys; Shift moves by 10. V/R/H switch tools.
 - Rename the board and export version 0 semantic JSON as `.hydraw.json`.
 - Recover the current board from IndexedDB after reload. Save status changes only after the storage transaction commits.
+- Import version 0 `.hydraw.json` files up to 2 MB, with validation and a name/object-count preview before opening. Export the current board directly from the review dialog.
+- Keep one previous board when importing or restoring. The current board and recovery copy change in one storage transaction; failed imports preserve both. Restore is reversible by restoring again.
 
 One tab owns the local writer lock. Additional tabs enter an explicitly unsaved session instead of overwriting that board. If storage fails or saved data cannot be decoded, the app preserves existing storage and offers in-memory editing/export. Browser storage can still be cleared or evicted; export valuable work.
 
@@ -72,8 +74,8 @@ Individual commands: `pnpm run check`, `pnpm test`, `pnpm run build`, and `pnpm 
 
 ## Current limits
 
-This milestone supports one local board and rectangles. JSON export exists; importing it is a subsequent slice. Text, connectors, multiselection, SVG/PNG export, cloud storage, authentication, collaboration and hosted deployment are still planned. Undo history is session-local and resets after reload. History retains at most 100 transactions containing changed records rather than full-board snapshots. Transaction application is atomic and checks expected prior values. These are local edit preconditions; server revisions, authorization and collaborative rebase are not implemented yet.
+This milestone supports one local board and rectangles. Import requires writable local storage to preserve a recovery copy. Text, connectors, multiselection, SVG/PNG export, cloud storage, authentication, collaboration and hosted deployment are still planned. Undo history is session-local and resets after reload, import or restore. History retains at most 100 transactions containing changed records rather than full-board snapshots. Transaction application is atomic and checks expected prior values. These are local edit preconditions; server revisions, authorization and collaborative rebase are not implemented yet.
 
 An already loaded page can edit without network access. Offline application startup is not supported yet. Desktop Chromium is verified; other browsers, pen/touch behavior and accessibility need further testing. The responsive layout is an early shell, not a claim of full mobile editor support.
 
-Next milestone: JSON import with recovery, then text and bound connectors. See [ADR 0002](docs/adr/0002-container-and-transactions.md) for the current packaging and transaction boundaries.
+Next milestone: text editing, then bound connectors. See [ADR 0002](docs/adr/0002-container-and-transactions.md) for packaging and editor transactions, and [ADR 0003](docs/adr/0003-local-import-and-recovery.md) for import and persistence boundaries.

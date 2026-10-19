@@ -88,16 +88,25 @@ export class Editor {
   }
 
   /** Excludes edits while an external replacement is being durably committed. */
-  lockDocument(): () => void {
+  lockDocument(): Readonly<{ replace: (document: BoardDocument) => void; release: () => void }> {
     this.assertWritable();
     this.cancelGesture();
     this.documentLocked = true;
-    return () => {
-      this.documentLocked = false;
+    let active = true;
+    return {
+      replace: (document) => {
+        if (!active) throw new Error("This replacement lock has been released.");
+        this.replaceDocument(document);
+      },
+      release: () => {
+        if (!active) return;
+        active = false;
+        this.documentLocked = false;
+      },
     };
   }
 
-  replaceDocument(next: BoardDocument): void {
+  private replaceDocument(next: BoardDocument): void {
     const document = decodeDocument(next);
     this.cancelGesture();
     this.history.clear();
