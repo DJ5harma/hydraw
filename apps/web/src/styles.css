@@ -1108,3 +1108,45 @@ kbd {
   color: inherit;
   text-decoration: underline;
 }
+
+.arrangement-controls h4 {
+  font-size: 11px;
+  font-weight: 500;
+  color: #52634b;
+  margin: 16px 0 10px;
+}
+.alignment-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.distribution-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.arrange-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 36px;
+  padding: 8px 4px;
+  border: 1px solid #dce2d7;
+  border-radius: 6px;
+  background: white;
+  color: #52634b;
+  font-size: 10px;
+}
+.arrange-button svg {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+}
+.arrange-button:hover:not(:disabled) {
+  background: #f1f4ee;
+  border-color: #8a9e77;
+}
+.arrangement-controls .inspector-note {
+  margin-top: 12px;
+}

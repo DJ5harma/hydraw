@@ -1,20 +1,25 @@
 import { FILLS } from "@hydraw/document";
-import type { Point } from "@hydraw/document";
+import type { Point, Alignment, DistributionAxis } from "@hydraw/document";
 import type { Editor } from "@hydraw/editor";
 import { Icon } from "../../components/icons.tsx";
 import { useEditorSnapshot } from "./useEditorSnapshot.ts";
 import { TextStyleControls } from "./TextStyleControls.tsx";
 import { ConnectorInspector } from "./ConnectorInspector.tsx";
+import { ArrangementControls } from "./ArrangementControls.tsx";
 import { GeometryFields } from "./GeometryFields.tsx";
 const fillNames = ["Blue", "Sage", "Sand", "Rose", "White"];
 export function BoardInspector({
   editor,
   center,
   onDuplicate,
+  onAlign,
+  onDistribute,
 }: {
   editor: Editor;
   center: () => Point;
   onDuplicate: () => void;
+  onAlign: (alignment: Alignment) => void;
+  onDistribute: (axis: DistributionAxis) => void;
 }) {
   const snapshot = useEditorSnapshot(editor);
   const selected = snapshot.document.shapes.find((shape) => shape.id === snapshot.selectedId);
@@ -92,6 +97,13 @@ export function BoardInspector({
             Delete {selected.type === "text" ? "text" : "rectangle"}
           </button>
         </section>
+      )}
+      {multiple && (
+        <ArrangementControls
+          shapeCount={snapshot.document.shapes.filter((shape) => selectedIds.has(shape.id)).length}
+          onAlign={onAlign}
+          onDistribute={onDistribute}
+        />
       )}
       {selectedIds.size > 0 && (
         <section className="inspector-section selection-actions">

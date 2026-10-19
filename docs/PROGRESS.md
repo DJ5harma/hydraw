@@ -72,4 +72,15 @@ Implemented on 20 October 2026:
 - Focused selection geometry/gesture helpers and a separate renderer for selection outlines and marquees. Inspector sections now retain their content height and scroll without the footer overlapping object-list entries; the keyboard-reference panel also scrolls in short viewports.
 - 65 unit/server tests and 50 development/production browser checks cover graph operations, Shift-click, reverse/additive marquees, group move/cancel, duplicate/undo/redo, text-input shortcut isolation and saved copies after reload. Focused Luna reviews found no remaining operation or interaction defects. No runtime dependencies added.
 
-Next: alignment and distribution. Keep each slice runnable and verified before expanding.
+## Milestone 7 — alignment and center distribution
+
+Implemented on 20 October 2026:
+
+- Six shape alignment modes use selected node bounds: left, horizontal center, right, top, vertical center and bottom. At least two rectangles/text objects are required; selected connectors do not influence targets.
+- Horizontal and vertical center distribution keep the two outer centers fixed, order tied centers by document order and preserve collection stacking. At least three shapes are required; sizes and text layout remain unchanged.
+- Every action uses one reversible transaction. Bound endpoints follow the moved nodes without rewriting edge records, while unselected nodes and free arrows remain in place.
+- Layouts exceeding coordinate limits reject the entire operation with a dismissible error. Insufficient selections and repeated layouts preserve history and redo; numeric comparisons account for cancellation error from large or fractional bounds.
+- Focused inspector controls receive values and callbacks, with accessible names, disabled states based on shape count, and explicit center-spacing guidance. Editor commands share the existing replacement lock and gesture cancellation paths.
+- 81 unit/server tests and 58 development/production browser checks passed, including all alignment modes, distribution, text/binding preservation, undo/redo, reload and coordinate-error recovery. Desktop and narrower inspector layouts visually checked. No runtime dependencies or schema version changes.
+
+Next: clipboard copy/paste. Keep each slice runnable and verified before expanding.

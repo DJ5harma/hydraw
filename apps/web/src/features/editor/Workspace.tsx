@@ -1,3 +1,4 @@
+import type { Alignment, DistributionAxis } from "@hydraw/document";
 import { useRef, useState } from "react";
 import { BoardTransferDialog } from "../board/BoardTransferDialog.tsx";
 import type { TransferMode } from "../board/BoardTransferDialog.tsx";
@@ -19,16 +20,21 @@ export function Workspace({ session }: { session: BoardSession }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const snapshot = useEditorSnapshot(editor);
   const [actionError, setActionError] = useState<string | null>(null);
-  function duplicate() {
+  function runSelectionAction(action: () => void) {
     try {
-      editor.duplicateSelection();
+      action();
       setActionError(null);
     } catch (cause) {
       setActionError(
-        cause instanceof Error ? cause.message : "This selection could not be duplicated.",
+        cause instanceof Error ? cause.message : "This selection could not be changed.",
       );
     }
   }
+  const duplicate = () => runSelectionAction(() => editor.duplicateSelection());
+  const align = (alignment: Alignment) =>
+    runSelectionAction(() => editor.alignSelection(alignment));
+  const distribute = (axis: DistributionAxis) =>
+    runSelectionAction(() => editor.distributeSelection(axis));
   const { center, selectTool, keyboard } = createEditorControls(editor, canvasRef, duplicate);
   const { saveState, saveError, recovery, recoveryWarning, persistence } = useBoardPersistence(
     editor,
@@ -87,7 +93,13 @@ export function Workspace({ session }: { session: BoardSession }) {
             )}
           <CanvasControls editor={editor} center={center} />
         </section>
-        <BoardInspector editor={editor} center={center} onDuplicate={duplicate} />
+        <BoardInspector
+          editor={editor}
+          center={center}
+          onDuplicate={duplicate}
+          onAlign={align}
+          onDistribute={distribute}
+        />
       </div>
       {transfer && (
         <BoardTransferDialog

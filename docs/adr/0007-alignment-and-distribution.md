@@ -16,6 +16,12 @@ Each action builds one ordinary reversible transaction, retaining only changed r
 
 Floating-point cancellation can otherwise make repeated alignment generate microscopic position changes. Results within sixteen machine-epsilon units scaled to the selected geometry on that axis keep the exact prior coordinate. Scaling includes the operand positions and dimensions, so cancellation to an origin near zero remains stable even for very large shapes. This prevents spurious history without rounding the layout to a visible grid.
 
+## Editor and UI boundaries
+
+Editor commands honor the replacement lock, finish a pending text draft and cancel active gesture previews before arranging the committed document. Selection membership stays intact. Normal document revisions drive autosave, rendering, undo and redo; there is no parallel persistence path for layout.
+
+A focused inspector component receives selected shape count and action callbacks. Buttons expose accessible names and disable based on eligible shape count rather than total selected identities. The UI names center distribution explicitly and explains that attached arrows follow. Workspace action handling reports coordinate-limit failures through the existing dismissible selection error, without partial updates.
+
 ## Verification
 
-Domain checks cover all six modes, selected bounds, text/style preservation, ignored connector identities, unselected structural sharing, transaction inverses, variable-sized shape centers, stable ties, fractional coordinates, repeated no-ops and coordinate-limit rejection.
+Domain checks cover all six modes, selected bounds, text/style preservation, ignored connector identities, unselected structural sharing, transaction inverses, variable-sized shape centers, stable ties, fractional coordinates, repeated no-ops, large operands cancelling near zero and coordinate-limit rejection. Editor tests cover one-revision commits, retained selection, binding geometry, history, gesture cancellation and replacement locks. Browser journeys verify every control, shape-only eligibility, text preservation, repeated-layout undo behavior, saved positions after reload and recovery after rejected layouts in both development and production.

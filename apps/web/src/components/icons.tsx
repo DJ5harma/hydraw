@@ -1,5 +1,13 @@
 type IconName =
   | "select"
+  | "align-left"
+  | "align-center-x"
+  | "align-right"
+  | "align-top"
+  | "align-center-y"
+  | "align-bottom"
+  | "distribute-x"
+  | "distribute-y"
   | "duplicate"
   | "connector"
   | "rectangle"
@@ -22,6 +30,62 @@ const paths: Record<IconName, React.ReactNode> = {
     <>
       <path d="M3 10a9 9 0 1 1 1 7M3 4v6h6" />
       <path d="M12 7v5l3 2" />
+    </>
+  ),
+  "align-left": (
+    <>
+      <path d="M4 3v18" />
+      <rect x="8" y="5" width="12" height="5" rx="1" />
+      <rect x="8" y="14" width="7" height="5" rx="1" />
+    </>
+  ),
+  "align-center-x": (
+    <>
+      <path d="M12 2v20" />
+      <rect x="3" y="5" width="18" height="5" rx="1" />
+      <rect x="7" y="14" width="10" height="5" rx="1" />
+    </>
+  ),
+  "align-right": (
+    <>
+      <path d="M20 3v18" />
+      <rect x="4" y="5" width="12" height="5" rx="1" />
+      <rect x="9" y="14" width="7" height="5" rx="1" />
+    </>
+  ),
+  "align-top": (
+    <>
+      <path d="M3 4h18" />
+      <rect x="5" y="8" width="5" height="12" rx="1" />
+      <rect x="14" y="8" width="5" height="7" rx="1" />
+    </>
+  ),
+  "align-center-y": (
+    <>
+      <path d="M2 12h20" />
+      <rect x="5" y="3" width="5" height="18" rx="1" />
+      <rect x="14" y="7" width="5" height="10" rx="1" />
+    </>
+  ),
+  "align-bottom": (
+    <>
+      <path d="M3 20h18" />
+      <rect x="5" y="4" width="5" height="12" rx="1" />
+      <rect x="14" y="9" width="5" height="7" rx="1" />
+    </>
+  ),
+  "distribute-x": (
+    <>
+      <path d="M3 3v18M21 3v18M12 3v18" />
+      <rect x="6" y="8" width="3" height="8" />
+      <rect x="15" y="6" width="3" height="12" />
+    </>
+  ),
+  "distribute-y": (
+    <>
+      <path d="M3 3h18M3 21h18M3 12h18" />
+      <rect x="8" y="6" width="8" height="3" />
+      <rect x="6" y="15" width="12" height="3" />
     </>
   ),
   select: <path d="m5 3 13 9-6 1-3 6-4-16Z" />,

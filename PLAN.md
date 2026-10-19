@@ -1,6 +1,6 @@
 # Hydraw: product and engineering plan
 
-Planning baseline: 20 October 2026. Status: proposed architecture with the first six local editor increments implemented; hosted deployment and later product stages remain planned. See [the milestone log](docs/PROGRESS.md) for implemented scope and [ADR 0001](docs/adr/0001-owned-local-editor.md) for current engineering decisions. The repository was empty when this plan was written.
+Planning baseline: 20 October 2026. Status: proposed architecture with the first seven local editor increments implemented; hosted deployment and later product stages remain planned. See [the milestone log](docs/PROGRESS.md) for implemented scope and [ADR 0001](docs/adr/0001-owned-local-editor.md) for current engineering decisions. The repository was empty when this plan was written.
 
 ## 1. Product direction
 

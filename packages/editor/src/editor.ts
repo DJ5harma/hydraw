@@ -1,5 +1,7 @@
 import {
   decodeDocument,
+  alignShapesTransaction,
+  distributeShapesTransaction,
   deleteObjectsTransaction,
   duplicateObjects,
   translateObjects,
@@ -19,6 +21,8 @@ import {
   shapeTransaction,
 } from "@hydraw/document";
 import type {
+  Alignment,
+  DistributionAxis,
   Connector,
   BoardDocument,
   DocumentTransaction,
@@ -335,6 +339,24 @@ export class Editor {
     const result = duplicateObjects(this.snapshot.document, this.snapshot.selectedIds, this.makeId);
     this.commit(result.transaction);
     if (result.transaction) this.publish({ selectedIds: result.ids, tool: "select" });
+  }
+
+  alignSelection(alignment: Alignment): void {
+    this.assertWritable();
+    this.finishTextEditing();
+    this.cancelGesture();
+    this.commit(
+      alignShapesTransaction(this.snapshot.document, this.snapshot.selectedIds, alignment),
+    );
+  }
+
+  distributeSelection(axis: DistributionAxis): void {
+    this.assertWritable();
+    this.finishTextEditing();
+    this.cancelGesture();
+    this.commit(
+      distributeShapesTransaction(this.snapshot.document, this.snapshot.selectedIds, axis),
+    );
   }
 
   setFill(fill: Fill): void {
