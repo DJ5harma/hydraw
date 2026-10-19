@@ -134,6 +134,38 @@ describe("selection arrangement", () => {
     }
   });
 
+  it("keeps repeated layouts stable when large operands cancel to origins near zero", () => {
+    const document = decodeDocument({
+      ...createDocument(),
+      shapes: [
+        {
+          ...a,
+          id: "0",
+          x: -32666.88651752335,
+          y: -76088.58694521751,
+          width: 99990.194,
+          height: 99990.138,
+        },
+        { ...a, id: "1", x: 0, y: 0, width: 100.001, height: 100.001 },
+        {
+          ...a,
+          id: "2",
+          x: 32666.88651752335,
+          y: 76088.58694521751,
+          width: 99990.194,
+          height: 99990.138,
+        },
+      ],
+    });
+    for (const alignment of ["horizontal-center", "right", "vertical-center", "bottom"] as const) {
+      const next = applyTransaction(
+        document,
+        alignShapesTransaction(document, ["0", "1", "2"], alignment)!,
+      );
+      expect(alignShapesTransaction(next, ["0", "1", "2"], alignment)).toBeNull();
+    }
+  });
+
   it("ignores connector identities and insufficient node selections without creating history", () => {
     const document = initial();
     expect(alignShapesTransaction(document, ["a", "edge", "missing"], "left")).toBeNull();

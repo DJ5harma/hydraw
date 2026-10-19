@@ -23,16 +23,21 @@ function arrangement(
   shapes: readonly Shape[],
 ): DocumentTransaction | null {
   const originals = new Map(document.shapes.map((shape) => [shape.id, shape]));
+  let scaleX = 1,
+    scaleY = 1;
+  for (const shape of shapes) {
+    const before = originals.get(shape.id) ?? shape;
+    scaleX = Math.max(scaleX, Math.abs(shape.x), Math.abs(before.x), shape.width);
+    scaleY = Math.max(scaleY, Math.abs(shape.y), Math.abs(before.y), shape.height);
+  }
+  // Cancellation error depends on the operands' scale, even when the resulting origin is zero.
+  const stable = (value: number, previous: number, scale: number) =>
+    Math.abs(value - previous) <= Number.EPSILON * scale * 16 ? previous : value;
   const updates = shapes.map((shape) => {
     const before = originals.get(shape.id);
-    if (!before) return shape;
-    // Repeated layout must not create history from floating-point cancellation noise.
-    const stable = (value: number, previous: number) =>
-      Math.abs(value - previous) <=
-      Number.EPSILON * Math.max(1, Math.abs(value), Math.abs(previous)) * 16
-        ? previous
-        : value;
-    return { ...shape, x: stable(shape.x, before.x), y: stable(shape.y, before.y) };
+    return before
+      ? { ...shape, x: stable(shape.x, before.x, scaleX), y: stable(shape.y, before.y, scaleY) }
+      : shape;
   });
   for (const shape of updates)
     if (

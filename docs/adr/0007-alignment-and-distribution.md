@@ -14,7 +14,7 @@ Distribution spaces shape centers equally along the chosen axis. At least three 
 
 Each action builds one ordinary reversible transaction, retaining only changed records. A coordinate-limit failure rejects the entire layout rather than clamping individual nodes and breaking alignment. No-op and insufficient-shape selections produce no history entry and preserve redo.
 
-Floating-point cancellation can otherwise make repeated alignment generate microscopic position changes. Results within sixteen scaled machine-epsilon units of the prior coordinate keep that exact coordinate. This prevents spurious history without rounding the layout to a visible grid.
+Floating-point cancellation can otherwise make repeated alignment generate microscopic position changes. Results within sixteen machine-epsilon units scaled to the selected geometry on that axis keep the exact prior coordinate. Scaling includes the operand positions and dimensions, so cancellation to an origin near zero remains stable even for very large shapes. This prevents spurious history without rounding the layout to a visible grid.
 
 ## Verification
 
