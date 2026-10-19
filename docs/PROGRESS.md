@@ -37,4 +37,15 @@ Implemented on 20 October 2026:
 - Unreadable recovery data does not block a valid current board. Autosaves preserve it, and replacement explicitly warns before overwriting it.
 - Unit coverage for queue ordering, replacement failure and lease ownership. Development/production browser coverage for review, invalid files, cancellation, export round trips, recovery across reloads, and aborted or synchronously failed storage writes.
 
-Next: text editing, then bound connectors. Keep each slice runnable and verified before expanding.
+## Milestone 4 — standalone text editing
+
+Implemented on 20 October 2026:
+
+- Version 1 document model with a discriminated shape union, validated text records and explicit migration of version 0 rectangle boards. Transactions compare every text/style field and reject changing shape type under the same identity.
+- Text creation through T + click, keyboard placement or the inspector. Inline multiline drafts commit as one transaction on blur or Ctrl/⌘ Enter; Escape cancels. Clearing existing text deletes it through normal history.
+- Font size, weight, alignment and ink controls; selection, movement, deletion, undo/redo, save/reload, export, import and recovery share the existing paths.
+- Pure word/grapheme wrapping with injected browser font measurement. Width resizing reflows text and derives its height. Imported bounds are recomputed before storage replacement so persisted and displayed text agree.
+- Native textarea overlay for editing and Canvas rendering for committed text. Core code remains independent of React and browser APIs; no runtime dependencies added.
+- Regression checks for Unicode, wrapping, draft lifecycle, styling, type-safe history, old document migration, pointer resizing, keyboard movement at zoom and import/export round trips. Desktop and narrow mobile editing layouts inspected.
+
+Next: bound connectors. Keep each slice runnable and verified before expanding.

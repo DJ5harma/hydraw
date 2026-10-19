@@ -1,26 +1,29 @@
 import { useEffect, useId, useState } from "react";
 import { MAX_COORDINATE, MAX_SIZE } from "@hydraw/document";
-import type { Rectangle } from "@hydraw/document";
+import type { Shape } from "@hydraw/document";
 import type { Editor } from "@hydraw/editor";
 
 const fields = [
-  { key: "x", label: "X", name: "Rectangle x", min: -MAX_COORDINATE, max: MAX_COORDINATE },
-  { key: "y", label: "Y", name: "Rectangle y", min: -MAX_COORDINATE, max: MAX_COORDINATE },
-  { key: "width", label: "W", name: "Rectangle width", min: 1, max: MAX_SIZE },
-  { key: "height", label: "H", name: "Rectangle height", min: 1, max: MAX_SIZE },
+  { key: "x", label: "X", min: -MAX_COORDINATE, max: MAX_COORDINATE },
+  { key: "y", label: "Y", min: -MAX_COORDINATE, max: MAX_COORDINATE },
+  { key: "width", label: "W", min: 1, max: MAX_SIZE },
+  { key: "height", label: "H", min: 1, max: MAX_SIZE },
 ] as const;
 
-export function GeometryFields({ shape, editor }: { shape: Rectangle; editor: Editor }) {
+export function GeometryFields({ shape, editor }: { shape: Shape; editor: Editor }) {
   return (
     <div className="geometry">
-      {fields.map(({ key, ...field }) => (
-        <GeometryField
-          key={key}
-          {...field}
-          value={shape[key]}
-          onCommit={(value) => editor.setGeometry({ [key]: value })}
-        />
-      ))}
+      {fields
+        .filter((field) => shape.type !== "text" || field.key !== "height")
+        .map(({ key, ...field }) => (
+          <GeometryField
+            key={key}
+            {...field}
+            name={`${shape.type === "text" ? "Text" : "Rectangle"} ${key}`}
+            value={shape[key]}
+            onCommit={(value) => editor.setGeometry({ [key]: value })}
+          />
+        ))}
     </div>
   );
 }

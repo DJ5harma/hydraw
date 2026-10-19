@@ -1,5 +1,6 @@
-import type { Rectangle } from "@hydraw/document";
-import { handlePoint, RESIZE_HANDLES } from "../geometry.ts";
+import type { Rectangle, Shape, TextShape } from "@hydraw/document";
+import { handlePoint, resizeHandles } from "../geometry.ts";
+import { layoutText, TEXT_FONT_FAMILY, TEXT_LINE_HEIGHT, TEXT_PADDING } from "../text-layout.ts";
 import type { Camera, EditorSnapshot } from "../types.ts";
 
 type Viewport = Readonly<{ width: number; height: number; dpr: number }>;
@@ -25,6 +26,47 @@ function drawRectangle(
   ctx.stroke();
 }
 
+function drawText(ctx: CanvasRenderingContext2D, shape: TextShape, camera: Camera): void {
+  ctx.save();
+  ctx.translate(shape.x * camera.zoom + camera.x, shape.y * camera.zoom + camera.y);
+  ctx.scale(camera.zoom, camera.zoom);
+  ctx.font = `${shape.fontWeight} ${shape.fontSize}px ${TEXT_FONT_FAMILY}`;
+  ctx.fillStyle = shape.color;
+  ctx.textBaseline = "top";
+  ctx.textAlign = shape.textAlign;
+  const layout = layoutText(shape, (text) => ctx.measureText(text).width);
+  const x =
+    shape.textAlign === "left"
+      ? TEXT_PADDING
+      : shape.textAlign === "center"
+        ? shape.width / 2
+        : shape.width - TEXT_PADDING;
+  layout.lines.forEach((line, index) => {
+    ctx.fillText(
+      line,
+      x,
+      TEXT_PADDING + index * shape.fontSize * TEXT_LINE_HEIGHT + shape.fontSize * 0.15,
+    );
+  });
+  ctx.restore();
+}
+
+function drawShape(
+  ctx: CanvasRenderingContext2D,
+  shape: Shape,
+  camera: Camera,
+  viewport: Viewport,
+): void {
+  if (shape.type === "rectangle") drawRectangle(ctx, shape, camera, viewport);
+  else if (
+    shape.x * camera.zoom + camera.x <= viewport.width &&
+    shape.y * camera.zoom + camera.y <= viewport.height &&
+    (shape.x + shape.width) * camera.zoom + camera.x >= 0 &&
+    (shape.y + shape.height) * camera.zoom + camera.y >= 0
+  )
+    drawText(ctx, shape, camera);
+}
+
 /** Draws a derived scene. It cannot subscribe, dispatch commands or mutate editor state. */
 export function renderScene(
   ctx: CanvasRenderingContext2D,
@@ -43,10 +85,14 @@ export function renderScene(
       ctx.fillRect(x, y, 1.2, 1.2);
   }
   for (const shape of document.shapes) {
-    if (preview?.id !== shape.id) drawRectangle(ctx, shape, camera, viewport);
+    if (preview?.id !== shape.id && snapshot.textEditing?.draft.id !== shape.id)
+      drawShape(ctx, shape, camera, viewport);
   }
-  if (preview) drawRectangle(ctx, preview, camera, viewport);
-  const selected = preview ?? document.shapes.find((shape) => shape.id === selectedId);
+  if (preview) drawShape(ctx, preview, camera, viewport);
+  const selected =
+    snapshot.textEditing?.draft ??
+    preview ??
+    document.shapes.find((shape) => shape.id === selectedId);
   if (!selected) return;
   ctx.strokeStyle = "#3568db";
   ctx.lineWidth = 1;
@@ -56,8 +102,8 @@ export function renderScene(
     selected.width * camera.zoom,
     selected.height * camera.zoom,
   );
-  if (snapshot.tool !== "select") return;
-  for (const handle of RESIZE_HANDLES) {
+  if (snapshot.tool !== "select" || snapshot.textEditing) return;
+  for (const handle of resizeHandles(selected)) {
     const point = handlePoint(selected, handle);
     const x = point.x * camera.zoom + camera.x;
     const y = point.y * camera.zoom + camera.y;

@@ -7,7 +7,7 @@ import {
   rectangleBetween,
 } from "./index.ts";
 
-describe("version 0 documents", () => {
+describe("semantic documents", () => {
   it("rejects malformed JSON and measures the file limit in UTF-8 bytes", () => {
     expect(() => parseDocument("{broken")).toThrow("not valid JSON");
     expect(() => parseDocument('"' + "😀".repeat(500_000) + '"')).toThrow("too large");
@@ -22,7 +22,7 @@ describe("version 0 documents", () => {
     );
   });
   it("rejects future versions, malformed geometry, duplicate IDs and unbounded files", () => {
-    expect(() => decodeDocument({ ...createDocument(), version: 1 })).toThrow("unsupported");
+    expect(() => decodeDocument({ ...createDocument(), version: 99 })).toThrow("unsupported");
     for (const invalid of [NaN, Infinity, -1, 0, 100_001]) {
       expect(() =>
         decodeDocument({ ...createDocument(), shapes: [{ ...shape, width: invalid }] }),

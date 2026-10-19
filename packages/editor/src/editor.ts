@@ -1,5 +1,7 @@
 import {
   decodeDocument,
+  decodeText,
+  MAX_TEXT_LENGTH,
   hitTest,
   MAX_COORDINATE,
   MAX_SHAPES,
@@ -7,22 +9,34 @@ import {
   rectangleBetween,
   shapeTransaction,
 } from "@hydraw/document";
-import type { BoardDocument, DocumentTransaction, Fill, Point, Rectangle } from "@hydraw/document";
+import type {
+  BoardDocument,
+  DocumentTransaction,
+  Bounds,
+  Fill,
+  Point,
+  Rectangle,
+  Shape,
+  TextShape,
+} from "@hydraw/document";
 import { clamp, hitResizeHandle, screenToWorld } from "./geometry.ts";
 import type { ResizeHandle } from "./geometry.ts";
 import { previewGesture } from "./gestures.ts";
 import type { Gesture } from "./gestures.ts";
+import { layoutText } from "./text-layout.ts";
+import type { TextMeasurer } from "./text-layout.ts";
 import { TransactionHistory } from "./history.ts";
 import type { EditorChromeSnapshot, EditorSnapshot, Tool } from "./types.ts";
 
 function chromeSnapshot(snapshot: EditorSnapshot): EditorChromeSnapshot {
-  const { document, selectedId, tool, fill, interacting, canUndo, canRedo } = snapshot;
+  const { document, selectedId, tool, fill, interacting, textEditing, canUndo, canRedo } = snapshot;
   return {
     document,
     selectedId,
     tool,
     fill,
     interacting,
+    textEditing,
     canUndo,
     canRedo,
     zoom: snapshot.camera.zoom,
@@ -37,18 +51,25 @@ export class Editor {
   private readonly history = new TransactionHistory();
   private gesture: Gesture | null = null;
   private documentLocked = false;
+  private readonly measureText: TextMeasurer | undefined;
   private readonly makeId: () => string;
 
-  constructor(document: BoardDocument, makeId: () => string = () => crypto.randomUUID()) {
+  constructor(
+    document: BoardDocument,
+    makeId: () => string = () => crypto.randomUUID(),
+    measureText?: TextMeasurer,
+  ) {
     this.makeId = makeId;
+    this.measureText = measureText;
     this.snapshot = {
-      document: decodeDocument(document),
+      document: this.prepareDocument(document),
       revision: 0,
       selectedId: null,
       tool: "select",
       fill: "#e7eefb",
       camera: { x: 0, y: 0, zoom: 1 },
       preview: null,
+      textEditing: null,
       interacting: false,
       activeHandle: null,
       canUndo: false,
@@ -90,6 +111,7 @@ export class Editor {
   /** Excludes edits while an external replacement is being durably committed. */
   lockDocument(): Readonly<{ replace: (document: BoardDocument) => void; release: () => void }> {
     this.assertWritable();
+    this.finishTextEditing();
     this.cancelGesture();
     this.documentLocked = true;
     let active = true;
@@ -106,8 +128,19 @@ export class Editor {
     };
   }
 
+  /** Canonicalize imported text bounds using this editor's injected font metrics before saving. */
+  prepareDocument(value: unknown): BoardDocument {
+    const document = decodeDocument(value);
+    return Object.freeze({
+      ...document,
+      shapes: Object.freeze(
+        document.shapes.map((shape) => (shape.type === "text" ? this.fitText(shape) : shape)),
+      ),
+    });
+  }
+
   private replaceDocument(next: BoardDocument): void {
-    const document = decodeDocument(next);
+    const document = this.prepareDocument(next);
     this.cancelGesture();
     this.history.clear();
     this.publish({
@@ -117,6 +150,7 @@ export class Editor {
       tool: "select",
       camera: { x: 0, y: 0, zoom: 1 },
       preview: null,
+      textEditing: null,
       interacting: false,
       activeHandle: null,
     });
@@ -129,7 +163,7 @@ export class Editor {
     this.publish({ document, revision: this.snapshot.revision + 1 });
   }
 
-  private commitShape(label: string, before: Rectangle | null, after: Rectangle | null): void {
+  private commitShape(label: string, before: Shape | null, after: Shape | null): void {
     const index = before
       ? this.snapshot.document.shapes.findIndex((shape) => shape.id === before.id)
       : this.snapshot.document.shapes.length;
@@ -137,11 +171,13 @@ export class Editor {
   }
 
   setTool(tool: Tool): void {
+    this.finishTextEditing();
     this.cancelGesture();
     this.publish({ tool });
   }
 
   select(id: string | null): void {
+    this.finishTextEditing();
     this.cancelGesture();
     this.publish({
       selectedId: this.snapshot.document.shapes.some((shape) => shape.id === id) ? id : null,
@@ -150,30 +186,37 @@ export class Editor {
   }
 
   setFill(fill: Fill): void {
+    this.finishTextEditing();
     this.cancelGesture();
     const shape = this.selectedShape();
-    if (shape) this.commitShape("Change fill", shape, { ...shape, fill });
+    if (shape?.type === "rectangle") this.commitShape("Change fill", shape, { ...shape, fill });
     this.publish({ fill });
   }
 
   rename(name: string): void {
+    this.finishTextEditing();
     this.cancelGesture();
     this.commit(
       nameTransaction(this.snapshot.document.name, name.trim().slice(0, 120) || "Untitled board"),
     );
   }
 
-  private selectedShape(): Rectangle | undefined {
+  private selectedShape(): Shape | undefined {
     return this.snapshot.document.shapes.find((shape) => shape.id === this.snapshot.selectedId);
   }
 
-  setGeometry(geometry: Partial<Pick<Rectangle, "x" | "y" | "width" | "height">>): void {
+  setGeometry(geometry: Partial<Bounds>): void {
+    this.finishTextEditing();
     this.cancelGesture();
     const shape = this.selectedShape();
-    if (shape) this.commitShape("Change geometry", shape, { ...shape, ...geometry });
+    if (shape) {
+      const next = { ...shape, ...geometry };
+      this.commitShape("Change geometry", shape, next.type === "text" ? this.fitText(next) : next);
+    }
   }
 
   addRectangle(screen: Point): void {
+    this.finishTextEditing();
     this.cancelGesture();
     const { document, camera, fill } = this.snapshot;
     if (document.shapes.length >= MAX_SHAPES) return;
@@ -189,6 +232,90 @@ export class Editor {
     };
     this.commitShape("Create rectangle", null, shape);
     this.publish({ selectedId: shape.id, tool: "select" });
+  }
+
+  private fitText(shape: TextShape): TextShape {
+    const valid = decodeText(shape);
+    if (!this.measureText) throw new Error("Text editing requires a text measurement adapter.");
+    return decodeText({ ...valid, height: layoutText(valid, this.measureText).height });
+  }
+
+  addText(screen: Point): void {
+    this.assertWritable();
+    this.finishTextEditing();
+    this.cancelGesture();
+    if (this.snapshot.document.shapes.length >= MAX_SHAPES) return;
+    const point = screenToWorld(screen, this.snapshot.camera);
+    const draft = this.fitText({
+      id: this.makeId(),
+      type: "text",
+      text: "",
+      x: clamp(point.x, -MAX_COORDINATE, MAX_COORDINATE),
+      y: clamp(point.y, -MAX_COORDINATE, MAX_COORDINATE),
+      width: 280,
+      height: 42,
+      fontSize: 24,
+      fontWeight: 400,
+      textAlign: "left",
+      color: "#243e33",
+    });
+    this.publish({ selectedId: null, tool: "select", textEditing: { before: null, draft } });
+  }
+
+  editTextAt(screen: Point): void {
+    const shape = hitTest(
+      this.snapshot.document.shapes,
+      screenToWorld(screen, this.snapshot.camera),
+    );
+    if (shape?.type === "text") this.editText(shape.id);
+  }
+
+  editText(id = this.snapshot.selectedId): void {
+    this.assertWritable();
+    this.finishTextEditing();
+    this.cancelGesture();
+    const shape = this.snapshot.document.shapes.find((shape) => shape.id === id);
+    if (shape?.type === "text")
+      this.publish({
+        selectedId: id,
+        tool: "select",
+        textEditing: { before: shape, draft: shape },
+      });
+  }
+
+  updateTextDraft(text: string): void {
+    const editing = this.snapshot.textEditing;
+    if (!editing) return;
+    const normalized = text.replace(/\r\n?/gu, "\n").replace(/\t/gu, "    ");
+    if (normalized.length > MAX_TEXT_LENGTH)
+      throw new Error(`Text must be at most ${MAX_TEXT_LENGTH} characters.`);
+    const draft = this.fitText({ ...editing.draft, text: normalized });
+    this.publish({ textEditing: { ...editing, draft } });
+  }
+
+  finishTextEditing(): void {
+    const editing = this.snapshot.textEditing;
+    if (!editing) return;
+    this.assertWritable();
+    const { before, draft } = editing;
+    const after = draft.text.trim() ? draft : null;
+    this.commitShape(before ? "Edit text" : "Create text", before, after);
+    this.publish({ textEditing: null, selectedId: after?.id ?? null });
+  }
+
+  cancelTextEditing(): void {
+    const editing = this.snapshot.textEditing;
+    if (editing) this.publish({ textEditing: null, selectedId: editing.before?.id ?? null });
+  }
+
+  setTextStyle(
+    style: Partial<Pick<TextShape, "fontSize" | "fontWeight" | "textAlign" | "color">>,
+  ): void {
+    this.finishTextEditing();
+    this.cancelGesture();
+    const shape = this.selectedShape();
+    if (shape?.type === "text")
+      this.commitShape("Style text", shape, this.fitText({ ...shape, ...style }));
   }
 
   nudgeSelection(dx: number, dy: number): void {
@@ -209,6 +336,7 @@ export class Editor {
 
   begin(screen: Point, pan = false): void {
     if (this.documentLocked) return;
+    this.finishTextEditing();
     this.cancelGesture();
     const { camera, document, tool, fill } = this.snapshot;
     const raw = screenToWorld(screen, camera);
@@ -219,6 +347,10 @@ export class Editor {
     if (pan || tool === "hand") {
       this.gesture = { kind: "pan", start: screen, camera };
       this.publish({ interacting: true });
+    } else if (tool === "text") {
+      const shape = hitTest(document.shapes, point);
+      if (shape?.type === "text") this.editText(shape.id);
+      else this.addText(screen);
     } else if (tool === "rectangle") {
       if (document.shapes.length >= MAX_SHAPES) return;
       const id = this.makeId();
@@ -243,8 +375,14 @@ export class Editor {
   }
 
   move(screen: Point): void {
-    if (this.gesture)
-      this.publish(previewGesture(this.gesture, screen, this.snapshot.camera, this.snapshot.fill));
+    if (this.gesture) {
+      const patch = previewGesture(this.gesture, screen, this.snapshot.camera, this.snapshot.fill);
+      this.publish(
+        this.gesture.kind === "resize" && patch.preview?.type === "text"
+          ? { ...patch, preview: this.fitText(patch.preview) }
+          : patch,
+      );
+    }
   }
 
   finish(): void {
@@ -263,7 +401,7 @@ export class Editor {
       this.publish({ selectedId: preview.id, tool: "select" });
     } else if ((gesture?.kind === "move" || gesture?.kind === "resize") && preview) {
       this.commitShape(
-        gesture.kind === "resize" ? "Resize rectangle" : "Move rectangle",
+        gesture.kind === "resize" ? "Resize object" : "Move object",
         gesture.shape,
         preview,
       );
@@ -297,10 +435,11 @@ export class Editor {
   }
 
   removeSelection(): void {
+    this.finishTextEditing();
     this.cancelGesture();
     const shape = this.selectedShape();
     if (!shape) return;
-    this.commitShape("Delete rectangle", shape, null);
+    this.commitShape("Delete object", shape, null);
     this.publish({ selectedId: null });
   }
 
@@ -313,6 +452,7 @@ export class Editor {
 
   private restore(direction: "undo" | "redo"): void {
     this.assertWritable();
+    this.cancelTextEditing();
     this.cancelGesture();
     const document = this.history[direction](this.snapshot.document);
     if (!document) return;

@@ -70,6 +70,8 @@ export function BoardTransferDialog({
     }
   }
 
+  const textCount = preview?.shapes.filter((shape) => shape.type === "text").length ?? 0;
+  const rectangleCount = (preview?.shapes.length ?? 0) - textCount;
   return (
     <dialog
       ref={dialog}
@@ -107,7 +109,7 @@ export function BoardTransferDialog({
               void choose(file);
             }}
           />
-          <small>{fileName || "Version 0 · up to 2 MB"}</small>
+          <small>{fileName || "Versions 0–1 · up to 2 MB"}</small>
         </label>
       )}
       {reading && <p className="transfer-reading">Reading and validating your board…</p>}
@@ -117,7 +119,8 @@ export function BoardTransferDialog({
           <div>
             <strong>{preview.name || "Untitled board"}</strong>
             <span>
-              {preview.shapes.length} {preview.shapes.length === 1 ? "rectangle" : "rectangles"}
+              {rectangleCount} {rectangleCount === 1 ? "rectangle" : "rectangles"} · {textCount}{" "}
+              {textCount === 1 ? "text object" : "text objects"}
             </span>
           </div>
         </div>

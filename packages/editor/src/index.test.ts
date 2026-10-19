@@ -112,9 +112,9 @@ describe("editor transactions", () => {
     editor.setFill("#f7e4ed");
     editor.removeSelection();
     editor.undo();
-    expect(editor.getSnapshot().document.shapes[0]?.fill).toBe("#f7e4ed");
+    expect(editor.getSnapshot().document.shapes[0]).toMatchObject({ fill: "#f7e4ed" });
     editor.undo();
-    expect(editor.getSnapshot().document.shapes[0]?.fill).toBe("#e7eefb");
+    expect(editor.getSnapshot().document.shapes[0]).toMatchObject({ fill: "#e7eefb" });
     editor.addRectangle({ x: 400, y: 400 });
     expect(editor.getSnapshot().canRedo).toBe(false);
   });

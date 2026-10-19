@@ -4,6 +4,7 @@ import { useEditorSnapshot } from "./useEditorSnapshot.ts";
 const tools: { id: Tool; label: string; key: string }[] = [
   { id: "select", label: "Select", key: "V" },
   { id: "rectangle", label: "Rectangle", key: "R" },
+  { id: "text", label: "Text", key: "T" },
   { id: "hand", label: "Hand", key: "H" },
 ];
 export function EditorToolbar({

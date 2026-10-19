@@ -28,9 +28,11 @@ export function CanvasControls({ editor, center }: { editor: Editor; center: () 
         <p id="canvas-instructions">
           {snapshot.tool === "rectangle"
             ? "Drag to draw a rectangle"
-            : snapshot.tool === "hand"
-              ? "Drag to explore your canvas"
-              : "Select and drag to move"}
+            : snapshot.tool === "text"
+              ? "Click to place text"
+              : snapshot.tool === "hand"
+                ? "Drag to explore your canvas"
+                : "Select and drag to move"}
           <span> · </span>Hold <kbd>Space</kbd> to pan
         </p>
         <button
@@ -50,10 +52,13 @@ export function CanvasControls({ editor, center }: { editor: Editor; center: () 
               ["Select", "V"],
               ["Rectangle", "R"],
               ["Hand", "H"],
+              ["Text", "T"],
+              ["Edit selected text", "Enter"],
+              ["Save text draft", "Ctrl/⌘ Enter"],
               ["Create centered rectangle", "Enter"],
-              ["Move selected rectangle", "Arrow keys"],
+              ["Move selected object", "Arrow keys"],
               ["Move by 10", "Shift + Arrow"],
-              ["Delete selected rectangle", "Delete"],
+              ["Delete selected object", "Delete"],
               ["Undo / redo", "Ctrl/⌘ Z / Shift Z"],
               ["Pan", "Space + drag"],
               ["Zoom", "Ctrl/⌘ + scroll"],

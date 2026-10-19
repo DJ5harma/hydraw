@@ -7,6 +7,7 @@ import type { BoardSession } from "../board/useBoardSession.ts";
 import { useBoardPersistence } from "../board/useBoardPersistence.ts";
 import { BoardInspector } from "./BoardInspector.tsx";
 import { CanvasControls } from "./CanvasControls.tsx";
+import { InlineTextEditor } from "./InlineTextEditor.tsx";
 import { CanvasSurface } from "./CanvasSurface.tsx";
 import { EditorToolbar } from "./EditorToolbar.tsx";
 import { EmptyCanvas } from "./EmptyCanvas.tsx";
@@ -55,10 +56,12 @@ export function Workspace({ session }: { session: BoardSession }) {
       <div className="workspace-body">
         <section className="stage" aria-label="Drawing workspace">
           <CanvasSurface editor={editor} canvasRef={canvasRef} />
+          <InlineTextEditor editor={editor} canvasRef={canvasRef} />
           <EditorToolbar editor={editor} selectTool={selectTool} />
-          {snapshot.document.shapes.length === 0 && !snapshot.interacting && (
-            <EmptyCanvas onStart={() => selectTool("rectangle")} />
-          )}
+          {snapshot.document.shapes.length === 0 &&
+            !snapshot.interacting &&
+            !snapshot.textEditing &&
+            snapshot.tool !== "text" && <EmptyCanvas onStart={() => selectTool("rectangle")} />}
           <CanvasControls editor={editor} center={center} />
         </section>
         <BoardInspector editor={editor} center={center} />

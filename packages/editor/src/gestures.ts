@@ -1,13 +1,13 @@
 import { MAX_COORDINATE, MAX_SIZE, rectangleBetween } from "@hydraw/document";
-import type { Fill, Point, Rectangle } from "@hydraw/document";
+import type { Fill, Point, Shape } from "@hydraw/document";
 import { clamp, handlePoint, resizeRectangle, screenToWorld } from "./geometry.ts";
 import type { ResizeHandle } from "./geometry.ts";
 import type { Camera, EditorSnapshot } from "./types.ts";
 
 export type Gesture =
   | { kind: "draw"; start: Point; id: string }
-  | { kind: "move"; start: Point; shape: Rectangle }
-  | { kind: "resize"; start: Point; shape: Rectangle; handle: ResizeHandle }
+  | { kind: "move"; start: Point; shape: Shape }
+  | { kind: "resize"; start: Point; shape: Shape; handle: ResizeHandle }
   | { kind: "pan"; start: Point; camera: Camera };
 
 export function previewGesture(

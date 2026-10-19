@@ -1,5 +1,5 @@
 import { MAX_COORDINATE, MAX_SIZE } from "@hydraw/document";
-import type { Point, Rectangle } from "@hydraw/document";
+import type { Point, Bounds, Shape } from "@hydraw/document";
 import type { Camera } from "./types.ts";
 
 export const clamp = (value: number, min: number, max: number): number =>
@@ -12,7 +12,7 @@ export function screenToWorld(point: Point, camera: Camera): Point {
 export const RESIZE_HANDLES = ["nw", "n", "ne", "e", "se", "s", "sw", "w"] as const;
 export type ResizeHandle = (typeof RESIZE_HANDLES)[number];
 
-export function handlePoint(shape: Rectangle, handle: ResizeHandle): Point {
+export function handlePoint(shape: Bounds, handle: ResizeHandle): Point {
   return {
     x: shape.x + (handle.includes("w") ? 0 : handle.includes("e") ? shape.width : shape.width / 2),
     y:
@@ -20,14 +20,10 @@ export function handlePoint(shape: Rectangle, handle: ResizeHandle): Point {
   };
 }
 
-export function hitResizeHandle(
-  shape: Rectangle,
-  screen: Point,
-  camera: Camera,
-): ResizeHandle | null {
+export function hitResizeHandle(shape: Shape, screen: Point, camera: Camera): ResizeHandle | null {
   let closest: ResizeHandle | null = null;
   let distance = Infinity;
-  for (const handle of RESIZE_HANDLES) {
+  for (const handle of resizeHandles(shape)) {
     const point = handlePoint(shape, handle);
     const dx = point.x * camera.zoom + camera.x - screen.x;
     const dy = point.y * camera.zoom + camera.y - screen.y;
@@ -49,7 +45,7 @@ function resizeAxis(anchor: number, value: number): { position: number; size: nu
 }
 
 /** The opposite edge remains anchored. Crossing it normalizes geometry instead of producing negative dimensions. */
-export function resizeRectangle(shape: Rectangle, handle: ResizeHandle, point: Point): Rectangle {
+export function resizeRectangle<T extends Bounds>(shape: T, handle: ResizeHandle, point: Point): T {
   const x =
     handle.includes("w") || handle.includes("e")
       ? resizeAxis(handle.includes("w") ? shape.x + shape.width : shape.x, point.x)
@@ -59,4 +55,8 @@ export function resizeRectangle(shape: Rectangle, handle: ResizeHandle, point: P
       ? resizeAxis(handle.includes("n") ? shape.y + shape.height : shape.y, point.y)
       : { position: shape.y, size: shape.height };
   return { ...shape, x: x.position, y: y.position, width: x.size, height: y.size };
+}
+
+export function resizeHandles(shape: Shape): readonly ResizeHandle[] {
+  return shape.type === "text" ? ["e", "w"] : RESIZE_HANDLES;
 }

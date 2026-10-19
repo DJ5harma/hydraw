@@ -1,7 +1,7 @@
-import type { BoardDocument, Fill, Rectangle } from "@hydraw/document";
+import type { BoardDocument, Fill, Shape, TextShape } from "@hydraw/document";
 import type { ResizeHandle } from "./geometry.ts";
 
-export type Tool = "select" | "rectangle" | "hand";
+export type Tool = "select" | "rectangle" | "text" | "hand";
 export type Camera = Readonly<{ x: number; y: number; zoom: number }>;
 export type EditorSnapshot = Readonly<{
   document: BoardDocument;
@@ -10,7 +10,8 @@ export type EditorSnapshot = Readonly<{
   tool: Tool;
   fill: Fill;
   camera: Camera;
-  preview: Rectangle | null;
+  preview: Shape | null;
+  textEditing: Readonly<{ before: TextShape | null; draft: TextShape }> | null;
   interacting: boolean;
   activeHandle: ResizeHandle | null;
   canUndo: boolean;

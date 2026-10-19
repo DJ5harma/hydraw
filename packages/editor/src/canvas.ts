@@ -42,3 +42,5 @@ export function attachCanvas(canvas: HTMLCanvasElement, editor: Editor): () => v
     if (frame) cancelAnimationFrame(frame);
   };
 }
+
+export { createTextMeasurer } from "./browser/text.ts";

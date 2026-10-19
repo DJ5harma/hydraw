@@ -1,5 +1,15 @@
-import { MAX_SHAPES, MAX_DOCUMENT_BYTES, MAX_COORDINATE, MAX_SIZE, FILLS } from "./model.ts";
-import type { Fill, Rectangle, BoardDocument } from "./model.ts";
+import {
+  MAX_SHAPES,
+  MAX_DOCUMENT_BYTES,
+  MAX_COORDINATE,
+  MAX_SIZE,
+  FILLS,
+  TEXT_COLORS,
+  MAX_TEXT_LENGTH,
+  MIN_FONT_SIZE,
+  MAX_FONT_SIZE,
+} from "./model.ts";
+import type { Fill, Rectangle, BoardDocument, Shape, TextShape, TextColor } from "./model.ts";
 
 function record(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -15,7 +25,7 @@ export function isFill(value: unknown): value is Fill {
 
 /** Decode into new, known fields so persisted data never leaks arbitrary properties. */
 export function decodeDocument(value: unknown): BoardDocument {
-  if (!record(value) || value.format !== "hydraw" || value.version !== 0) {
+  if (!record(value) || value.format !== "hydraw" || (value.version !== 0 && value.version !== 1)) {
     throw new Error("This board uses an unsupported Hydraw format.");
   }
   if (!Array.isArray(value.shapes) || value.shapes.length > MAX_SHAPES) {
@@ -23,13 +33,14 @@ export function decodeDocument(value: unknown): BoardDocument {
   }
   const name = decodeName(value.name);
   const ids = new Set<string>();
-  const shapes = value.shapes.map((value: unknown): Rectangle => {
-    const shape = decodeRectangle(value);
+  const valueVersion = value.version;
+  const shapes = value.shapes.map((value: unknown): Shape => {
+    const shape = valueVersion === 0 ? decodeRectangle(value) : decodeShape(value);
     if (ids.has(shape.id)) throw new Error("This board contains invalid duplicate shape IDs.");
     ids.add(shape.id);
     return shape;
   });
-  return Object.freeze({ format: "hydraw", version: 0, name, shapes: Object.freeze(shapes) });
+  return Object.freeze({ format: "hydraw", version: 1, name, shapes: Object.freeze(shapes) });
 }
 
 export function parseDocument(json: string): BoardDocument {
@@ -79,4 +90,56 @@ export function decodeName(name: unknown): string {
   if (typeof name !== "string" || name.length > 120)
     throw new Error("Board names must be at most 120 characters.");
   return name;
+}
+
+export function isTextColor(value: unknown): value is TextColor {
+  return TEXT_COLORS.some((color) => color === value);
+}
+
+export function decodeShape(value: unknown): Shape {
+  if (record(value) && value.type === "text") return decodeText(value);
+  return decodeRectangle(value);
+}
+
+export function decodeText(shape: unknown): TextShape {
+  if (
+    !record(shape) ||
+    shape.type !== "text" ||
+    typeof shape.id !== "string" ||
+    !shape.id ||
+    shape.id.length > 100 ||
+    !finite(shape.x, -MAX_COORDINATE, MAX_COORDINATE) ||
+    !finite(shape.y, -MAX_COORDINATE, MAX_COORDINATE) ||
+    !finite(shape.width, 1, MAX_SIZE) ||
+    !finite(shape.height, 1, MAX_COORDINATE) ||
+    typeof shape.text !== "string" ||
+    shape.text.length > MAX_TEXT_LENGTH ||
+    hasControlCharacters(shape.text) ||
+    !finite(shape.fontSize, MIN_FONT_SIZE, MAX_FONT_SIZE) ||
+    (shape.fontWeight !== 400 && shape.fontWeight !== 700) ||
+    (shape.textAlign !== "left" && shape.textAlign !== "center" && shape.textAlign !== "right") ||
+    !isTextColor(shape.color)
+  )
+    throw new Error("This board contains invalid text.");
+  return Object.freeze({
+    id: shape.id,
+    type: "text",
+    x: shape.x,
+    y: shape.y,
+    width: shape.width,
+    height: shape.height,
+    text: shape.text,
+    fontSize: shape.fontSize,
+    fontWeight: shape.fontWeight,
+    textAlign: shape.textAlign,
+    color: shape.color,
+  });
+}
+
+function hasControlCharacters(text: string): boolean {
+  for (let index = 0; index < text.length; index++) {
+    const code = text.charCodeAt(index);
+    if ((code < 32 && code !== 10) || code === 127) return true;
+  }
+  return false;
 }

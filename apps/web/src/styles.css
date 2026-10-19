@@ -947,3 +947,94 @@ kbd {
     display: none;
   }
 }
+
+.inline-text-editor {
+  position: absolute;
+  z-index: 2;
+  box-sizing: border-box;
+  transform-origin: top left;
+  border: 0;
+  border-radius: 0;
+  outline: 1px solid #3568db;
+  background: rgba(255, 255, 255, 0.88);
+  resize: none;
+  overflow: hidden;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.text-editing-help {
+  position: absolute;
+  z-index: 3;
+  bottom: 68px;
+  left: 16px;
+  right: 16px;
+  margin: auto;
+  width: fit-content;
+  max-width: calc(100% - 32px);
+  padding: 10px 14px;
+  border: 1px solid #dce2d7;
+  border-radius: 8px;
+  background: #fff;
+  color: #52634b;
+  font-size: 11px;
+}
+.text-editing-help [role="alert"] {
+  display: block;
+  color: #a13636;
+  margin-bottom: 6px;
+}
+.text-style-controls {
+  display: grid;
+  gap: 14px;
+}
+.text-style-controls h3 {
+  margin-bottom: 0;
+}
+.edit-text-button {
+  justify-content: center;
+}
+.text-size-field {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+.text-size-field input {
+  width: 76px;
+  padding: 8px;
+  border: 1px solid #dce2d7;
+  border-radius: 6px;
+  background: white;
+  color: inherit;
+}
+.text-options {
+  display: flex;
+  gap: 4px;
+}
+.text-options .file-button {
+  padding: 8px;
+  font-size: 11px;
+}
+.text-options [aria-pressed="true"] {
+  background: #e7eedd;
+  border-color: #8a9e77;
+}
+.text-field-error {
+  color: #a13636;
+  font-size: 11px;
+  margin: 0;
+}
+.object-thumbnail {
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+}
+@media (max-width: 680px) {
+  .toolbar {
+    gap: 3px;
+    padding: 5px;
+  }
+  .tool-button {
+    width: 39px;
+  }
+}

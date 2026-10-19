@@ -43,6 +43,7 @@ function createKeyboardHandler(
       if (target instanceof HTMLElement && target.closest("button, a")) return;
       if (key === "v") selectTool("select");
       else if (key === "r") selectTool("rectangle");
+      else if (key === "t") selectTool("text");
       else if (key === "h") selectTool("hand");
       else if (key === "delete" || key === "backspace") {
         event.preventDefault();
@@ -52,7 +53,15 @@ function createKeyboardHandler(
         editor.select(null);
       } else if (key === "enter") {
         event.preventDefault();
-        editor.addRectangle(center());
+        const snapshot = editor.getSnapshot();
+        if (
+          snapshot.document.shapes.some(
+            (shape) => shape.id === snapshot.selectedId && shape.type === "text",
+          )
+        )
+          editor.editText();
+        else if (snapshot.tool === "text") editor.addText(center());
+        else editor.addRectangle(center());
       } else if (key.startsWith("arrow")) {
         event.preventDefault();
         const distance = event.shiftKey ? 10 : 1;

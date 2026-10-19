@@ -1,4 +1,3 @@
-import { decodeDocument } from "@hydraw/document";
 import type { BoardDocument } from "@hydraw/document";
 import type { Editor } from "@hydraw/editor";
 import type { LocalBoard } from "./storage.ts";
@@ -75,7 +74,7 @@ export class BoardPersistence {
   }
 
   async replace(next: BoardDocument): Promise<void> {
-    const document = decodeDocument(next);
+    const document = this.editor.prepareDocument(next);
     if (!this.storage)
       throw new Error(
         "Import needs local storage so a recovery copy can be saved. Export your current work and enable local storage first.",

@@ -19,7 +19,7 @@ export function bindCanvasInput(canvas: HTMLCanvasElement, editor: Editor, sched
   let lastPoint: Point | null = null;
   const events = new AbortController();
   const options = { signal: events.signal };
-  function point(event: PointerEvent): Point {
+  function point(event: MouseEvent): Point {
     const rect = canvas.getBoundingClientRect();
     return { x: event.clientX - rect.left, y: event.clientY - rect.top };
   }
@@ -59,6 +59,13 @@ export function bindCanvasInput(canvas: HTMLCanvasElement, editor: Editor, sched
       activePointer = null;
       editor.finish();
       if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+    },
+    options,
+  );
+  canvas.addEventListener(
+    "dblclick",
+    (event) => {
+      if (editor.getSnapshot().tool === "select") editor.editTextAt(point(event));
     },
     options,
   );
@@ -147,6 +154,7 @@ export function bindCanvasInput(canvas: HTMLCanvasElement, editor: Editor, sched
       if (snapshot.tool === "hand" || spacePressed)
         return snapshot.interacting ? "grabbing" : "grab";
       if (snapshot.tool === "rectangle") return "crosshair";
+      if (snapshot.tool === "text") return "text";
       const handle =
         snapshot.activeHandle ?? (lastPoint ? editor.getResizeHandleAt(lastPoint) : null);
       return handle ? resizeCursors[handle] : snapshot.interacting ? "grabbing" : "default";

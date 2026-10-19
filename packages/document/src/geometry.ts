@@ -1,4 +1,4 @@
-import type { Fill, Point, Rectangle } from "./model.ts";
+import type { Fill, Point, Rectangle, Shape } from "./model.ts";
 
 export function rectangleBetween(id: string, a: Point, b: Point, fill: Fill): Rectangle {
   return {
@@ -12,7 +12,7 @@ export function rectangleBetween(id: string, a: Point, b: Point, fill: Fill): Re
   };
 }
 
-export function hitTest(shapes: readonly Rectangle[], point: Point): Rectangle | undefined {
+export function hitTest(shapes: readonly Shape[], point: Point): Shape | undefined {
   return shapes.findLast(
     (shape) =>
       point.x >= shape.x &&
