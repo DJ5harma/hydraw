@@ -93,33 +93,6 @@ export function connectorTransaction(
   });
 }
 
-/** Deleting a node also removes its incident edges, in the same reversible transaction. */
-export function deleteShapeTransaction(
-  document: BoardDocument,
-  id: string,
-): DocumentTransaction | null {
-  const index = document.shapes.findIndex((shape) => shape.id === id);
-  const before = document.shapes[index];
-  if (!before) return null;
-  const changes: DocumentChange[] = [];
-  for (let position = document.connectors.length - 1; position >= 0; position--) {
-    const connector = document.connectors[position]!;
-    if (
-      [connector.start, connector.end].some(
-        (endpoint) => endpoint.type === "binding" && endpoint.shapeId === id,
-      )
-    )
-      changes.push(
-        Object.freeze({ type: "connector", index: position, before: connector, after: null }),
-      );
-  }
-  changes.push(Object.freeze({ type: "shape", index, before, after: null }));
-  return Object.freeze({
-    label: "Delete object and attached connectors",
-    changes: Object.freeze(changes),
-  });
-}
-
 export function nameTransaction(before: string, after: string): DocumentTransaction | null {
   if (before === after) return null;
   return Object.freeze({
