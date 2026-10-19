@@ -8,6 +8,10 @@ import {
 } from "./index.ts";
 
 describe("version 0 documents", () => {
+  it("rejects malformed JSON and measures the file limit in UTF-8 bytes", () => {
+    expect(() => parseDocument("{broken")).toThrow("not valid JSON");
+    expect(() => parseDocument('"' + "😀".repeat(500_000) + '"')).toThrow("too large");
+  });
   const shape = rectangleBetween("a", { x: 90, y: 80 }, { x: 10, y: 20 }, "#e7eefb");
   it("normalizes reverse drawing and round-trips known semantic data", () => {
     const document = { ...createDocument(), shapes: [shape] };

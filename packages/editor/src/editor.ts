@@ -36,6 +36,7 @@ export class Editor {
   private listeners = new Set<() => void>();
   private readonly history = new TransactionHistory();
   private gesture: Gesture | null = null;
+  private documentLocked = false;
   private readonly makeId: () => string;
 
   constructor(document: BoardDocument, makeId: () => string = () => crypto.randomUUID()) {
@@ -82,8 +83,39 @@ export class Editor {
     this.listeners.forEach((listener) => listener());
   }
 
+  private assertWritable(): void {
+    if (this.documentLocked) throw new Error("A board replacement is in progress.");
+  }
+
+  /** Excludes edits while an external replacement is being durably committed. */
+  lockDocument(): () => void {
+    this.assertWritable();
+    this.cancelGesture();
+    this.documentLocked = true;
+    return () => {
+      this.documentLocked = false;
+    };
+  }
+
+  replaceDocument(next: BoardDocument): void {
+    const document = decodeDocument(next);
+    this.cancelGesture();
+    this.history.clear();
+    this.publish({
+      document,
+      revision: this.snapshot.revision + 1,
+      selectedId: null,
+      tool: "select",
+      camera: { x: 0, y: 0, zoom: 1 },
+      preview: null,
+      interacting: false,
+      activeHandle: null,
+    });
+  }
+
   private commit(transaction: DocumentTransaction | null): void {
     if (!transaction) return;
+    this.assertWritable();
     const document = this.history.execute(this.snapshot.document, transaction);
     this.publish({ document, revision: this.snapshot.revision + 1 });
   }
@@ -167,6 +199,7 @@ export class Editor {
   }
 
   begin(screen: Point, pan = false): void {
+    if (this.documentLocked) return;
     this.cancelGesture();
     const { camera, document, tool, fill } = this.snapshot;
     const raw = screenToWorld(screen, camera);
@@ -270,6 +303,7 @@ export class Editor {
   }
 
   private restore(direction: "undo" | "redo"): void {
+    this.assertWritable();
     this.cancelGesture();
     const document = this.history[direction](this.snapshot.document);
     if (!document) return;

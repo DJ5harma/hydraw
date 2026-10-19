@@ -34,7 +34,19 @@ export function decodeDocument(value: unknown): BoardDocument {
 
 export function parseDocument(json: string): BoardDocument {
   if (json.length > MAX_DOCUMENT_BYTES) throw new Error("This board file is too large.");
-  return decodeDocument(JSON.parse(json) as unknown);
+  let bytes = 0;
+  for (const character of json) {
+    const code = character.codePointAt(0)!;
+    bytes += code <= 0x7f ? 1 : code <= 0x7ff ? 2 : code <= 0xffff ? 3 : 4;
+    if (bytes > MAX_DOCUMENT_BYTES) throw new Error("This board file is too large.");
+  }
+  let value: unknown;
+  try {
+    value = JSON.parse(json) as unknown;
+  } catch {
+    throw new Error("This file is not valid JSON.");
+  }
+  return decodeDocument(value);
 }
 
 export function decodeRectangle(shape: unknown): Rectangle {

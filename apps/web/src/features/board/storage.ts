@@ -3,6 +3,8 @@ import type { BoardDocument } from "@hydraw/document";
 
 export type LocalBoard = {
   document: BoardDocument;
+  recovery: BoardDocument | null;
+  replace: (previous: BoardDocument, next: BoardDocument) => Promise<void>;
   save: (document: BoardDocument) => Promise<void>;
   close: () => void;
 };
@@ -88,26 +90,46 @@ export async function openLocalBoard(signal: AbortSignal): Promise<LocalBoard> {
   };
   database.onversionchange = close;
   try {
-    const stored = await new Promise<unknown>((resolve, reject) => {
+    const stored = await new Promise<{ primary: unknown; recovery: unknown }>((resolve, reject) => {
       const transaction = database.transaction("boards", "readonly");
-      const request = transaction.objectStore("boards").get("primary");
-      transaction.oncomplete = () => resolve(request.result as unknown);
+      const store = transaction.objectStore("boards");
+      const primary = store.get("primary");
+      const recovery = store.get("recovery");
+      transaction.oncomplete = () =>
+        resolve({ primary: primary.result as unknown, recovery: recovery.result as unknown });
       transaction.onerror = () => reject(transaction.error);
       transaction.onabort = () =>
         reject(transaction.error ?? new Error("Local read was interrupted."));
     });
-    const document = stored === undefined ? createDocument() : decodeDocument(stored);
+    const document =
+      stored.primary === undefined ? createDocument() : decodeDocument(stored.primary);
+    const recovery = stored.recovery === undefined ? null : decodeDocument(stored.recovery);
+    function write(records: readonly (readonly [string, BoardDocument])[]): Promise<void> {
+      return new Promise((resolve, reject) => {
+        const transaction = database.transaction("boards", "readwrite");
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = () => reject(transaction.error);
+        transaction.onabort = () =>
+          reject(transaction.error ?? new Error("Local save was interrupted."));
+        try {
+          const store = transaction.objectStore("boards");
+          for (const [key, value] of records) store.put(value, key);
+        } catch (error) {
+          // A synchronous second put failure must also roll back the first put.
+          transaction.abort();
+          reject(error);
+        }
+      });
+    }
     return {
       document,
-      save: (next) =>
-        new Promise<void>((resolve, reject) => {
-          const transaction = database.transaction("boards", "readwrite");
-          transaction.objectStore("boards").put(next, "primary");
-          transaction.oncomplete = () => resolve();
-          transaction.onerror = () => reject(transaction.error);
-          transaction.onabort = () =>
-            reject(transaction.error ?? new Error("Local save was interrupted."));
-        }),
+      recovery,
+      save: (next) => write([["primary", decodeDocument(next)]]),
+      replace: (previous, next) =>
+        write([
+          ["recovery", decodeDocument(previous)],
+          ["primary", decodeDocument(next)],
+        ]),
       close,
     };
   } catch (error) {

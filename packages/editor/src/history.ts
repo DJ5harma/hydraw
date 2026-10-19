@@ -13,6 +13,11 @@ export class TransactionHistory {
     return this.future.length > 0;
   }
 
+  clear(): void {
+    this.past = [];
+    this.future = [];
+  }
+
   execute(document: BoardDocument, transaction: DocumentTransaction): BoardDocument {
     const next = applyTransaction(document, transaction);
     this.past.push(transaction);
