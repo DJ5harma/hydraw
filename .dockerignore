@@ -1,0 +1,10 @@
+.git
+**/node_modules
+**/dist
+**/.vite
+**/.vite-plus
+test-results
+playwright-report
+.env
+.env.*
+*.log
