@@ -4,7 +4,11 @@ import { clamp, handlePoint, resizeRectangle, screenToWorld } from "./geometry.t
 import type { ResizeHandle } from "./geometry.ts";
 import type { Camera, EditorSnapshot } from "./types.ts";
 
+import type { ConnectorGesture } from "./connector-interactions.ts";
+import { previewConnectorGesture } from "./connector-interactions.ts";
+
 export type Gesture =
+  | ConnectorGesture
   | { kind: "draw"; start: Point; id: string }
   | { kind: "move"; start: Point; shape: Shape }
   | { kind: "resize"; start: Point; shape: Shape; handle: ResizeHandle }
@@ -15,7 +19,14 @@ export function previewGesture(
   screen: Point,
   camera: Camera,
   fill: Fill,
+  shapes: readonly Shape[],
 ): Partial<EditorSnapshot> {
+  if (
+    gesture.kind === "connect" ||
+    gesture.kind === "reconnect" ||
+    gesture.kind === "move-connector"
+  )
+    return previewConnectorGesture(gesture, screen, camera, shapes);
   if (gesture.kind === "pan")
     return {
       camera: {

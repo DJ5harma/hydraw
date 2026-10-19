@@ -1,6 +1,7 @@
 import {
   MAX_SHAPES,
   MAX_CONNECTORS,
+  MAX_ENDPOINT_COORDINATE,
   MAX_DOCUMENT_BYTES,
   MAX_COORDINATE,
   MAX_SIZE,
@@ -176,8 +177,8 @@ export function decodeEndpoint(value: unknown): Endpoint {
   if (record(value)) {
     if (
       value.type === "point" &&
-      finite(value.x, -MAX_COORDINATE, MAX_COORDINATE) &&
-      finite(value.y, -MAX_COORDINATE, MAX_COORDINATE)
+      finite(value.x, -MAX_ENDPOINT_COORDINATE, MAX_ENDPOINT_COORDINATE) &&
+      finite(value.y, -MAX_ENDPOINT_COORDINATE, MAX_ENDPOINT_COORDINATE)
     )
       return Object.freeze({ type: "point", x: value.x, y: value.y });
     if (

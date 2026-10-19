@@ -1,7 +1,8 @@
-import type { BoardDocument, Fill, Shape, TextShape } from "@hydraw/document";
+import type { BoardDocument, Fill, Shape, TextShape, Connector } from "@hydraw/document";
+import type { ConnectorEnd } from "./connector-interactions.ts";
 import type { ResizeHandle } from "./geometry.ts";
 
-export type Tool = "select" | "rectangle" | "text" | "hand";
+export type Tool = "select" | "rectangle" | "text" | "connector" | "hand";
 export type Camera = Readonly<{ x: number; y: number; zoom: number }>;
 export type EditorSnapshot = Readonly<{
   document: BoardDocument;
@@ -11,6 +12,9 @@ export type EditorSnapshot = Readonly<{
   fill: Fill;
   camera: Camera;
   preview: Shape | null;
+  connectorPreview: Connector | null;
+  bindingTargetId: string | null;
+  activeEndpoint: ConnectorEnd | null;
   textEditing: Readonly<{ before: TextShape | null; draft: TextShape }> | null;
   interacting: boolean;
   activeHandle: ResizeHandle | null;
@@ -19,6 +23,12 @@ export type EditorSnapshot = Readonly<{
 }>;
 export type EditorChromeSnapshot = Omit<
   EditorSnapshot,
-  "preview" | "camera" | "revision" | "activeHandle"
+  | "preview"
+  | "camera"
+  | "revision"
+  | "activeHandle"
+  | "connectorPreview"
+  | "bindingTargetId"
+  | "activeEndpoint"
 > &
   Readonly<{ zoom: number }>;

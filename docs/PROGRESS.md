@@ -48,4 +48,16 @@ Implemented on 20 October 2026:
 - Native textarea overlay for editing and Canvas rendering for committed text. Core code remains independent of React and browser APIs; no runtime dependencies added.
 - Regression checks for Unicode, wrapping, draft lifecycle, styling, type-safe history, old document migration, pointer resizing, keyboard movement at zoom and import/export round trips. Desktop and narrow mobile editing layouts inspected.
 
-Next: bound connectors. Keep each slice runnable and verified before expanding.
+## Milestone 5 — bound connectors
+
+Implemented on 20 October 2026:
+
+- Version 2 adds a separate connector collection with point or shape-bound endpoints, ink color and optional arrowheads. Version 0 and version 1 boards migrate without losing rectangles, text or style.
+- Straight arrows derive automatic perimeter attachments from current node bounds, including temporary rectangle move/resize and text editing previews. No coordinate caches or binding rewrites per pointer frame.
+- C + drag creates a connection with binding highlights. Screen-space endpoint handles reconnect to nodes or canvas points. Centered free arrows can be added by keyboard or the inspector.
+- Connector selection, color/arrowhead controls, reversal, detaching, free-arrow movement, deletion and normal history. Attached arrow bodies remain fixed until detached.
+- Node deletion and empty-text completion remove incident edges in one transaction. Undo restores nodes and connectors in their original order. Completed graph validation rejects dangling references, duplicate identities and unsupported self-bindings atomically.
+- Save/reload, export, reviewed import and recovery retain connectors. Invalid imported graphs preserve the current board.
+- 52 unit/server tests and 42 development/production browser checks passed. Connector domain and interaction logic received focused Luna review; desktop drawing and narrow-screen toolbar layouts were visually inspected. No runtime dependencies added.
+
+Next: multiselection and duplication. Keep each slice runnable and verified before expanding.

@@ -1,5 +1,10 @@
 import {
   decodeDocument,
+  connectorTransaction,
+  deleteShapeTransaction,
+  MAX_CONNECTORS,
+  MAX_ENDPOINT_COORDINATE,
+  resolveConnector,
   decodeText,
   MAX_TEXT_LENGTH,
   hitTest,
@@ -10,6 +15,7 @@ import {
   shapeTransaction,
 } from "@hydraw/document";
 import type {
+  Connector,
   BoardDocument,
   DocumentTransaction,
   Bounds,
@@ -19,6 +25,13 @@ import type {
   Shape,
   TextShape,
 } from "@hydraw/document";
+import {
+  endpointAt,
+  hitConnector,
+  hitConnectorEnd,
+  translateConnector,
+} from "./connector-interactions.ts";
+import type { ConnectorEnd } from "./connector-interactions.ts";
 import { clamp, hitResizeHandle, screenToWorld } from "./geometry.ts";
 import type { ResizeHandle } from "./geometry.ts";
 import { previewGesture } from "./gestures.ts";
@@ -68,6 +81,9 @@ export class Editor {
       tool: "select",
       fill: "#e7eefb",
       camera: { x: 0, y: 0, zoom: 1 },
+      connectorPreview: null,
+      bindingTargetId: null,
+      activeEndpoint: null,
       preview: null,
       textEditing: null,
       interacting: false,
@@ -149,6 +165,9 @@ export class Editor {
       selectedId: null,
       tool: "select",
       camera: { x: 0, y: 0, zoom: 1 },
+      connectorPreview: null,
+      bindingTargetId: null,
+      activeEndpoint: null,
       preview: null,
       textEditing: null,
       interacting: false,
@@ -164,10 +183,82 @@ export class Editor {
   }
 
   private commitShape(label: string, before: Shape | null, after: Shape | null): void {
+    if (before && !after) {
+      this.commit(deleteShapeTransaction(this.snapshot.document, before.id));
+      return;
+    }
     const index = before
       ? this.snapshot.document.shapes.findIndex((shape) => shape.id === before.id)
       : this.snapshot.document.shapes.length;
     this.commit(shapeTransaction(label, index, before, after));
+  }
+
+  private selectedConnector(): Connector | undefined {
+    return this.snapshot.document.connectors.find(
+      (connector) => connector.id === this.snapshot.selectedId,
+    );
+  }
+
+  private commitConnector(label: string, before: Connector | null, after: Connector | null): void {
+    const index = before
+      ? this.snapshot.document.connectors.findIndex((connector) => connector.id === before.id)
+      : this.snapshot.document.connectors.length;
+    this.commit(connectorTransaction(label, index, before, after));
+  }
+
+  addConnector(screen: Point): void {
+    this.finishTextEditing();
+    this.cancelGesture();
+    if (this.snapshot.document.connectors.length >= MAX_CONNECTORS) return;
+    const point = screenToWorld(screen, this.snapshot.camera);
+    const x = clamp(point.x, -MAX_ENDPOINT_COORDINATE + 80, MAX_ENDPOINT_COORDINATE - 80);
+    const y = clamp(point.y, -MAX_ENDPOINT_COORDINATE, MAX_ENDPOINT_COORDINATE);
+    const connector: Connector = {
+      id: this.makeId(),
+      type: "connector",
+      start: { type: "point", x: x - 80, y },
+      end: { type: "point", x: x + 80, y },
+      color: "#243e33",
+      arrowhead: "arrow",
+    };
+    this.commitConnector("Create connector", null, connector);
+    this.publish({ selectedId: connector.id, tool: "select" });
+  }
+
+  setConnectorStyle(style: Partial<Pick<Connector, "color" | "arrowhead">>): void {
+    this.cancelGesture();
+    const connector = this.selectedConnector();
+    if (connector) this.commitConnector("Style connector", connector, { ...connector, ...style });
+  }
+
+  reverseConnector(): void {
+    this.cancelGesture();
+    const connector = this.selectedConnector();
+    if (connector)
+      this.commitConnector("Reverse connector", connector, {
+        ...connector,
+        start: connector.end,
+        end: connector.start,
+      });
+  }
+
+  detachConnector(): void {
+    this.cancelGesture();
+    const connector = this.selectedConnector();
+    if (!connector) return;
+    const ends = resolveConnector(connector, this.snapshot.document.shapes);
+    this.commitConnector("Detach connector", connector, {
+      ...connector,
+      start: { type: "point", ...ends.start },
+      end: { type: "point", ...ends.end },
+    });
+  }
+
+  getConnectorEndpointAt(screen: Point): ConnectorEnd | null {
+    const connector = this.selectedConnector();
+    return connector && this.snapshot.tool === "select"
+      ? hitConnectorEnd(connector, this.snapshot.document.shapes, screen, this.snapshot.camera)
+      : null;
   }
 
   setTool(tool: Tool): void {
@@ -180,7 +271,11 @@ export class Editor {
     this.finishTextEditing();
     this.cancelGesture();
     this.publish({
-      selectedId: this.snapshot.document.shapes.some((shape) => shape.id === id) ? id : null,
+      selectedId:
+        this.snapshot.document.shapes.some((shape) => shape.id === id) ||
+        this.snapshot.document.connectors.some((connector) => connector.id === id)
+          ? id
+          : null,
       tool: "select",
     });
   }
@@ -319,6 +414,12 @@ export class Editor {
   }
 
   nudgeSelection(dx: number, dy: number): void {
+    const connector = this.selectedConnector();
+    if (connector) {
+      this.cancelGesture();
+      this.commitConnector("Move connector", connector, translateConnector(connector, dx, dy));
+      return;
+    }
     const shape = this.selectedShape();
     if (shape)
       this.setGeometry({
@@ -347,6 +448,32 @@ export class Editor {
     if (pan || tool === "hand") {
       this.gesture = { kind: "pan", start: screen, camera };
       this.publish({ interacting: true });
+    } else if (tool === "connector") {
+      if (document.connectors.length >= MAX_CONNECTORS) return;
+      const start = endpointAt(
+        document.shapes,
+        {
+          x: clamp(raw.x, -MAX_ENDPOINT_COORDINATE, MAX_ENDPOINT_COORDINATE),
+          y: clamp(raw.y, -MAX_ENDPOINT_COORDINATE, MAX_ENDPOINT_COORDINATE),
+        },
+        10 / camera.zoom,
+      );
+      const id = this.makeId();
+      this.gesture = { kind: "connect", id, start };
+      this.publish({
+        selectedId: null,
+        interacting: true,
+        activeEndpoint: "end",
+        bindingTargetId: start.type === "binding" ? start.shapeId : null,
+        connectorPreview: {
+          id,
+          type: "connector",
+          start,
+          end: start,
+          color: "#243e33",
+          arrowhead: "arrow",
+        },
+      });
     } else if (tool === "text") {
       const shape = hitTest(document.shapes, point);
       if (shape?.type === "text") this.editText(shape.id);
@@ -361,6 +488,13 @@ export class Editor {
         preview: rectangleBetween(id, point, point, fill),
       });
     } else {
+      const endpoint = this.getConnectorEndpointAt(screen);
+      const connector = this.selectedConnector();
+      if (endpoint && connector) {
+        this.gesture = { kind: "reconnect", connector, endpoint };
+        this.publish({ interacting: true, activeEndpoint: endpoint, connectorPreview: connector });
+        return;
+      }
       const handle = this.getResizeHandleAt(screen);
       const selected = this.selectedShape();
       if (handle && selected) {
@@ -369,14 +503,28 @@ export class Editor {
         return;
       }
       const shape = hitTest(document.shapes, point);
-      this.gesture = shape ? { kind: "move", start: point, shape } : null;
-      this.publish({ selectedId: shape?.id ?? null, interacting: !!shape });
+      const edge = shape ? undefined : hitConnector(document, raw, 7 / camera.zoom);
+      this.gesture = shape
+        ? { kind: "move", start: point, shape }
+        : edge?.start.type === "point" && edge.end.type === "point"
+          ? { kind: "move-connector", connector: edge, start: raw }
+          : null;
+      this.publish({
+        selectedId: shape?.id ?? edge?.id ?? null,
+        interacting: this.gesture !== null,
+      });
     }
   }
 
   move(screen: Point): void {
     if (this.gesture) {
-      const patch = previewGesture(this.gesture, screen, this.snapshot.camera, this.snapshot.fill);
+      const patch = previewGesture(
+        this.gesture,
+        screen,
+        this.snapshot.camera,
+        this.snapshot.fill,
+        this.snapshot.document.shapes,
+      );
       this.publish(
         this.gesture.kind === "resize" && patch.preview?.type === "text"
           ? { ...patch, preview: this.fitText(patch.preview) }
@@ -387,9 +535,36 @@ export class Editor {
 
   finish(): void {
     const gesture = this.gesture;
-    const { preview, camera } = this.snapshot;
+    const { preview, camera, connectorPreview } = this.snapshot;
     this.gesture = null;
     if (
+      (gesture?.kind === "connect" ||
+        gesture?.kind === "reconnect" ||
+        gesture?.kind === "move-connector") &&
+      connectorPreview
+    ) {
+      const selfBound =
+        connectorPreview.start.type === "binding" &&
+        connectorPreview.end.type === "binding" &&
+        connectorPreview.start.shapeId === connectorPreview.end.shapeId;
+      const ends = resolveConnector(connectorPreview, this.snapshot.document.shapes);
+      if (
+        !selfBound &&
+        (gesture.kind !== "connect" ||
+          Math.hypot(ends.end.x - ends.start.x, ends.end.y - ends.start.y) * camera.zoom >= 6)
+      ) {
+        this.commitConnector(
+          gesture.kind === "connect"
+            ? "Create connector"
+            : gesture.kind === "reconnect"
+              ? "Reconnect endpoint"
+              : "Move connector",
+          gesture.kind === "connect" ? null : gesture.connector,
+          connectorPreview,
+        );
+        this.publish({ selectedId: connectorPreview.id, tool: "select" });
+      }
+    } else if (
       gesture?.kind === "draw" &&
       preview &&
       preview.width >= 1 &&
@@ -406,14 +581,29 @@ export class Editor {
         preview,
       );
     }
-    this.publish({ preview: null, interacting: false, activeHandle: null });
+    this.publish({
+      preview: null,
+      connectorPreview: null,
+      bindingTargetId: null,
+      activeEndpoint: null,
+      interacting: false,
+      activeHandle: null,
+    });
   }
 
   cancelGesture(): void {
     if (!this.gesture) return;
     const camera = this.gesture.kind === "pan" ? this.gesture.camera : this.snapshot.camera;
     this.gesture = null;
-    this.publish({ preview: null, interacting: false, activeHandle: null, camera });
+    this.publish({
+      preview: null,
+      connectorPreview: null,
+      bindingTargetId: null,
+      activeEndpoint: null,
+      interacting: false,
+      activeHandle: null,
+      camera,
+    });
   }
 
   pan(dx: number, dy: number): void {
@@ -438,8 +628,10 @@ export class Editor {
     this.finishTextEditing();
     this.cancelGesture();
     const shape = this.selectedShape();
-    if (!shape) return;
-    this.commitShape("Delete object", shape, null);
+    const connector = this.selectedConnector();
+    if (connector) this.commitConnector("Delete connector", connector, null);
+    else if (shape) this.commitShape("Delete object", shape, null);
+    else return;
     this.publish({ selectedId: null });
   }
 
@@ -456,9 +648,11 @@ export class Editor {
     this.cancelGesture();
     const document = this.history[direction](this.snapshot.document);
     if (!document) return;
-    const selectedId = document.shapes.some((shape) => shape.id === this.snapshot.selectedId)
-      ? this.snapshot.selectedId
-      : null;
+    const selectedId =
+      document.shapes.some((shape) => shape.id === this.snapshot.selectedId) ||
+      document.connectors.some((connector) => connector.id === this.snapshot.selectedId)
+        ? this.snapshot.selectedId
+        : null;
     this.publish({ document, selectedId, revision: this.snapshot.revision + 1 });
   }
 }

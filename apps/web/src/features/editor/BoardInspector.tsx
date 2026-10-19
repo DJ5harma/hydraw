@@ -4,18 +4,36 @@ import type { Editor } from "@hydraw/editor";
 import { Icon } from "../../components/icons.tsx";
 import { useEditorSnapshot } from "./useEditorSnapshot.ts";
 import { TextStyleControls } from "./TextStyleControls.tsx";
+import { ConnectorInspector } from "./ConnectorInspector.tsx";
 import { GeometryFields } from "./GeometryFields.tsx";
 const fillNames = ["Blue", "Sage", "Sand", "Rose", "White"];
 export function BoardInspector({ editor, center }: { editor: Editor; center: () => Point }) {
   const snapshot = useEditorSnapshot(editor);
   const selected = snapshot.document.shapes.find((shape) => shape.id === snapshot.selectedId);
+  const selectedConnector = snapshot.document.connectors.find(
+    (connector) => connector.id === snapshot.selectedId,
+  );
   return (
     <aside className="inspector" aria-label="Board inspector">
       <div className="inspector-heading">
-        <h2>{selected?.type === "text" ? "Text" : selected ? "Rectangle" : "Your canvas"}</h2>
-        <span className="small-label">{selected ? "SELECTED" : "LOCAL"}</span>
+        <h2>
+          {selectedConnector
+            ? "Connector"
+            : selected?.type === "text"
+              ? "Text"
+              : selected
+                ? "Rectangle"
+                : "Your canvas"}
+        </h2>
+        <span className="small-label">{selected || selectedConnector ? "SELECTED" : "LOCAL"}</span>
       </div>
-      {selected?.type === "text" ? (
+      {selectedConnector ? (
+        <ConnectorInspector
+          connector={selectedConnector}
+          document={snapshot.document}
+          editor={editor}
+        />
+      ) : selected?.type === "text" ? (
         <TextStyleControls key={selected.id} shape={selected} editor={editor} />
       ) : (
         <section className="inspector-section">
@@ -57,9 +75,9 @@ export function BoardInspector({ editor, center }: { editor: Editor; center: () 
             <Icon name="layers" />
             OBJECTS
           </h3>
-          <span>{snapshot.document.shapes.length}</span>
+          <span>{snapshot.document.shapes.length + snapshot.document.connectors.length}</span>
         </div>
-        {snapshot.document.shapes.length === 0 ? (
+        {snapshot.document.shapes.length === 0 && snapshot.document.connectors.length === 0 ? (
           <p className="no-objects">
             A blank canvas.
             <br />A good place to begin.
@@ -91,6 +109,24 @@ export function BoardInspector({ editor, center }: { editor: Editor; center: () 
                 </button>
               </li>
             ))}
+            {snapshot.document.connectors.map((connector, index) => (
+              <li key={connector.id}>
+                <button
+                  className={snapshot.selectedId === connector.id ? "selected-object" : ""}
+                  aria-pressed={snapshot.selectedId === connector.id}
+                  onClick={() => editor.select(connector.id)}
+                >
+                  <span
+                    aria-hidden="true"
+                    className="object-thumbnail connector-thumbnail"
+                    style={{ color: connector.color }}
+                  >
+                    <Icon name="connector" />
+                  </span>
+                  <span>Connector {index + 1}</span>
+                </button>
+              </li>
+            ))}
           </ul>
         )}
         <button className="add-object" onClick={() => editor.addRectangle(center())}>
@@ -100,6 +136,10 @@ export function BoardInspector({ editor, center }: { editor: Editor; center: () 
         <button className="add-object" onClick={() => editor.addText(center())}>
           <Icon name="text" />
           Add text
+        </button>
+        <button className="add-object" onClick={() => editor.addConnector(center())}>
+          <Icon name="connector" />
+          Add connector
         </button>
       </section>
       <div className="inspector-footer">

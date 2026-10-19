@@ -1038,3 +1038,44 @@ kbd {
     width: 39px;
   }
 }
+
+.connector-controls {
+  display: grid;
+  gap: 14px;
+}
+.connector-controls h3 {
+  margin-bottom: 0;
+}
+.connector-controls .file-button {
+  justify-content: center;
+}
+.connector-endpoints {
+  margin: 0;
+  display: grid;
+  gap: 10px;
+  font-size: 12px;
+}
+.connector-endpoints > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.connector-endpoints dt {
+  color: #6c7a67;
+}
+.connector-endpoints dd {
+  margin: 0;
+}
+.connector-arrowhead {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+}
+.connector-arrowhead input {
+  accent-color: #244f3e;
+}
+.connector-thumbnail svg {
+  width: 14px;
+  height: 14px;
+}

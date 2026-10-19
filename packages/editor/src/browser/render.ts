@@ -1,4 +1,5 @@
 import type { Rectangle, Shape, TextShape } from "@hydraw/document";
+import { drawConnector, drawConnectorHandles } from "./render-connectors.ts";
 import { handlePoint, resizeHandles } from "../geometry.ts";
 import { layoutText, TEXT_FONT_FAMILY, TEXT_LINE_HEIGHT, TEXT_PADDING } from "../text-layout.ts";
 import type { Camera, EditorSnapshot } from "../types.ts";
@@ -84,11 +85,37 @@ export function renderScene(
     for (let y = ((camera.y % spacing) + spacing) % spacing; y < height; y += spacing)
       ctx.fillRect(x, y, 1.2, 1.2);
   }
+  const nodePreview = snapshot.textEditing?.draft ?? preview;
+  const sceneShapes = nodePreview
+    ? document.shapes.map((shape) => (shape.id === nodePreview.id ? nodePreview : shape))
+    : document.shapes;
+  const connectorPreview = snapshot.connectorPreview;
+  for (const connector of document.connectors)
+    if (connector.id !== connectorPreview?.id)
+      drawConnector(ctx, connector, sceneShapes, camera, connector.id === selectedId);
+  if (connectorPreview) drawConnector(ctx, connectorPreview, sceneShapes, camera, true);
   for (const shape of document.shapes) {
     if (preview?.id !== shape.id && snapshot.textEditing?.draft.id !== shape.id)
       drawShape(ctx, shape, camera, viewport);
   }
   if (preview) drawShape(ctx, preview, camera, viewport);
+  const selectedConnector =
+    connectorPreview ?? document.connectors.find((connector) => connector.id === selectedId);
+  if (selectedConnector && (snapshot.tool === "select" || connectorPreview))
+    drawConnectorHandles(ctx, selectedConnector, sceneShapes, camera);
+  const bindingTarget = sceneShapes.find((shape) => shape.id === snapshot.bindingTargetId);
+  if (bindingTarget) {
+    ctx.strokeStyle = "#67944a";
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 4]);
+    ctx.strokeRect(
+      bindingTarget.x * camera.zoom + camera.x - 4,
+      bindingTarget.y * camera.zoom + camera.y - 4,
+      bindingTarget.width * camera.zoom + 8,
+      bindingTarget.height * camera.zoom + 8,
+    );
+    ctx.setLineDash([]);
+  }
   const selected =
     snapshot.textEditing?.draft ??
     preview ??

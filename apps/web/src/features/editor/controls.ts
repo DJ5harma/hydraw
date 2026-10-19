@@ -43,6 +43,7 @@ function createKeyboardHandler(
       if (target instanceof HTMLElement && target.closest("button, a")) return;
       if (key === "v") selectTool("select");
       else if (key === "r") selectTool("rectangle");
+      else if (key === "c") selectTool("connector");
       else if (key === "t") selectTool("text");
       else if (key === "h") selectTool("hand");
       else if (key === "delete" || key === "backspace") {
@@ -61,6 +62,7 @@ function createKeyboardHandler(
         )
           editor.editText();
         else if (snapshot.tool === "text") editor.addText(center());
+        else if (snapshot.tool === "connector") editor.addConnector(center());
         else editor.addRectangle(center());
       } else if (key.startsWith("arrow")) {
         event.preventDefault();

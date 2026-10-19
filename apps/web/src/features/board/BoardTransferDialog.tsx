@@ -109,7 +109,7 @@ export function BoardTransferDialog({
               void choose(file);
             }}
           />
-          <small>{fileName || "Versions 0–1 · up to 2 MB"}</small>
+          <small>{fileName || "Versions 0–2 · up to 2 MB"}</small>
         </label>
       )}
       {reading && <p className="transfer-reading">Reading and validating your board…</p>}
@@ -120,7 +120,8 @@ export function BoardTransferDialog({
             <strong>{preview.name || "Untitled board"}</strong>
             <span>
               {rectangleCount} {rectangleCount === 1 ? "rectangle" : "rectangles"} · {textCount}{" "}
-              {textCount === 1 ? "text object" : "text objects"}
+              {textCount === 1 ? "text object" : "text objects"} · {preview.connectors.length}{" "}
+              {preview.connectors.length === 1 ? "connector" : "connectors"}
             </span>
           </div>
         </div>

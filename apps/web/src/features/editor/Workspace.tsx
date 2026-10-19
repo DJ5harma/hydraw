@@ -59,9 +59,13 @@ export function Workspace({ session }: { session: BoardSession }) {
           <InlineTextEditor editor={editor} canvasRef={canvasRef} />
           <EditorToolbar editor={editor} selectTool={selectTool} />
           {snapshot.document.shapes.length === 0 &&
+            snapshot.document.connectors.length === 0 &&
             !snapshot.interacting &&
             !snapshot.textEditing &&
-            snapshot.tool !== "text" && <EmptyCanvas onStart={() => selectTool("rectangle")} />}
+            snapshot.tool !== "text" &&
+            snapshot.tool !== "connector" && (
+              <EmptyCanvas onStart={() => selectTool("rectangle")} />
+            )}
           <CanvasControls editor={editor} center={center} />
         </section>
         <BoardInspector editor={editor} center={center} />

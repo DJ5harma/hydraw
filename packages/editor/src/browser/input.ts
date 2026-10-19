@@ -153,8 +153,10 @@ export function bindCanvasInput(canvas: HTMLCanvasElement, editor: Editor, sched
       const snapshot = editor.getSnapshot();
       if (snapshot.tool === "hand" || spacePressed)
         return snapshot.interacting ? "grabbing" : "grab";
-      if (snapshot.tool === "rectangle") return "crosshair";
+      if (snapshot.tool === "rectangle" || snapshot.tool === "connector") return "crosshair";
       if (snapshot.tool === "text") return "text";
+      if (snapshot.activeEndpoint || (lastPoint && editor.getConnectorEndpointAt(lastPoint)))
+        return "crosshair";
       const handle =
         snapshot.activeHandle ?? (lastPoint ? editor.getResizeHandleAt(lastPoint) : null);
       return handle ? resizeCursors[handle] : snapshot.interacting ? "grabbing" : "default";

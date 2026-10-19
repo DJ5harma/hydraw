@@ -54,6 +54,8 @@ export type BoardDocument = Readonly<{
 export const MAX_SHAPES = 5_000;
 export const MAX_DOCUMENT_BYTES = 2_000_000;
 export const MAX_COORDINATE = 1_000_000;
+// Bound endpoints may lie beyond a node origin by the node's width/height.
+export const MAX_ENDPOINT_COORDINATE = MAX_COORDINATE * 2;
 export const MAX_SIZE = 100_000;
 
 export function createDocument(): BoardDocument {

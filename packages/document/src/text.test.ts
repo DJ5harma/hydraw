@@ -32,6 +32,9 @@ describe("version 1 text documents", () => {
     };
     expect(decodeDocument(legacy)).toEqual({ ...legacy, version: 2, connectors: [] });
     expect(legacy.version).toBe(0);
+    expect(
+      decodeDocument({ format: "hydraw", version: 1, name: "Text from v1", shapes: [text] }),
+    ).toEqual({ ...createDocument(), name: "Text from v1", shapes: [text] });
     const document = { ...createDocument(), shapes: [text] };
     expect(parseDocument(JSON.stringify(document))).toEqual(document);
     expect(() => decodeDocument({ ...document, version: 0 })).toThrow("invalid");
