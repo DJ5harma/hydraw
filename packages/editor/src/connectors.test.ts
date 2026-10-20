@@ -1,3 +1,4 @@
+import { selectionScene } from "./selection.ts";
 import { describe, expect, it } from "vite-plus/test";
 import { createDocument, resolveConnector } from "@hydraw/document";
 import type { Connector, Rectangle, TextShape } from "@hydraw/document";
@@ -50,14 +51,10 @@ describe("connector interactions", () => {
     editor.begin({ x: 380, y: 520 });
     editor.move({ x: 460, y: 520 });
     const snapshot = editor.getSnapshot();
-    expect(
-      resolveConnector(
-        original,
-        snapshot.document.shapes.map((shape) =>
-          shape.id === snapshot.preview?.id ? snapshot.preview : shape,
-        ),
-      ).start,
-    ).toEqual({ x: 320, y: 260 });
+    expect(resolveConnector(original, selectionScene(snapshot).shapes).start).toEqual({
+      x: 320,
+      y: 260,
+    });
     editor.finish();
     editor.setGeometry({ width: 240 });
     expect(edge(editor)).toBe(original);

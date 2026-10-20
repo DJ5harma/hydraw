@@ -202,3 +202,22 @@ test("edits geometry through accessible fields and keeps invalid values out of t
   await page.keyboard.press("Control+Shift+z");
   await expect(width).toHaveValue("240");
 });
+
+test("ignores cancellation from a pointer that does not own the drag", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Add rectangle", exact: true }).click();
+  const x = page.getByRole("spinbutton", { name: "Rectangle x" });
+  const originalX = Number(await x.inputValue());
+  const originalY = Number(
+    await page.getByRole("spinbutton", { name: "Rectangle y" }).inputValue(),
+  );
+  const canvas = page.locator("canvas");
+  const bounds = (await canvas.boundingBox())!;
+  await page.mouse.move(bounds.x + originalX + 90, bounds.y + originalY + 60);
+  await page.mouse.down();
+  await page.mouse.move(bounds.x + originalX + 120, bounds.y + originalY + 60);
+  await canvas.dispatchEvent("pointercancel", { pointerId: 99 });
+  await page.mouse.move(bounds.x + originalX + 140, bounds.y + originalY + 60);
+  await page.mouse.up();
+  await expect(x).toHaveValue(String(originalX + 50));
+});

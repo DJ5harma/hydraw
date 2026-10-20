@@ -37,8 +37,13 @@ export function bindCanvasInput(canvas: HTMLCanvasElement, editor: Editor, sched
       event.preventDefault();
       canvas.focus({ preventScroll: true });
       activePointer = event.pointerId;
-      canvas.setPointerCapture(event.pointerId);
-      editor.begin(point(event), spacePressed || event.button === 1, event.shiftKey);
+      try {
+        canvas.setPointerCapture(event.pointerId);
+        editor.begin(point(event), spacePressed || event.button === 1, event.shiftKey);
+      } catch (error) {
+        cancel();
+        throw error;
+      }
     },
     options,
   );
@@ -55,10 +60,12 @@ export function bindCanvasInput(canvas: HTMLCanvasElement, editor: Editor, sched
     "pointerup",
     (event) => {
       if (activePointer !== event.pointerId) return;
-      editor.move(point(event));
-      activePointer = null;
-      editor.finish();
-      if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+      try {
+        editor.move(point(event));
+        editor.finish();
+      } finally {
+        cancel();
+      }
     },
     options,
   );
@@ -69,11 +76,17 @@ export function bindCanvasInput(canvas: HTMLCanvasElement, editor: Editor, sched
     },
     options,
   );
-  canvas.addEventListener("pointercancel", cancel, options);
+  canvas.addEventListener(
+    "pointercancel",
+    (event) => {
+      if (activePointer === event.pointerId) cancel();
+    },
+    options,
+  );
   canvas.addEventListener(
     "lostpointercapture",
-    () => {
-      if (activePointer !== null) cancel();
+    (event) => {
+      if (activePointer === event.pointerId) cancel();
     },
     options,
   );

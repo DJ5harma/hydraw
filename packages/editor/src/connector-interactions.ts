@@ -11,8 +11,7 @@ import type { Camera, EditorSnapshot } from "./types.ts";
 export type ConnectorEnd = "start" | "end";
 export type ConnectorGesture =
   | { kind: "connect"; id: string; start: Endpoint }
-  | { kind: "reconnect"; connector: Connector; endpoint: ConnectorEnd }
-  | { kind: "move-connector"; connector: Connector; start: Point };
+  | { kind: "reconnect"; connector: Connector; endpoint: ConnectorEnd };
 
 export function endpointAt(shapes: readonly Shape[], point: Point, tolerance: number): Endpoint {
   const shape =
@@ -61,25 +60,6 @@ export function hitConnectorEnd(
   return closest;
 }
 
-export function translateConnector(connector: Connector, dx: number, dy: number): Connector {
-  if (connector.start.type !== "point" || connector.end.type !== "point") return connector;
-  const x = clamp(
-    dx,
-    -MAX_ENDPOINT_COORDINATE - Math.min(connector.start.x, connector.end.x),
-    MAX_ENDPOINT_COORDINATE - Math.max(connector.start.x, connector.end.x),
-  );
-  const y = clamp(
-    dy,
-    -MAX_ENDPOINT_COORDINATE - Math.min(connector.start.y, connector.end.y),
-    MAX_ENDPOINT_COORDINATE - Math.max(connector.start.y, connector.end.y),
-  );
-  return {
-    ...connector,
-    start: { type: "point", x: connector.start.x + x, y: connector.start.y + y },
-    end: { type: "point", x: connector.end.x + x, y: connector.end.y + y },
-  };
-}
-
 export function previewConnectorGesture(
   gesture: ConnectorGesture,
   screen: Point,
@@ -91,14 +71,6 @@ export function previewConnectorGesture(
     x: clamp(raw.x, -MAX_ENDPOINT_COORDINATE, MAX_ENDPOINT_COORDINATE),
     y: clamp(raw.y, -MAX_ENDPOINT_COORDINATE, MAX_ENDPOINT_COORDINATE),
   };
-  if (gesture.kind === "move-connector")
-    return {
-      connectorPreview: translateConnector(
-        gesture.connector,
-        point.x - gesture.start.x,
-        point.y - gesture.start.y,
-      ),
-    };
   const endpoint = endpointAt(shapes, point, 10 / camera.zoom);
   return {
     connectorPreview:

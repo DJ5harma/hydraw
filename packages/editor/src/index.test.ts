@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
-import { createDocument } from "@hydraw/document";
+import { createDocument, MAX_COORDINATE } from "@hydraw/document";
 import { Editor, screenToWorld } from "./index.ts";
+import { selectionScene } from "./selection.ts";
 
 function setup() {
   let id = 0;
@@ -8,6 +9,41 @@ function setup() {
 }
 
 describe("editor transactions", () => {
+  it("moves a single shape by the pointer delta even beyond the origin coordinate limit", () => {
+    const editor = setup();
+    editor.addRectangle({ x: 100, y: 100 });
+    editor.setGeometry({ x: MAX_COORDINATE, y: 0 });
+    editor.begin({ x: MAX_COORDINATE + 90, y: 60 });
+    editor.move({ x: MAX_COORDINATE + 70, y: 60 });
+    expect(selectionScene(editor.getSnapshot()).shapes[0]?.x).toBe(MAX_COORDINATE - 20);
+    editor.finish();
+    expect(editor.getSnapshot().document.shapes[0]?.x).toBe(MAX_COORDINATE - 20);
+    editor.undo();
+    expect(editor.getSnapshot().document.shapes[0]?.x).toBe(MAX_COORDINATE);
+  });
+
+  it("clears interaction previews when a completed edit is rejected", () => {
+    const editor = new Editor(createDocument(), () => "duplicate");
+    editor.addRectangle({ x: 100, y: 100 });
+    const before = editor.getSnapshot().document;
+    editor.setTool("rectangle");
+    editor.begin({ x: 300, y: 300 });
+    editor.move({ x: 500, y: 400 });
+    expect(() => editor.finish()).toThrow("Duplicate");
+    expect(editor.getSnapshot()).toMatchObject({
+      document: before,
+      interacting: false,
+      preview: null,
+      selectionPreview: null,
+      connectorPreview: null,
+      marquee: null,
+    });
+    editor.setTool("select");
+    editor.select("duplicate");
+    editor.nudgeSelection(10, 0);
+    expect(editor.getSnapshot().document.shapes[0]?.x).toBe(20);
+  });
+
   it("requires an active replacement lease and does not let an old release unlock a newer lease", () => {
     const editor = setup();
     editor.addRectangle({ x: 100, y: 100 });

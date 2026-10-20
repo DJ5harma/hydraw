@@ -17,7 +17,6 @@ import {
   MAX_COORDINATE,
   MAX_SHAPES,
   nameTransaction,
-  rectangleBetween,
   shapeTransaction,
 } from "@hydraw/document";
 import type {
@@ -33,13 +32,13 @@ import type {
   Shape,
   TextShape,
 } from "@hydraw/document";
-import { endpointAt, hitConnector, hitConnectorEnd } from "./connector-interactions.ts";
+import { hitConnectorEnd } from "./connector-interactions.ts";
 import type { ConnectorEnd } from "./connector-interactions.ts";
 import { clamp, hitResizeHandle, screenToWorld } from "./geometry.ts";
 import type { ResizeHandle } from "./geometry.ts";
-import { previewGesture } from "./gestures.ts";
+import { IDLE_GESTURE, previewGesture, startGesture } from "./gestures.ts";
 import type { Gesture } from "./gestures.ts";
-import { objectIds, previewSelectionGesture } from "./selection.ts";
+import { objectIds } from "./selection.ts";
 import { layoutText } from "./text-layout.ts";
 import type { TextMeasurer } from "./text-layout.ts";
 import { TransactionHistory } from "./history.ts";
@@ -517,200 +516,83 @@ export class Editor {
     if (this.documentLocked) return;
     this.finishTextEditing();
     this.cancelGesture();
-    const { camera, document, tool, fill } = this.snapshot;
-    const raw = screenToWorld(screen, camera);
-    const point = {
-      x: clamp(raw.x, -MAX_COORDINATE, MAX_COORDINATE),
-      y: clamp(raw.y, -MAX_COORDINATE, MAX_COORDINATE),
-    };
-    if (pan || tool === "hand") {
-      this.gesture = { kind: "pan", start: screen, camera };
-      this.publish({ interacting: true });
-    } else if (tool === "connector") {
-      if (document.connectors.length >= MAX_CONNECTORS) return;
-      const start = endpointAt(
-        document.shapes,
-        {
-          x: clamp(raw.x, -MAX_ENDPOINT_COORDINATE, MAX_ENDPOINT_COORDINATE),
-          y: clamp(raw.y, -MAX_ENDPOINT_COORDINATE, MAX_ENDPOINT_COORDINATE),
-        },
-        10 / camera.zoom,
+    if (!pan && this.snapshot.tool === "text") {
+      const shape = hitTest(
+        this.snapshot.document.shapes,
+        screenToWorld(screen, this.snapshot.camera),
       );
-      const id = this.makeId();
-      this.gesture = { kind: "connect", id, start };
-      this.publish({
-        selectedIds: [],
-        interacting: true,
-        activeEndpoint: "end",
-        bindingTargetId: start.type === "binding" ? start.shapeId : null,
-        connectorPreview: {
-          id,
-          type: "connector",
-          start,
-          end: start,
-          color: "#243e33",
-          arrowhead: "arrow",
-        },
-      });
-    } else if (tool === "text") {
-      const shape = hitTest(document.shapes, point);
       if (shape?.type === "text") this.editText(shape.id);
       else this.addText(screen);
-    } else if (tool === "rectangle") {
-      if (document.shapes.length >= MAX_SHAPES) return;
-      const id = this.makeId();
-      this.gesture = { kind: "draw", start: point, id };
-      this.publish({
-        interacting: true,
-        selectedIds: [],
-        preview: rectangleBetween(id, point, point, fill),
-      });
-    } else {
-      const shape = hitTest(document.shapes, raw);
-      const edge = shape ? undefined : hitConnector(document, raw, 7 / camera.zoom);
-      const hitId = shape?.id ?? edge?.id;
-      if (additive && hitId) {
-        this.select(hitId, true);
-        return;
-      }
-      if (
-        !hitId &&
-        (additive || !this.getConnectorEndpointAt(screen)) &&
-        !this.getResizeHandleAt(screen)
-      ) {
-        this.gesture = { kind: "marquee", start: raw, before: this.snapshot.selectedIds, additive };
-        this.publish({
-          selectedIds: additive ? this.snapshot.selectedIds : [],
-          marquee: { ...raw, width: 0, height: 0 },
-          interacting: true,
-        });
-        return;
-      }
-      if (
-        hitId &&
-        this.snapshot.selectedIds.length > 1 &&
-        this.snapshot.selectedIds.includes(hitId)
-      ) {
-        this.gesture = { kind: "move-selection", start: raw, ids: this.snapshot.selectedIds };
-        this.publish({ interacting: true });
-        return;
-      }
-      const endpoint = this.getConnectorEndpointAt(screen);
-      const connector = this.selectedConnector();
-      if (endpoint && connector) {
-        this.gesture = { kind: "reconnect", connector, endpoint };
-        this.publish({ interacting: true, activeEndpoint: endpoint, connectorPreview: connector });
-        return;
-      }
-      const handle = this.getResizeHandleAt(screen);
-      const selected = this.selectedShape();
-      if (handle && selected) {
-        this.gesture = { kind: "resize", start: raw, shape: selected, handle };
-        this.publish({ interacting: true, activeHandle: handle });
-        return;
-      }
-      this.gesture = shape
-        ? { kind: "move", start: point, shape }
-        : edge?.start.type === "point" && edge.end.type === "point"
-          ? { kind: "move-connector", connector: edge, start: raw }
-          : null;
-      this.publish({
-        selectedIds: hitId ? [hitId] : [],
-        interacting: this.gesture !== null,
-      });
+      return;
     }
+    const start = startGesture(this.snapshot, screen, this.makeId, pan, additive);
+    if (!start) return;
+    this.gesture = start.gesture;
+    this.publish(start.patch);
   }
 
   move(screen: Point): void {
-    if (this.gesture) {
-      if (this.gesture.kind === "marquee" || this.gesture.kind === "move-selection") {
-        this.publish(
-          previewSelectionGesture(
-            this.gesture,
-            screen,
-            this.snapshot.camera,
-            this.snapshot.document,
-          ),
-        );
-        return;
-      }
-      const patch = previewGesture(
-        this.gesture,
-        screen,
-        this.snapshot.camera,
-        this.snapshot.fill,
-        this.snapshot.document.shapes,
-      );
-      this.publish(
-        this.gesture.kind === "resize" && patch.preview?.type === "text"
-          ? { ...patch, preview: this.fitText(patch.preview) }
-          : patch,
-      );
-    }
+    if (!this.gesture) return;
+    const patch = previewGesture(
+      this.gesture,
+      screen,
+      this.snapshot.camera,
+      this.snapshot.fill,
+      this.snapshot.document,
+    );
+    this.publish(
+      this.gesture.kind === "resize" && patch.preview?.type === "text"
+        ? { ...patch, preview: this.fitText(patch.preview) }
+        : patch,
+    );
   }
 
   finish(): void {
     const gesture = this.gesture;
     const { preview, camera, connectorPreview, selectionPreview } = this.snapshot;
     this.gesture = null;
-    if (gesture?.kind === "move-selection" && selectionPreview) {
-      this.commit(
-        updateObjectsTransaction(this.snapshot.document, "Move selection", selectionPreview),
-      );
-    } else if (
-      (gesture?.kind === "connect" ||
-        gesture?.kind === "reconnect" ||
-        gesture?.kind === "move-connector") &&
-      connectorPreview
-    ) {
-      const selfBound =
-        connectorPreview.start.type === "binding" &&
-        connectorPreview.end.type === "binding" &&
-        connectorPreview.start.shapeId === connectorPreview.end.shapeId;
-      const ends = resolveConnector(connectorPreview, this.snapshot.document.shapes);
-      if (
-        !selfBound &&
-        (gesture.kind !== "connect" ||
-          Math.hypot(ends.end.x - ends.start.x, ends.end.y - ends.start.y) * camera.zoom >= 6)
-      ) {
-        this.commitConnector(
-          gesture.kind === "connect"
-            ? "Create connector"
-            : gesture.kind === "reconnect"
-              ? "Reconnect endpoint"
-              : "Move connector",
-          gesture.kind === "connect" ? null : gesture.connector,
-          connectorPreview,
+    try {
+      if (gesture?.kind === "move-selection" && selectionPreview) {
+        this.commit(
+          updateObjectsTransaction(this.snapshot.document, "Move selection", selectionPreview),
         );
-        this.publish({ selectedIds: [connectorPreview.id], tool: "select" });
+      } else if (
+        (gesture?.kind === "connect" || gesture?.kind === "reconnect") &&
+        connectorPreview
+      ) {
+        const selfBound =
+          connectorPreview.start.type === "binding" &&
+          connectorPreview.end.type === "binding" &&
+          connectorPreview.start.shapeId === connectorPreview.end.shapeId;
+        const ends = resolveConnector(connectorPreview, this.snapshot.document.shapes);
+        if (
+          !selfBound &&
+          (gesture.kind !== "connect" ||
+            Math.hypot(ends.end.x - ends.start.x, ends.end.y - ends.start.y) * camera.zoom >= 6)
+        ) {
+          this.commitConnector(
+            gesture.kind === "connect" ? "Create connector" : "Reconnect endpoint",
+            gesture.kind === "connect" ? null : gesture.connector,
+            connectorPreview,
+          );
+          this.publish({ selectedIds: [connectorPreview.id], tool: "select" });
+        }
+      } else if (
+        gesture?.kind === "draw" &&
+        preview &&
+        preview.width >= 1 &&
+        preview.height >= 1 &&
+        preview.width * camera.zoom >= 3 &&
+        preview.height * camera.zoom >= 3
+      ) {
+        this.commitShape("Create rectangle", null, preview);
+        this.publish({ selectedIds: [preview.id], tool: "select" });
+      } else if (gesture?.kind === "resize" && preview) {
+        this.commitShape("Resize object", gesture.shape, preview);
       }
-    } else if (
-      gesture?.kind === "draw" &&
-      preview &&
-      preview.width >= 1 &&
-      preview.height >= 1 &&
-      preview.width * camera.zoom >= 3 &&
-      preview.height * camera.zoom >= 3
-    ) {
-      this.commitShape("Create rectangle", null, preview);
-      this.publish({ selectedIds: [preview.id], tool: "select" });
-    } else if ((gesture?.kind === "move" || gesture?.kind === "resize") && preview) {
-      this.commitShape(
-        gesture.kind === "resize" ? "Resize object" : "Move object",
-        gesture.shape,
-        preview,
-      );
+    } finally {
+      this.publish(IDLE_GESTURE);
     }
-    this.publish({
-      preview: null,
-      selectionPreview: null,
-      marquee: null,
-      connectorPreview: null,
-      bindingTargetId: null,
-      activeEndpoint: null,
-      interacting: false,
-      activeHandle: null,
-    });
   }
 
   cancelGesture(): void {
@@ -720,14 +602,7 @@ export class Editor {
     const camera = this.gesture.kind === "pan" ? this.gesture.camera : this.snapshot.camera;
     this.gesture = null;
     this.publish({
-      preview: null,
-      selectionPreview: null,
-      marquee: null,
-      connectorPreview: null,
-      bindingTargetId: null,
-      activeEndpoint: null,
-      interacting: false,
-      activeHandle: null,
+      ...IDLE_GESTURE,
       camera,
       selectedIds,
     });
