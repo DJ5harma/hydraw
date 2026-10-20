@@ -1,4 +1,4 @@
-import { resolveConnector, translateObjects } from "@hydraw/document";
+import { createConnectorResolver, translateObjects } from "@hydraw/document";
 import type {
   BoardDocument,
   Bounds,
@@ -31,6 +31,7 @@ function contains(bounds: Bounds, point: Point): boolean {
 }
 
 export function enclosedObjects(document: BoardDocument, bounds: Bounds): readonly string[] {
+  const resolveConnector = createConnectorResolver(document.shapes);
   return [
     ...document.shapes
       .filter(
@@ -41,7 +42,7 @@ export function enclosedObjects(document: BoardDocument, bounds: Bounds): readon
       .map((shape) => shape.id),
     ...document.connectors
       .filter((connector) => {
-        const ends = resolveConnector(connector, document.shapes);
+        const ends = resolveConnector(connector);
         return contains(bounds, ends.start) && contains(bounds, ends.end);
       })
       .map((connector) => connector.id),
@@ -106,13 +107,14 @@ export function selectionBounds(
   ids: readonly string[],
 ): Bounds | null {
   const selected = new Set(ids);
+  const resolveConnector = createConnectorResolver(shapes);
   const points: Point[] = [];
   for (const shape of shapes)
     if (selected.has(shape.id))
       points.push(shape, { x: shape.x + shape.width, y: shape.y + shape.height });
   for (const connector of connectors)
     if (selected.has(connector.id)) {
-      const ends = resolveConnector(connector, shapes);
+      const ends = resolveConnector(connector);
       points.push(ends.start, ends.end);
     }
   if (!points.length) return null;

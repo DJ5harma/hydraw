@@ -2,6 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 import {
   applyTransaction,
   connectorTransaction,
+  createConnectorResolver,
   createDocument,
   decodeDocument,
   deleteShapeTransaction,
@@ -34,6 +35,15 @@ const initial = () =>
   decodeDocument({ ...createDocument(), shapes: [a, b], connectors: [connector] });
 
 describe("bound connector documents", () => {
+  it("resolves indexed scenes with current bounds and the same geometry as individual edges", () => {
+    const moved = { ...b, x: 500, width: 240 };
+    const resolve = createConnectorResolver([a, moved]);
+    expect(resolve(connector)).toEqual(resolveConnector(connector, [a, moved]));
+    expect(resolve(connector)).not.toEqual(resolveConnector(connector, [a, b]));
+    const free: Connector = { ...connector, start: { type: "point", x: 100, y: 20 } };
+    expect(resolve(free)).toEqual(resolveConnector(free, [a, moved]));
+    expect(() => createConnectorResolver([a])(connector)).toThrow("missing");
+  });
   it("migrates earlier versions and round-trips endpoint semantics", () => {
     for (const version of [0, 1])
       expect(decodeDocument({ format: "hydraw", version, name: "Earlier", shapes: [a] })).toEqual({

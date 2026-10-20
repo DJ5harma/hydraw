@@ -1,15 +1,14 @@
-import { resolveConnector } from "@hydraw/document";
-import type { Connector, Shape } from "@hydraw/document";
+import type { Connector, ConnectorResolver } from "@hydraw/document";
 import type { Camera } from "../types.ts";
 
 export function drawConnector(
   ctx: CanvasRenderingContext2D,
   connector: Connector,
-  shapes: readonly Shape[],
+  resolve: ConnectorResolver,
   camera: Camera,
   selected: boolean,
 ): void {
-  const ends = resolveConnector(connector, shapes);
+  const ends = resolve(connector);
   const start = {
     x: ends.start.x * camera.zoom + camera.x,
     y: ends.start.y * camera.zoom + camera.y,
@@ -46,10 +45,10 @@ export function drawConnector(
 export function drawConnectorHandles(
   ctx: CanvasRenderingContext2D,
   connector: Connector,
-  shapes: readonly Shape[],
+  resolve: ConnectorResolver,
   camera: Camera,
 ): void {
-  const ends = resolveConnector(connector, shapes);
+  const ends = resolve(connector);
   ctx.save();
   ctx.strokeStyle = "#3568db";
   ctx.lineWidth = 1.5;

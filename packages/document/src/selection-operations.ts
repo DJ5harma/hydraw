@@ -1,6 +1,6 @@
 import { MAX_CONNECTORS, MAX_COORDINATE, MAX_ENDPOINT_COORDINATE, MAX_SHAPES } from "./model.ts";
 import type { BoardDocument, Connector, Endpoint, Point, Shape } from "./model.ts";
-import { resolveConnector } from "./connectors.ts";
+import { createConnectorResolver } from "./connectors.ts";
 import { connectorTransaction, shapeTransaction } from "./transactions.ts";
 import type { DocumentChange, DocumentTransaction } from "./transactions.ts";
 
@@ -134,8 +134,9 @@ export function duplicateObjects(
     document.connectors.length + edges.length > MAX_CONNECTORS
   )
     throw new Error("There is not enough room to duplicate this selection. Select fewer objects.");
+  const resolveConnector = createConnectorResolver(document.shapes);
   const detached = edges.map((connector) => {
-    const resolved = resolveConnector(connector, document.shapes);
+    const resolved = resolveConnector(connector);
     function endpoint(key: "start" | "end"): Endpoint {
       const endpoint = connector[key];
       return endpoint.type === "binding" && !nodes.has(endpoint.shapeId)

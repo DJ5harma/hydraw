@@ -1,4 +1,5 @@
 import {
+  createConnectorResolver,
   distanceToSegment,
   hitTest,
   MAX_ENDPOINT_COORDINATE,
@@ -31,8 +32,9 @@ export function hitConnector(
   point: Point,
   tolerance: number,
 ): Connector | undefined {
+  const resolve = createConnectorResolver(document.shapes);
   return document.connectors.findLast((connector) => {
-    const { start, end } = resolveConnector(connector, document.shapes);
+    const { start, end } = resolve(connector);
     return distanceToSegment(point, start, end) <= tolerance;
   });
 }

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 import { createDocument } from "@hydraw/document";
 import type { TextShape } from "@hydraw/document";
 import { Editor, layoutText } from "./index.ts";
+import { createTextLayouter } from "./text-layout.ts";
 
 const measure = (text: string, style: { fontSize: number }) => (text.length * style.fontSize) / 2;
 const text: TextShape = {
@@ -20,6 +21,22 @@ const text: TextShape = {
 const setup = () => new Editor(createDocument(), () => "new-text", measure);
 
 describe("owned text layout and editing", () => {
+  it("reuses unchanged text layouts and measures changed records with its own adapter", () => {
+    let measurements = 0;
+    const layout = createTextLayouter((value, style) => {
+      measurements++;
+      return measure(value, style);
+    });
+    const first = layout(text);
+    const count = measurements;
+    expect(count).toBeGreaterThan(0);
+    expect(layout(text)).toBe(first);
+    expect(measurements).toBe(count);
+    const changed = { ...text, width: 200 };
+    expect(layout(changed).lines).toEqual(["one two three"]);
+    expect(measurements).toBeGreaterThan(count);
+    expect(createTextLayouter(() => 1)(text).lines).toEqual(["one two three"]);
+  });
   it("wraps words, explicit blank lines and long Unicode tokens without breaking graphemes", () => {
     expect(layoutText(text, measure).lines).toEqual(["one two", "three"]);
     const shape = { ...text, width: 18, text: "👩‍💻\n\nx" };

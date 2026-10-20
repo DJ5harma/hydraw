@@ -1,9 +1,18 @@
+import { createConnectorResolver } from "@hydraw/document";
 import type { Rectangle, Shape, TextShape } from "@hydraw/document";
 import { drawConnector, drawConnectorHandles } from "./render-connectors.ts";
 import { selectionScene } from "../selection.ts";
 import { drawSelection } from "./render-selection.ts";
-import { layoutText, TEXT_FONT_FAMILY, TEXT_LINE_HEIGHT, TEXT_PADDING } from "../text-layout.ts";
+import {
+  createTextLayouter,
+  TEXT_FONT_FAMILY,
+  TEXT_LINE_HEIGHT,
+  TEXT_PADDING,
+} from "../text-layout.ts";
 import type { Camera, EditorSnapshot } from "../types.ts";
+
+import type { TextLayouter } from "../text-layout.ts";
+import { createTextMeasurer } from "./text.ts";
 
 type Viewport = Readonly<{ width: number; height: number; dpr: number }>;
 
@@ -28,7 +37,12 @@ function drawRectangle(
   ctx.stroke();
 }
 
-function drawText(ctx: CanvasRenderingContext2D, shape: TextShape, camera: Camera): void {
+function drawText(
+  ctx: CanvasRenderingContext2D,
+  shape: TextShape,
+  camera: Camera,
+  textLayout: TextLayouter,
+): void {
   ctx.save();
   ctx.translate(shape.x * camera.zoom + camera.x, shape.y * camera.zoom + camera.y);
   ctx.scale(camera.zoom, camera.zoom);
@@ -36,7 +50,7 @@ function drawText(ctx: CanvasRenderingContext2D, shape: TextShape, camera: Camer
   ctx.fillStyle = shape.color;
   ctx.textBaseline = "top";
   ctx.textAlign = shape.textAlign;
-  const layout = layoutText(shape, (text) => ctx.measureText(text).width);
+  const layout = textLayout(shape);
   const x =
     shape.textAlign === "left"
       ? TEXT_PADDING
@@ -58,6 +72,7 @@ function drawShape(
   shape: Shape,
   camera: Camera,
   viewport: Viewport,
+  textLayout: TextLayouter,
 ): void {
   if (shape.type === "rectangle") drawRectangle(ctx, shape, camera, viewport);
   else if (
@@ -66,14 +81,15 @@ function drawShape(
     (shape.x + shape.width) * camera.zoom + camera.x >= 0 &&
     (shape.y + shape.height) * camera.zoom + camera.y >= 0
   )
-    drawText(ctx, shape, camera);
+    drawText(ctx, shape, camera, textLayout);
 }
 
 /** Draws a derived scene. It cannot subscribe, dispatch commands or mutate editor state. */
-export function renderScene(
+function renderScene(
   ctx: CanvasRenderingContext2D,
   snapshot: EditorSnapshot,
   viewport: Viewport,
+  textLayout: TextLayouter,
 ): void {
   const { width, height, dpr } = viewport;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -87,21 +103,23 @@ export function renderScene(
       ctx.fillRect(x, y, 1.2, 1.2);
   }
   const { shapes: sceneShapes, connectors: sceneConnectors } = selectionScene(snapshot);
+  const resolveConnector = createConnectorResolver(sceneShapes);
   const selectedIds = new Set(snapshot.selectedIds);
   for (const connector of sceneConnectors)
     drawConnector(
       ctx,
       connector,
-      sceneShapes,
+      resolveConnector,
       camera,
       selectedIds.has(connector.id) || connector.id === snapshot.connectorPreview?.id,
     );
   for (const shape of sceneShapes)
-    if (snapshot.textEditing?.draft.id !== shape.id) drawShape(ctx, shape, camera, viewport);
+    if (snapshot.textEditing?.draft.id !== shape.id)
+      drawShape(ctx, shape, camera, viewport, textLayout);
   const selectedConnector =
     snapshot.connectorPreview ?? sceneConnectors.find((connector) => connector.id === selectedId);
   if (selectedConnector && (snapshot.tool === "select" || snapshot.connectorPreview))
-    drawConnectorHandles(ctx, selectedConnector, sceneShapes, camera);
+    drawConnectorHandles(ctx, selectedConnector, resolveConnector, camera);
   const bindingTarget = sceneShapes.find((shape) => shape.id === snapshot.bindingTargetId);
   if (bindingTarget) {
     ctx.strokeStyle = "#67944a";
@@ -116,4 +134,11 @@ export function renderScene(
     ctx.setLineDash([]);
   }
   drawSelection(ctx, snapshot, sceneShapes, sceneConnectors);
+}
+
+/** Per-canvas caches share the renderer's font metrics and live only as long as the adapter. */
+export function createSceneRenderer(ctx: CanvasRenderingContext2D) {
+  const textLayout = createTextLayouter(createTextMeasurer(ctx));
+  return (snapshot: EditorSnapshot, viewport: Viewport): void =>
+    renderScene(ctx, snapshot, viewport, textLayout);
 }

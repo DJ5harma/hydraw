@@ -1,11 +1,12 @@
 import type { Editor } from "./editor.ts";
 import { bindCanvasInput } from "./browser/input.ts";
-import { renderScene } from "./browser/render.ts";
+import { createSceneRenderer } from "./browser/render.ts";
 
 /** Owns browser resources only. Input, drawing, and semantic editing have separate lifecycles. */
 export function attachCanvas(canvas: HTMLCanvasElement, editor: Editor): () => void {
   const context = canvas.getContext("2d");
   if (!context) throw new Error("Your browser could not start the drawing canvas.");
+  const renderScene = createSceneRenderer(context);
   let width = 0;
   let height = 0;
   let frame = 0;
@@ -21,7 +22,7 @@ export function attachCanvas(canvas: HTMLCanvasElement, editor: Editor): () => v
       canvas.width = Math.round(width * dpr);
       canvas.height = Math.round(height * dpr);
     }
-    renderScene(context!, editor.getSnapshot(), { width, height, dpr });
+    renderScene(editor.getSnapshot(), { width, height, dpr });
     canvas.style.cursor = input.cursor();
   }
   const observer = new ResizeObserver(([entry]) => {

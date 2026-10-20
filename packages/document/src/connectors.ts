@@ -4,39 +4,48 @@ function center(shape: Shape): Point {
   return { x: shape.x + shape.width / 2, y: shape.y + shape.height / 2 };
 }
 
-function seed(endpoint: Endpoint, shapes: readonly Shape[]): Point {
-  if (endpoint.type === "point") return endpoint;
-  const shape = shapes.find((shape) => shape.id === endpoint.shapeId);
-  if (!shape) throw new Error("A connector refers to a missing object.");
-  return center(shape);
-}
+type ResolvedEndpoint = Point | Shape;
+export type ConnectorGeometry = Readonly<{ start: Point; end: Point }>;
+export type ConnectorResolver = (connector: Connector) => ConnectorGeometry;
 
-function perimeter(
-  endpoint: Endpoint,
-  toward: Point,
-  shapes: readonly Shape[],
-  fallback: number,
-): Point {
-  if (endpoint.type === "point") return { x: endpoint.x, y: endpoint.y };
-  const shape = shapes.find((shape) => shape.id === endpoint.shapeId);
-  if (!shape) throw new Error("A connector refers to a missing object.");
-  const origin = center(shape);
+function perimeter(endpoint: ResolvedEndpoint, toward: Point, fallback: number): Point {
+  if (!("width" in endpoint)) return endpoint;
+  const origin = center(endpoint);
   const dx = toward.x - origin.x;
   const dy = toward.y - origin.y;
-  if (dx === 0 && dy === 0) return { x: origin.x + (fallback * shape.width) / 2, y: origin.y };
-  const scale = 1 / Math.max(Math.abs(dx) / (shape.width / 2), Math.abs(dy) / (shape.height / 2));
+  if (dx === 0 && dy === 0) return { x: origin.x + (fallback * endpoint.width) / 2, y: origin.y };
+  const scale =
+    1 / Math.max(Math.abs(dx) / (endpoint.width / 2), Math.abs(dy) / (endpoint.height / 2));
   return { x: origin.x + dx * scale, y: origin.y + dy * scale };
 }
 
-/** Endpoints are derived from current node bounds, including temporary move/resize previews. */
+function resolve(connector: Connector, find: (id: string) => Shape | undefined): ConnectorGeometry {
+  function endpoint(value: Endpoint): ResolvedEndpoint {
+    if (value.type === "point") return { x: value.x, y: value.y };
+    const shape = find(value.shapeId);
+    if (!shape) throw new Error("A connector refers to a missing object.");
+    return shape;
+  }
+  const start = endpoint(connector.start);
+  const end = endpoint(connector.end);
+  return {
+    start: perimeter(start, "width" in end ? center(end) : end, 1),
+    end: perimeter(end, "width" in start ? center(start) : start, -1),
+  };
+}
+
+/** Resolve a single edge against current node bounds, including transient previews. */
 export function resolveConnector(
   connector: Connector,
   shapes: readonly Shape[],
-): Readonly<{ start: Point; end: Point }> {
-  return {
-    start: perimeter(connector.start, seed(connector.end, shapes), shapes, 1),
-    end: perimeter(connector.end, seed(connector.start, shapes), shapes, -1),
-  };
+): ConnectorGeometry {
+  return resolve(connector, (id) => shapes.find((shape) => shape.id === id));
+}
+
+/** Index a scene once when resolving many edges. The index is derived, never persisted. */
+export function createConnectorResolver(shapes: readonly Shape[]): ConnectorResolver {
+  const index = new Map(shapes.map((shape) => [shape.id, shape]));
+  return (connector) => resolve(connector, (id) => index.get(id));
 }
 
 export function distanceToSegment(point: Point, start: Point, end: Point): number {

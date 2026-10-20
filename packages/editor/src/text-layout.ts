@@ -36,3 +36,18 @@ export function layoutText(shape: TextShape, measure: TextMeasurer) {
     height: Math.max(1, lines.length * shape.fontSize * TEXT_LINE_HEIGHT + TEXT_PADDING * 2),
   };
 }
+
+export type TextLayouter = (shape: TextShape) => ReturnType<typeof layoutText>;
+
+/** Immutable records are safe cache keys; old documents are collectable with their layouts. */
+export function createTextLayouter(measure: TextMeasurer): TextLayouter {
+  const layouts = new WeakMap<TextShape, ReturnType<typeof layoutText>>();
+  return (shape) => {
+    let layout = layouts.get(shape);
+    if (!layout) {
+      layout = layoutText(shape, measure);
+      layouts.set(shape, layout);
+    }
+    return layout;
+  };
+}
