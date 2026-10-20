@@ -107,67 +107,65 @@ export function nameTransaction(before: string, after: string): DocumentTransact
   });
 }
 
+type RecordChange<T> = Readonly<{ index: number; before: T | null; after: T | null }>;
+
+/** Each collection is copied only when touched; all changes stay private until graph validation. */
+function applyRecordChanges<T extends Readonly<{ id: string; type: string }>>(
+  records: readonly T[],
+  changes: readonly RecordChange<T>[],
+  rules: {
+    kind: string;
+    limit: number;
+    decode: (value: unknown) => T;
+    same: (a: T, b: T) => boolean;
+  },
+): readonly T[] {
+  if (!changes.length) return records;
+  const next = [...records];
+  const ids = new Set(records.map((record) => record.id));
+  for (const { before, after, index } of changes) {
+    if (!Number.isInteger(index) || index < 0 || index > next.length || (!before && !after))
+      throw new Error(`Invalid ${rules.kind} transaction.`);
+    const current = next[index];
+    if (before && (!current || !rules.same(current, before)))
+      throw new Error(`The ${rules.kind} changed before this transaction.`);
+    if (before && after && (before.id !== after.id || before.type !== after.type))
+      throw new Error(`A transaction cannot change ${rules.kind} identity.`);
+    if (!before && after && ids.has(after.id)) throw new Error(`Duplicate ${rules.kind} identity.`);
+    const decoded = after ? rules.decode(after) : null;
+    next.splice(index, before ? 1 : 0, ...(decoded ? [decoded] : []));
+    if (before) ids.delete(before.id);
+    if (after) ids.add(after.id);
+    if (next.length > rules.limit)
+      throw new Error(`This board exceeds the supported ${rules.kind} limit.`);
+  }
+  return Object.freeze(next);
+}
+
 /** Preconditions make stale inverses fail instead of silently replacing later edits. */
 export function applyTransaction(
   document: BoardDocument,
   transaction: DocumentTransaction,
 ): BoardDocument {
   if (transaction.changes.length === 0) return document;
-  const shapes = [...document.shapes];
-  const connectors = [...document.connectors];
   let name = document.name;
   for (const change of transaction.changes) {
-    if (change.type === "name") {
-      if (name !== change.before)
-        throw new Error("The board name changed before this transaction.");
-      name = decodeName(change.after);
-      continue;
-    }
-    if (change.type === "connector") {
-      const { before, after, index } = change;
-      if (!Number.isInteger(index) || index < 0 || index > connectors.length || (!before && !after))
-        throw new Error("Invalid connector transaction.");
-      const current = connectors[index];
-      if (before && (!current || !sameConnector(current, before)))
-        throw new Error("The connector changed before this transaction.");
-      if (before && after && before.id !== after.id)
-        throw new Error("A transaction cannot change connector identity.");
-      if (
-        after &&
-        connectors.some(
-          (connector, position) => connector.id === after.id && (!before || position !== index),
-        )
-      )
-        throw new Error("Duplicate connector identity.");
-      connectors.splice(index, before ? 1 : 0, ...(after ? [decodeConnector(after)] : []));
-      if (connectors.length > MAX_CONNECTORS)
-        throw new Error("This board exceeds the supported connector limit.");
-      continue;
-    }
-    const { before, after, index } = change;
-    if (!Number.isInteger(index) || index < 0 || index > shapes.length || (!before && !after))
-      throw new Error("Invalid shape transaction.");
-    const current = shapes[index];
-    if (before && (!current || !sameShape(current, before)))
-      throw new Error("The shape changed before this transaction.");
-    if (before && after && (before.id !== after.id || before.type !== after.type))
-      throw new Error("A transaction cannot change shape identity.");
-    if (
-      after &&
-      shapes.some((shape, position) => shape.id === after.id && (!before || position !== index))
-    )
-      throw new Error("Duplicate shape identity.");
-    shapes.splice(index, before ? 1 : 0, ...(after ? [decodeShape(after)] : []));
-    if (shapes.length > MAX_SHAPES)
-      throw new Error("This board exceeds the supported shape limit.");
+    if (change.type !== "name") continue;
+    if (name !== change.before) throw new Error("The board name changed before this transaction.");
+    name = decodeName(change.after);
   }
+  const shapes = applyRecordChanges(
+    document.shapes,
+    transaction.changes.filter((change) => change.type === "shape"),
+    { kind: "shape", limit: MAX_SHAPES, decode: decodeShape, same: sameShape },
+  );
+  const connectors = applyRecordChanges(
+    document.connectors,
+    transaction.changes.filter((change) => change.type === "connector"),
+    { kind: "connector", limit: MAX_CONNECTORS, decode: decodeConnector, same: sameConnector },
+  );
   assertConnectorGraph(shapes, connectors);
-  return Object.freeze({
-    ...document,
-    name,
-    shapes: Object.freeze(shapes),
-    connectors: Object.freeze(connectors),
-  });
+  return Object.freeze({ ...document, name, shapes, connectors });
 }
 
 export function invertTransaction(transaction: DocumentTransaction): DocumentTransaction {

@@ -31,6 +31,32 @@ describe("reversible document transactions", () => {
     expect(applyTransaction(next, invertTransaction(change))).toEqual(document);
     expect(Object.isFrozen(next.shapes)).toBe(true);
     expect(Object.isFrozen(next.shapes[0])).toBe(true);
+    expect(next.connectors).toBe(document.connectors);
+    const renamed = applyTransaction(document, nameTransaction(document.name, "Renamed")!);
+    expect(renamed.shapes).toBe(document.shapes);
+    expect(renamed.connectors).toBe(document.connectors);
+  });
+
+  it("tracks identities through ordered removals, insertions and repeated updates", () => {
+    const document = initial();
+    const transaction: DocumentTransaction = {
+      label: "Replace and move",
+      changes: [
+        { type: "shape", index: 0, before: first, after: null },
+        { type: "shape", index: 1, before: null, after: first },
+        { type: "shape", index: 1, before: first, after: { ...first, x: 50 } },
+      ],
+    };
+    const next = applyTransaction(document, transaction);
+    expect(next.shapes).toEqual([second, { ...first, x: 50 }]);
+    expect(applyTransaction(next, invertTransaction(transaction))).toEqual(document);
+    expect(() =>
+      applyTransaction(document, {
+        ...transaction,
+        changes: [...transaction.changes, { type: "shape", index: 2, before: null, after: first }],
+      }),
+    ).toThrow("Duplicate");
+    expect(document).toEqual(initial());
   });
 
   it("reverses a multi-change transaction in reverse order, preserving stacking order", () => {
