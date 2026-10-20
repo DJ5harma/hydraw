@@ -142,6 +142,9 @@ test("mobile text creation and editing close the drawer and focus the canvas inp
   const input = page.getByRole("textbox", { name: "Edit canvas text", exact: true });
   await expect(page.getByRole("dialog", { name: "Inspector", exact: true })).toHaveCount(0);
   await expect(input).toBeFocused();
+  const inputBounds = (await input.boundingBox())!;
+  expect(inputBounds.x).toBeGreaterThanOrEqual(0);
+  expect(inputBounds.x + inputBounds.width).toBeLessThanOrEqual(390);
   await input.fill("Gateway");
   await input.press("Control+Enter");
   await expect(input).toHaveCount(0);

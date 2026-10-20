@@ -413,7 +413,7 @@ export class Editor {
     return decodeText({ ...valid, height: layoutText(valid, this.measureText).height });
   }
 
-  addText(screen: Point): void {
+  addText(screen: Point, placement: "start" | "center" = "start"): void {
     this.assertWritable();
     this.finishTextEditing();
     this.cancelGesture();
@@ -432,7 +432,19 @@ export class Editor {
       textAlign: "left",
       color: "#243e33",
     });
-    this.publish({ selectedIds: [], tool: "select", textEditing: { before: null, draft } });
+    const positioned =
+      placement === "center"
+        ? decodeText({
+            ...draft,
+            x: clamp(point.x - draft.width / 2, -MAX_COORDINATE, MAX_COORDINATE),
+            y: clamp(point.y - draft.height / 2, -MAX_COORDINATE, MAX_COORDINATE),
+          })
+        : draft;
+    this.publish({
+      selectedIds: [],
+      tool: "select",
+      textEditing: { before: null, draft: positioned },
+    });
   }
 
   editTextAt(screen: Point): void {

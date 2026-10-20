@@ -69,7 +69,7 @@ function createKeyboardHandler(
           )
         )
           editor.editText();
-        else if (snapshot.tool === "text") editor.addText(center());
+        else if (snapshot.tool === "text") editor.addText(center(), "center");
         else if (snapshot.tool === "connector") editor.addConnector(center());
         else editor.addRectangle(center());
       } else if (key.startsWith("arrow")) {

@@ -21,6 +21,20 @@ const text: TextShape = {
 const setup = () => new Editor(createDocument(), () => "new-text", measure);
 
 describe("owned text layout and editing", () => {
+  it("centers command-created text at the screen anchor while retaining click placement", () => {
+    const editor = setup();
+    editor.zoomAt({ x: 0, y: 0 }, 2);
+    editor.pan(20, 40);
+    const anchor = { x: 300, y: 200 };
+    editor.addText(anchor, "center");
+    const centered = editor.getSnapshot().textEditing!.draft;
+    expect(centered.x + centered.width / 2).toBe(140);
+    expect(centered.y + centered.height / 2).toBeCloseTo(80);
+    editor.cancelTextEditing();
+    editor.addText(anchor);
+    expect(editor.getSnapshot().textEditing!.draft).toMatchObject({ x: 140, y: 80 });
+    expect(editor.getSnapshot().revision).toBe(0);
+  });
   it("reuses unchanged text layouts and measures changed records with its own adapter", () => {
     let measurements = 0;
     const layout = createTextLayouter((value, style) => {

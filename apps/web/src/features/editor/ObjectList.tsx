@@ -88,7 +88,7 @@ export function ObjectList({ editor, center }: { editor: Editor; center: () => P
           className="add-object"
           aria-label="Add text"
           title="Add text"
-          onClick={() => editor.addText(center())}
+          onClick={() => editor.addText(center(), "center")}
         >
           <Icon name="text" /> <span>Text</span>
         </button>

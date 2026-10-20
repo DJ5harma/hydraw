@@ -130,9 +130,12 @@ canvas controls, plus primary-agent layout integration and product sequencing.
 - Below 900 px the inspector opens as a drawer with an explicit close control,
   contained keyboard focus and an inactive background. Closing restores the
   trigger; starting text editing releases the drawer and focuses the native input.
+- Text added from insertion controls or the keyboard is centered in the current
+  viewport; text-tool clicks retain direct placement. Narrow-screen regression
+  checks verify that the initial text box fits inside the canvas.
 - Header, inspector and canvas controls own their stylesheets over shared design
   tokens. No production dependencies or document schema changes were added.
-- Formatting/lint, strict types, package boundaries, 95 unit/server tests and 74
+- Formatting/lint, strict types, package boundaries, 96 unit/server tests and 74
   development/production Chromium browser journeys passed. Blank, selected, text
   and narrow drawer layouts were visually inspected. Docker and other browsers
   were not rerun.
