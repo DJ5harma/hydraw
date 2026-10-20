@@ -43,12 +43,13 @@ Desktop editing comes first. Tablet drawing follows input QA; phones initially s
 
 ### Current execution sequence
 
-The local engine now has seven working increments and a verified code cleanup.
+The local engine now has eight working increments and a verified code cleanup.
 The next release should complete one useful architecture-diagram workflow rather
 than expand the entire tool catalog at once. [The current next-step plan](docs/NEXT.md)
-sets the order: workspace usability, attached rectangle labels, selection clipboard,
-SVG/PNG export, navigation/snapping and connector clarity, followed by a measured
-local-alpha gate. [The workspace UX plan](docs/UX_PLAN.md) specifies this UI increment.
+sets the order: canvas-first workspace and fit navigation, attached rectangle
+labels, SVG/PNG export, selection clipboard, then snapping and connector clarity,
+followed by a measured local-alpha gate. [The workspace UX proposal](docs/UX_PLAN.md)
+specifies the replacement for the current header/sidebar shell; it is not yet implemented.
 Cloud saving and collaboration follow their own correctness prototype; they do not
 block improving the local drawing experience.
 

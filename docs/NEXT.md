@@ -1,79 +1,76 @@
 # The next useful Hydraw release
 
-Updated 20 October 2026, after the local engine and code cleanup. This refines the
-near-term sequence in PLAN.md; its broader product direction and owned-engine
-constraints remain in force.
+Updated 20 October 2026 after feedback on the first workspace pass. This refines
+PLAN.md; the owned-engine boundaries and broader direction remain in force.
 
-## Release goal
+## Product focus
 
-A developer opens Hydraw, draws and names a few components, connects them, cleans
-up the layout, reuses a section and exports a diagram into documentation. The board
-remains editable and recoverable throughout. This is the first workflow to make
-excellent before adding more tools or cloud administration.
+Make architecture diagrams easy to sketch, name, tidy and put into documentation
+without rebuilding them elsewhere. Finish that workflow before expanding into a
+general whiteboard, workshop platform or design suite.
 
-The current editor already supports creation, bindings, layout and local recovery.
-Three missing capabilities interrupt this workflow: box labels are independent
-text objects, selection reuse stops at duplication, and export is native JSON
-rather than a diagram people can publish.
+Today rectangles, standalone text, bound straight connectors, multiselection,
+alignment, duplication, history, native JSON and local recovery work. Attached
+labels, fit navigation, visual export and clipboard reuse are still missing. The
+new workspace is a [reviewable design proposal](UX_PLAN.md), not shipped behavior.
 
 ## Ordered increments
 
-| Priority | Increment                       | Exit condition                                                                                                                                                                          |
-| -------- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Now      | Canvas workspace usability      | Compact, coherent shell; inspector remains reachable at narrow widths; existing journeys and responsive/focus regressions pass                                                          |
-| 1        | Labels attached to rectangles   | Type a label directly; it moves, resizes, duplicates, saves and undoes with its shape; existing files migrate without losing standalone text or bindings                                |
-| 2        | Selection clipboard             | Copy/cut/paste connected selections with fresh identities and one undo step; preserve internal bindings and detach external references safely; native input clipboard remains untouched |
-| 3        | SVG, then PNG export            | Whole-board and selection export match current geometry/text; bounds and padding are predictable; exported files can be reopened in ordinary viewers                                    |
-| 4        | Navigation and placement polish | Fit board/selection, predictable snapping and alignment feedback improve a real architecture exercise without surprising movement                                                       |
-| 5        | Connector clarity               | Connector labels and a deliberately scoped elbow-routing increment, with movement/reflow/undo regressions                                                                               |
-| Gate     | Local alpha evaluation          | Fresh users complete the target workflow; measured latency, persistence, keyboard, text input and browser checks support the release claim                                              |
+| Order | Increment                                 | Exit condition                                                                                                                                                                                                        |
+| ----- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Now   | Canvas-first workspace and fit navigation | No reserved header/default sidebar. Contextual actions preserve every existing workflow; fit board/selection makes offscreen content recoverable. Keyboard, responsive, persistence and interaction regressions pass. |
+| Next  | Labels attached to rectangles             | Type directly; label follows movement, resize, duplication, save and undo. Existing files migrate without losing standalone text or bindings.                                                                         |
+| Then  | SVG, then PNG export                      | Board/selection exports faithfully include geometry and text, use predictable bounds/padding, and open in ordinary viewers. Editable native files remain available.                                                   |
+| Then  | Selection clipboard                       | Copy/cut/paste connected selections with fresh identities and one undo step. Internal bindings survive; external references detach safely. Native input clipboard remains untouched.                                  |
+| Then  | Placement and connector clarity           | Predictable snapping with feedback, then connector labels. Add elbow routing only when real diagrams demonstrate the need and its behavior can be specified.                                                          |
+| Gate  | Local alpha evaluation                    | Fresh users finish the workflow; latency, text input, persistence, keyboard and browser evidence support the release claim.                                                                                           |
 
-Each row is a direction, not a single oversized commit. Split it into cohesive,
-runnable domain/editor/UI increments, include migrations and regressions with the
-behavior they verify, and update the milestone log as evidence arrives.
+Fit moves into the workspace increment because a canvas without a permanent object
+list needs excellent navigation immediately. Visual export moves before clipboard
+because a named diagram that cannot leave the app as an image does not complete
+the handoff. Clipboard is valuable once that end-to-end workflow works.
 
-## Next implementation: attached labels
+Each row spans small, runnable milestones. Include migrations, documentation and
+regressions with the behavior they verify; commit verified milestones separately.
+Do not combine this entire table into one implementation branch-sized change.
+
+## Attached-label contract
 
 Write an ADR before changing the portable format. Start with plain text contained
-by a rectangle, sharing the existing font metrics and native input integration.
-Keep label content and placement owned by the shape rather than simulating a
-binding to a standalone text object. Define overflow, wrapping, padding and
-minimum size explicitly; avoid automatic resizing that changes neighboring
-geometry unexpectedly.
+by a rectangle, sharing existing text metrics and native input integration. Own
+label content and placement on the shape rather than simulating attachment to an
+independent text record. Specify wrapping, padding, overflow and minimum size;
+avoid automatic resizing that unexpectedly moves neighboring geometry.
 
-Preserve current rectangle/text/connector identities through migration. Label
-editing is one undoable action; movement/resizing and graph duplication carry the
-label with the rectangle. Empty labels keep their rectangle. Standalone text stays
-useful for independent notes. Verify exports, reload, import/recovery, cancellation,
-IME composition and coordinate limits before marking the increment complete.
+Preserve rectangle/text/connector identities during migration. Label editing is
+one undoable action; movement/resizing and graph duplication carry the label.
+Empty labels retain their rectangle. Standalone text remains available for notes.
+Verify reload, native import/export/recovery, cancellation, IME composition and
+coordinate limits before calling the feature complete.
 
-## Clipboard and export boundaries
-
-Build clipboard fragments from the same graph rules as duplication, with explicit
-format/version and validation. Handle denied/unavailable clipboard access visibly,
-without losing a selection or intercepting clipboard events inside form controls.
-Copy has no history entry; cut/paste each apply one atomic transaction. Avoid
-silently accepting arbitrary JSON as editor commands.
+## Export and clipboard contracts
 
 Use shared semantic geometry and text layout for SVG; derive PNG through a tested
-render/export path. Export semantic content, not selection outlines or the canvas
-UI. Start without images/fonts/assets that introduce separate packaging concerns.
+export path. Exclude selection outlines and UI. Validate multiline text, arrowheads,
+negative coordinates, transparent backgrounds, bounds and high-DPI output. Begin
+without external assets/fonts that require a separate packaging policy.
 
-## Evidence before cloud work
+Reuse graph duplication rules for versioned clipboard fragments. Handle denied or
+unavailable clipboard access visibly without losing selection. Copy changes no
+history; cut and paste each apply an atomic transaction. Do not intercept events
+inside native text controls or accept arbitrary JSON as editor commands.
 
-Use a small reproducible architecture exercise with named services, notes and
-connections, then representative 100-, 1,000- and limit-sized fixtures. Measure
-pointer-to-render latency, text editing, layout, export and memory on stated
-hardware; a record-count allowance is not a performance guarantee. Test keyboard
-navigation, 200% browser zoom, high DPI, IME input and another browser engine.
+## Evidence before expansion
 
-Cloud saving follows the local workflow gate. It needs its own protocol prototype:
-authorized durable admission, operation IDs and retries, commit-ordered catch-up,
-local outbox/recovery, explicit conflicts and two-client conditional undo. The
-current local transaction preconditions are not that protocol. Keep Supabase,
-auth, dashboards, realtime presence and team sharing out of this UI increment.
+Use a reproducible named-service exercise, then representative 100-, 1,000- and
+limit-sized fixtures. Record hardware/browser and measure interaction latency,
+text editing, export and memory; record-count validation is not a speed guarantee.
+Include keyboard, 200% browser zoom, high DPI, IME and another browser engine.
 
-A hosted local-only preview can be evaluated separately when useful; publication
-is not part of this request. Templates, additional shape families, sketch styles,
-AI, and presentation features follow observed needs instead of competing with the
-first complete drawing workflow.
+Defer shape catalog expansion, templates, groups, sketch styles, AI, presentation,
+cloud dashboards and realtime presence until observed use supports them. Cloud
+saving needs its own correctness prototype: authorized durable admission,
+idempotent retries, commit-ordered catch-up, local outbox/recovery, conflicts and
+two-client conditional undo. Current local transaction preconditions are not that
+protocol. A hosted local-only preview is separate from cloud saving; publication
+is not part of this request.

@@ -1,0 +1,1931 @@
+<style>
+  #hydraw-canvas-concepts {
+    color-scheme: light dark;
+  }
+  #hydraw-canvas-concepts .h-variant {
+    min-height: 700px;
+  }
+  #hydraw-canvas-concepts .h-app {
+    --h-bg: light-dark(#fcfcfd, #171b20);
+    --h-surface: light-dark(#ffffff, #252b32);
+    --h-fg: light-dark(#263139, #e4e9ed);
+    --h-muted: light-dark(#6c7882, #a4b0ba);
+    --h-line: light-dark(#e1e5e8, #424b54);
+    --h-green: light-dark(#176b52, #8dd3b8);
+    --h-soft: light-dark(#eaf4ef, #273e34);
+    --h-node: light-dark(#f0f3f6, #29333c);
+    --h-node-green: light-dark(#e6f2ea, #2a4034);
+    --h-node-sand: light-dark(#fff0d5, #463d2a);
+    --h-node-rose: light-dark(#f7e4ed, #45313b);
+    --h-selection: light-dark(#3977d5, #85b1fa);
+    --h-shadow: light-dark(#1a2c3b12, #00000030);
+    position: relative;
+    height: 660px;
+    width: 100%;
+    overflow: hidden;
+    background: var(--h-bg);
+    color: var(--h-fg);
+    font:
+      13px/1.4 Inter,
+      ui-sans-serif,
+      system-ui,
+      sans-serif;
+    isolation: isolate;
+    border: 1px solid var(--h-line);
+    border-radius: 12px;
+  }
+  #hydraw-canvas-concepts .h-phone .h-app {
+    width: min(390px, 100%);
+    margin: 0 auto;
+    height: 690px;
+  }
+  #hydraw-canvas-concepts .h-app *,
+  #hydraw-canvas-concepts .h-app *::before,
+  #hydraw-canvas-concepts .h-app *::after {
+    box-sizing: border-box;
+  }
+  #hydraw-canvas-concepts .h-app [hidden] {
+    display: none !important;
+  }
+  #hydraw-canvas-concepts .h-app button,
+  #hydraw-canvas-concepts .h-app input {
+    font: inherit;
+    color: inherit;
+  }
+  #hydraw-canvas-concepts .h-app button {
+    touch-action: manipulation;
+  }
+  #hydraw-canvas-concepts .h-app button:disabled {
+    opacity: 0.35;
+  }
+  #hydraw-canvas-concepts .h-app button:focus-visible,
+  #hydraw-canvas-concepts .h-app input:focus-visible {
+    outline: 2px solid var(--h-selection);
+    outline-offset: 3px;
+  }
+  #hydraw-canvas-concepts .h-app svg.lucide {
+    width: 17px;
+    height: 17px;
+    flex: 0 0 auto;
+  }
+  #hydraw-canvas-concepts .h-canvas {
+    position: absolute;
+    inset: 0;
+    touch-action: none;
+  }
+  #hydraw-canvas-concepts .h-grid .h-canvas {
+    background-image: radial-gradient(var(--h-line) 0.8px, transparent 0.8px);
+    background-size: 24px 24px;
+  }
+  #hydraw-canvas-concepts .h-board,
+  #hydraw-canvas-concepts .h-tools,
+  #hydraw-canvas-concepts .h-context,
+  #hydraw-canvas-concepts .h-navigation,
+  #hydraw-canvas-concepts .h-utility,
+  #hydraw-canvas-concepts .h-panel {
+    background: var(--h-surface);
+    border: 1px solid var(--h-line);
+    border-radius: 10px;
+    box-shadow: 0 4px 18px var(--h-shadow);
+    z-index: 4;
+  }
+  #hydraw-canvas-concepts .h-board {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    display: flex;
+    align-items: center;
+    padding: 4px;
+    gap: 5px;
+  }
+  #hydraw-canvas-concepts .h-icon,
+  #hydraw-canvas-concepts .h-text-button,
+  #hydraw-canvas-concepts .h-tool {
+    border: 0;
+    background: transparent;
+    min-width: 34px;
+    min-height: 34px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px;
+  }
+  #hydraw-canvas-concepts .h-icon:hover:not(:disabled),
+  #hydraw-canvas-concepts .h-tool:hover,
+  #hydraw-canvas-concepts .h-text-button:hover {
+    background: var(--h-node);
+  }
+  #hydraw-canvas-concepts .h-text-button {
+    padding: 6px 9px;
+  }
+  #hydraw-canvas-concepts .h-board-name {
+    max-width: 155px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 500;
+  }
+  #hydraw-canvas-concepts .h-local {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--h-green);
+  }
+  #hydraw-canvas-concepts .h-tools {
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 3px;
+    padding: 5px;
+  }
+  #hydraw-canvas-concepts .h-tool {
+    width: 38px;
+    height: 38px;
+    color: var(--h-muted);
+  }
+  #hydraw-canvas-concepts .h-tool[aria-pressed="true"] {
+    color: var(--h-green);
+    background: var(--h-soft);
+  }
+  #hydraw-canvas-concepts .h-direct .h-tools {
+    top: auto;
+    bottom: 16px;
+  }
+  #hydraw-canvas-concepts .h-context {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: calc(100% - 24px);
+    display: flex;
+    align-items: center;
+    padding: 5px;
+    gap: 3px;
+    white-space: nowrap;
+  }
+  #hydraw-canvas-concepts .h-context-label {
+    padding: 0 8px;
+    font-size: 12px;
+    color: var(--h-muted);
+  }
+  #hydraw-canvas-concepts .h-rule {
+    height: 20px;
+    width: 1px;
+    background: var(--h-line);
+    margin: 0 3px;
+  }
+  #hydraw-canvas-concepts .h-sample {
+    width: 17px;
+    height: 17px;
+    border: 1px solid var(--h-muted);
+    background: var(--h-node);
+    border-radius: 50%;
+  }
+  #hydraw-canvas-concepts .h-wires {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    color: var(--h-muted);
+  }
+  #hydraw-canvas-concepts .h-wire {
+    stroke: currentColor;
+    stroke-width: 1.7;
+    fill: none;
+  }
+  #hydraw-canvas-concepts .h-wire.is-selected {
+    stroke: var(--h-selection);
+    stroke-width: 2.2;
+  }
+  #hydraw-canvas-concepts .h-edge {
+    position: absolute;
+    height: 24px;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    transform-origin: left center;
+    z-index: 1;
+  }
+  #hydraw-canvas-concepts .h-node {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px;
+    text-align: center;
+    border: 1px solid var(--h-muted);
+    border-radius: 7px;
+    background: var(--h-node);
+    color: var(--h-fg);
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.35;
+    z-index: 2;
+    touch-action: none;
+    user-select: none;
+  }
+  #hydraw-canvas-concepts .h-node.h-text-node {
+    background: transparent;
+    border-color: transparent;
+    text-align: left;
+    justify-content: flex-start;
+  }
+  #hydraw-canvas-concepts .h-node.is-selected {
+    outline: 1.5px solid var(--h-selection);
+    outline-offset: 3px;
+  }
+  #hydraw-canvas-concepts .h-node.is-selected::before,
+  #hydraw-canvas-concepts .h-node.is-selected::after {
+    content: "";
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border: 1px solid var(--h-selection);
+    background: var(--h-surface);
+  }
+  #hydraw-canvas-concepts .h-node.is-selected::before {
+    top: -6px;
+    left: -6px;
+  }
+  #hydraw-canvas-concepts .h-node.is-selected::after {
+    bottom: -6px;
+    right: -6px;
+  }
+  #hydraw-canvas-concepts .h-node.h-editing {
+    color: transparent;
+  }
+  #hydraw-canvas-concepts .h-inline {
+    position: absolute;
+    z-index: 3;
+    border: 1px solid var(--h-selection);
+    background: var(--h-surface);
+    border-radius: 3px;
+    padding: 7px;
+    font-size: 16px;
+    text-align: center;
+  }
+  #hydraw-canvas-concepts .h-navigation {
+    position: absolute;
+    bottom: 16px;
+    left: 14px;
+    display: flex;
+    align-items: center;
+    padding: 3px;
+    gap: 1px;
+  }
+  #hydraw-canvas-concepts .h-zoom {
+    font-size: 12px;
+    width: 45px;
+  }
+  #hydraw-canvas-concepts .h-utility {
+    position: absolute;
+    bottom: 16px;
+    right: 14px;
+    display: flex;
+    padding: 3px;
+  }
+  #hydraw-canvas-concepts .h-panel {
+    position: absolute;
+    z-index: 8;
+    width: 264px;
+    max-width: calc(100% - 28px);
+    padding: 14px;
+  }
+  #hydraw-canvas-concepts .h-panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    font-weight: 500;
+  }
+  #hydraw-canvas-concepts .h-panel-head .h-icon {
+    min-width: 28px;
+    min-height: 28px;
+  }
+  #hydraw-canvas-concepts .h-menu {
+    top: 62px;
+    left: 14px;
+  }
+  #hydraw-canvas-concepts .h-menu label {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-size: 12px;
+    color: var(--h-muted);
+  }
+  #hydraw-canvas-concepts .h-panel input {
+    width: 100%;
+    min-width: 0;
+    border: 1px solid var(--h-line);
+    border-radius: 6px;
+    padding: 7px 9px;
+    background: var(--h-bg);
+    color: var(--h-fg);
+  }
+  #hydraw-canvas-concepts .h-menu .h-status {
+    font-size: 12px;
+    color: var(--h-muted);
+    margin: 10px 0;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  #hydraw-canvas-concepts .h-menu .h-text-button,
+  #hydraw-canvas-concepts .h-outline .h-text-button {
+    display: flex;
+    width: 100%;
+    justify-content: flex-start;
+  }
+  #hydraw-canvas-concepts .h-menu hr,
+  #hydraw-canvas-concepts .h-panel hr {
+    border: 0;
+    border-top: 1px solid var(--h-line);
+    margin: 10px 0;
+  }
+  #hydraw-canvas-concepts .h-precision,
+  #hydraw-canvas-concepts .h-color,
+  #hydraw-canvas-concepts .h-arrange {
+    bottom: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  #hydraw-canvas-concepts .h-precision-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  #hydraw-canvas-concepts .h-precision label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--h-muted);
+  }
+  #hydraw-canvas-concepts .h-outline {
+    top: 62px;
+    left: 14px;
+  }
+  #hydraw-canvas-concepts .h-object-row {
+    border: 0;
+    background: transparent;
+    border-radius: 6px;
+    width: 100%;
+    min-height: 36px;
+    padding: 7px;
+    text-align: left;
+    display: flex;
+    gap: 9px;
+    align-items: center;
+  }
+  #hydraw-canvas-concepts .h-object-row[aria-pressed="true"] {
+    background: var(--h-soft);
+    color: var(--h-green);
+  }
+  #hydraw-canvas-concepts .h-object-row svg {
+    width: 14px;
+    height: 14px;
+  }
+  #hydraw-canvas-concepts .h-swatches {
+    display: flex;
+    gap: 12px;
+  }
+  #hydraw-canvas-concepts .h-swatch {
+    width: 30px;
+    height: 30px;
+    border: 1px solid var(--h-muted);
+    border-radius: 50%;
+  }
+  #hydraw-canvas-concepts .h-swatch[aria-pressed="true"] {
+    outline: 2px solid var(--h-selection);
+    outline-offset: 3px;
+  }
+  #hydraw-canvas-concepts .h-arrange-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 7px;
+  }
+  #hydraw-canvas-concepts .h-help {
+    bottom: 68px;
+    right: 14px;
+  }
+  #hydraw-canvas-concepts .h-shortcut-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 7px 0;
+    color: var(--h-muted);
+    font-size: 12px;
+  }
+  #hydraw-canvas-concepts .h-shortcut-row kbd {
+    color: var(--h-fg);
+    font:
+      12px ui-monospace,
+      monospace;
+  }
+  #hydraw-canvas-concepts .h-empty {
+    position: absolute;
+    top: 42%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(330px, calc(100% - 40px));
+    text-align: center;
+    color: var(--h-muted);
+    pointer-events: none;
+  }
+  #hydraw-canvas-concepts .h-empty p {
+    margin: 0 0 14px;
+    font-size: 14px;
+  }
+  #hydraw-canvas-concepts .h-empty .h-text-button {
+    pointer-events: auto;
+    border: 1px solid var(--h-line);
+    background: var(--h-surface);
+    color: var(--h-fg);
+  }
+  #hydraw-canvas-concepts .h-hint {
+    position: absolute;
+    left: 50%;
+    bottom: 78px;
+    transform: translateX(-50%);
+    color: var(--h-muted);
+    font-size: 12px;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  #hydraw-canvas-concepts .h-phone .h-context {
+    bottom: 72px;
+  }
+  #hydraw-canvas-concepts .h-phone .h-tools {
+    top: auto;
+    bottom: 16px;
+  }
+  #hydraw-canvas-concepts .h-phone .h-navigation {
+    bottom: auto;
+    top: 64px;
+  }
+  #hydraw-canvas-concepts .h-phone .h-utility {
+    bottom: auto;
+    top: 64px;
+  }
+  #hydraw-canvas-concepts .h-phone .h-panel:not(.h-menu):not(.h-outline):not(.h-help) {
+    bottom: 126px;
+  }
+  #hydraw-canvas-concepts .h-phone .h-context-label {
+    display: none;
+  }
+  #hydraw-canvas-concepts .h-phone .h-precision {
+    width: calc(100% - 28px);
+  }
+  #hydraw-canvas-concepts .h-phone .h-hint {
+    bottom: 122px;
+  }
+  @media (max-width: 740px) {
+    #hydraw-canvas-concepts .h-direct .h-tools {
+      top: auto;
+    }
+    #hydraw-canvas-concepts .h-context-label {
+      display: none;
+    }
+  }
+  @media (max-width: 660px) {
+    #hydraw-canvas-concepts .h-app {
+      height: 690px;
+    }
+    #hydraw-canvas-concepts .h-tools {
+      top: auto;
+      bottom: 16px;
+    }
+    #hydraw-canvas-concepts .h-context {
+      bottom: 72px;
+    }
+    #hydraw-canvas-concepts .h-navigation,
+    #hydraw-canvas-concepts .h-utility {
+      top: 64px;
+      bottom: auto;
+    }
+    #hydraw-canvas-concepts .h-panel:not(.h-menu):not(.h-outline):not(.h-help) {
+      bottom: 126px;
+    }
+    #hydraw-canvas-concepts .h-hint {
+      bottom: 122px;
+    }
+  }
+  @media (pointer: coarse) {
+    #hydraw-canvas-concepts .h-icon,
+    #hydraw-canvas-concepts .h-tool,
+    #hydraw-canvas-concepts .h-text-button {
+      min-width: 42px;
+      min-height: 44px;
+    }
+    #hydraw-canvas-concepts .h-panel input {
+      font-size: 16px;
+    }
+  }
+</style>
+<div id="hydraw-canvas-concepts">
+  <div class="viz-carousel" aria-label="Hydraw canvas workspace directions">
+    <section class="h-variant" data-variant="Quiet canvas" aria-label="Quiet canvas design">
+      <div class="h-mount"></div>
+    </section>
+    <section
+      class="h-variant h-direct"
+      data-variant="Direct editing"
+      aria-label="Direct editing design"
+      hidden
+    >
+      <div class="h-mount"></div>
+    </section>
+  </div>
+  <template id="hydraw-concept-template">
+    <div class="h-app" aria-label="Hydraw workspace concept">
+      <div class="h-canvas" aria-label="Drawing area"></div>
+      <svg class="h-wires" aria-hidden="true">
+        <defs>
+          <marker
+            markerWidth="8"
+            markerHeight="8"
+            refX="7"
+            refY="4"
+            orient="auto"
+            markerUnits="userSpaceOnUse"
+          >
+            <path d="M1 1 L7 4 L1 7" fill="none" stroke="currentColor" stroke-width="1.5"></path>
+          </marker>
+        </defs>
+        <g></g>
+      </svg>
+      <div class="h-nodes"></div>
+      <input class="h-inline" aria-label="Edit component label" maxlength="120" hidden />
+      <div class="h-board" aria-label="Board controls">
+        <button
+          class="h-icon cursor-interaction"
+          data-action="board"
+          aria-label="Board menu"
+          aria-expanded="false"
+          data-tooltip="Board menu"
+        >
+          <i data-lucide="menu" aria-hidden="true"></i>
+        </button>
+        <button
+          class="h-text-button cursor-interaction"
+          data-action="board"
+          aria-label="Board name and save status"
+          data-tooltip="Board details · saved locally"
+        >
+          <span class="h-board-name">Request flow</span
+          ><span class="h-local" aria-hidden="true"></span>
+        </button>
+      </div>
+      <div class="h-tools" role="toolbar" aria-label="Drawing tools">
+        <button
+          class="h-tool cursor-interaction"
+          data-tool="select"
+          aria-label="Select"
+          data-tooltip="Select · V"
+          aria-pressed="true"
+        >
+          <i data-lucide="mouse-pointer-2" aria-hidden="true"></i>
+        </button>
+        <button
+          class="h-tool cursor-interaction"
+          data-tool="rectangle"
+          aria-label="Rectangle"
+          data-tooltip="Rectangle · R"
+          aria-pressed="false"
+        >
+          <i data-lucide="square" aria-hidden="true"></i>
+        </button>
+        <button
+          class="h-tool cursor-interaction"
+          data-tool="connector"
+          aria-label="Connector"
+          data-tooltip="Connector · C"
+          aria-pressed="false"
+        >
+          <i data-lucide="arrow-up-right" aria-hidden="true"></i>
+        </button>
+        <button
+          class="h-tool cursor-interaction"
+          data-tool="text"
+          aria-label="Text"
+          data-tooltip="Text · T"
+          aria-pressed="false"
+        >
+          <i data-lucide="type" aria-hidden="true"></i>
+        </button>
+        <button
+          class="h-tool cursor-interaction"
+          data-tool="hand"
+          aria-label="Pan"
+          data-tooltip="Pan · H"
+          aria-pressed="false"
+        >
+          <i data-lucide="hand" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div class="h-context" role="toolbar" aria-label="Selection actions" hidden>
+        <span class="h-context-label"></span>
+        <button
+          class="h-text-button cursor-interaction"
+          data-action="color"
+          aria-label="Change fill"
+          data-tooltip="Change fill"
+        >
+          <span class="h-sample"></span><span class="h-color-label">Fill</span>
+        </button>
+        <button
+          class="h-icon cursor-interaction"
+          data-action="edit"
+          aria-label="Edit label"
+          data-tooltip="Edit label · Enter"
+        >
+          <i data-lucide="type" aria-hidden="true"></i>
+        </button>
+        <button
+          class="h-icon cursor-interaction"
+          data-action="arrange"
+          aria-label="Arrange selection"
+          data-tooltip="Align and distribute"
+          hidden
+        >
+          <i data-lucide="align-horizontal-justify-center" aria-hidden="true"></i>
+        </button>
+        <button
+          class="h-icon cursor-interaction"
+          data-action="arrowhead"
+          aria-label="Toggle arrowhead"
+          data-tooltip="Arrowhead"
+          hidden
+        >
+          <i data-lucide="move-up-right" aria-hidden="true"></i>
+        </button>
+        <button
+          class="h-icon cursor-interaction"
+          data-action="reverse"
+          aria-label="Reverse direction"
+          data-tooltip="Reverse direction"
+          hidden
+        >
+          <i data-lucide="arrow-right-left" aria-hidden="true"></i>
+        </button>
+        <span class="h-rule"></span>
+        <button
+          class="h-icon cursor-interaction"
+          data-action="duplicate"
+          aria-label="Duplicate selection"
+          data-tooltip="Duplicate · ⌘/Ctrl D"
+        >
+          <i data-lucide="copy" aria-hidden="true"></i>
+        </button>
+        <button
+          class="h-icon cursor-interaction"
+          data-action="delete"
+          aria-label="Delete selection"
+          data-tooltip="Delete"
+        >
+          <i data-lucide="trash-2" aria-hidden="true"></i>
+        </button>
+        <button
+          class="h-icon cursor-interaction"
+          data-action="precision"
+          aria-label="More properties"
+          data-tooltip="More properties"
+        >
+          <i data-lucide="sliders-horizontal" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div class="h-navigation" aria-label="View and history">
+        <button
+          class="h-icon cursor-interaction"
+          data-action="out"
+          aria-label="Zoom out"
+          data-tooltip="Zoom out"
+        >
+          <i data-lucide="minus" aria-hidden="true"></i>
+        </button>
+        <button
+          class="h-text-button h-zoom cursor-interaction"
+          data-action="fit"
+          aria-label="Fit diagram"
+          data-tooltip="Fit diagram"
+        >
+          100%
+        </button>
+        <button
+          class="h-icon cursor-interaction"
+          data-action="in"
+          aria-label="Zoom in"
+          data-tooltip="Zoom in"
+        >
+          <i data-lucide="plus" aria-hidden="true"></i>
+        </button>
+        <span class="h-rule h-history"></span>
+        <button
+          class="h-icon h-history cursor-interaction"
+          data-action="undo"
+          aria-label="Undo"
+          data-tooltip="Undo · ⌘/Ctrl Z"
+        >
+          <i data-lucide="undo-2" aria-hidden="true"></i>
+        </button>
+        <button
+          class="h-icon h-history cursor-interaction"
+          data-action="redo"
+          aria-label="Redo"
+          data-tooltip="Redo · ⌘/Ctrl Shift Z"
+        >
+          <i data-lucide="redo-2" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div class="h-utility">
+        <button
+          class="h-icon cursor-interaction"
+          data-action="help"
+          aria-label="Help"
+          data-tooltip="Keyboard shortcuts"
+        >
+          <i data-lucide="circle-help" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div class="h-empty" hidden>
+        <p>Start with a shape.</p>
+        <button class="h-text-button cursor-interaction" data-action="add">
+          <i data-lucide="plus" aria-hidden="true"></i> Add a rectangle
+        </button>
+      </div>
+      <span class="h-hint" aria-live="polite" hidden></span>
+      <div class="h-panel h-menu" data-panel="board" role="dialog" aria-label="Board menu" hidden>
+        <div class="h-panel-head">
+          Board<button
+            class="h-icon cursor-interaction"
+            data-action="close"
+            aria-label="Close board menu"
+          >
+            <i data-lucide="x" aria-hidden="true"></i>
+          </button>
+        </div>
+        <label>Board name<input class="h-name-input" value="Request flow" maxlength="120" /></label>
+        <div class="h-status">
+          <span class="h-local" aria-hidden="true"></span>Local board · saved in this browser
+        </div>
+        <hr />
+        <button class="h-text-button cursor-interaction" data-action="objects">
+          <i data-lucide="layers" aria-hidden="true"></i>Objects
+        </button>
+        <button class="h-text-button cursor-interaction" data-action="save">
+          <i data-lucide="download" aria-hidden="true"></i>Save editable file
+        </button>
+        <button class="h-text-button cursor-interaction" data-action="grid">
+          <i data-lucide="grid-2x2" aria-hidden="true"></i>Toggle grid
+        </button>
+      </div>
+      <div
+        class="h-panel h-precision"
+        data-panel="precision"
+        role="dialog"
+        aria-label="Precise geometry"
+        hidden
+      >
+        <div class="h-panel-head">
+          Precise geometry<button
+            class="h-icon cursor-interaction"
+            data-action="close"
+            aria-label="Close properties"
+          >
+            <i data-lucide="x" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div class="h-precision-grid">
+          <label>X<input type="number" data-field="x" step="1" /></label
+          ><label>Y<input type="number" data-field="y" step="1" /></label
+          ><label>Width<input type="number" data-field="w" min="70" max="300" /></label
+          ><label>Height<input type="number" data-field="h" min="50" max="180" /></label>
+        </div>
+      </div>
+      <div
+        class="h-panel h-color"
+        data-panel="color"
+        role="dialog"
+        aria-label="Fill choices"
+        hidden
+      >
+        <div class="h-panel-head">
+          Fill<button
+            class="h-icon cursor-interaction"
+            data-action="close"
+            aria-label="Close fill choices"
+          >
+            <i data-lucide="x" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div class="h-swatches">
+          <button
+            class="h-swatch cursor-interaction"
+            data-fill="neutral"
+            aria-label="Neutral fill"
+            style="background: var(--h-node)"
+          ></button
+          ><button
+            class="h-swatch cursor-interaction"
+            data-fill="green"
+            aria-label="Green fill"
+            style="background: var(--h-node-green)"
+          ></button
+          ><button
+            class="h-swatch cursor-interaction"
+            data-fill="sand"
+            aria-label="Sand fill"
+            style="background: var(--h-node-sand)"
+          ></button
+          ><button
+            class="h-swatch cursor-interaction"
+            data-fill="rose"
+            aria-label="Rose fill"
+            style="background: var(--h-node-rose)"
+          ></button>
+        </div>
+      </div>
+      <div
+        class="h-panel h-color"
+        data-panel="textstyle"
+        role="dialog"
+        aria-label="Text style"
+        hidden
+      >
+        <div class="h-panel-head">
+          Text style<button
+            class="h-icon cursor-interaction"
+            data-action="close"
+            aria-label="Close text style"
+          >
+            <i data-lucide="x" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div class="h-precision-grid">
+          <label>Size<input type="number" data-text-size min="12" max="32" value="16" /></label
+          ><button class="h-text-button cursor-interaction" data-action="bold" aria-pressed="false">
+            Bold
+          </button>
+        </div>
+      </div>
+      <div
+        class="h-panel h-arrange"
+        data-panel="arrange"
+        role="dialog"
+        aria-label="Arrange selection"
+        hidden
+      >
+        <div class="h-panel-head">
+          Align shapes<button
+            class="h-icon cursor-interaction"
+            data-action="close"
+            aria-label="Close arrangement"
+          >
+            <i data-lucide="x" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div class="h-arrange-buttons">
+          <button
+            class="h-icon cursor-interaction"
+            data-align="left"
+            aria-label="Align left"
+            data-tooltip="Align left"
+          >
+            <i data-lucide="align-start-vertical" aria-hidden="true"></i></button
+          ><button
+            class="h-icon cursor-interaction"
+            data-align="center"
+            aria-label="Align centers"
+            data-tooltip="Align centers"
+          >
+            <i data-lucide="align-center-vertical" aria-hidden="true"></i></button
+          ><button
+            class="h-icon cursor-interaction"
+            data-align="top"
+            aria-label="Align top"
+            data-tooltip="Align top"
+          >
+            <i data-lucide="align-start-horizontal" aria-hidden="true"></i>
+          </button>
+        </div>
+      </div>
+      <div class="h-panel h-outline" data-panel="objects" role="dialog" aria-label="Objects" hidden>
+        <div class="h-panel-head">
+          Objects<button
+            class="h-icon cursor-interaction"
+            data-action="close"
+            aria-label="Close objects"
+          >
+            <i data-lucide="x" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div class="h-object-rows"></div>
+      </div>
+      <div
+        class="h-panel h-help"
+        data-panel="help"
+        role="dialog"
+        aria-label="Keyboard shortcuts"
+        hidden
+      >
+        <div class="h-panel-head">
+          Shortcuts<button
+            class="h-icon cursor-interaction"
+            data-action="close"
+            aria-label="Close help"
+          >
+            <i data-lucide="x" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div class="h-shortcut-row"><span>Tools</span><kbd>V R C T H</kbd></div>
+        <div class="h-shortcut-row"><span>Add to selection</span><kbd>Shift + click</kbd></div>
+        <div class="h-shortcut-row">
+          <span>Edit component label</span><kbd>Enter / double-click</kbd>
+        </div>
+        <div class="h-shortcut-row"><span>Duplicate</span><kbd>⌘/Ctrl D</kbd></div>
+        <div class="h-shortcut-row"><span>Remove</span><kbd>Delete</kbd></div>
+        <div class="h-shortcut-row"><span>Cancel / dismiss</span><kbd>Escape</kbd></div>
+      </div>
+    </div>
+  </template>
+</div>
+<script>
+  (() => {
+    const root = document.getElementById("hydraw-canvas-concepts");
+    const template = root.querySelector("template");
+    const views = new Map();
+    const clone = (value) => JSON.parse(JSON.stringify(value));
+    const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+    const initialNodes = () => [
+      {
+        id: "gateway",
+        label: "API gateway",
+        kind: "rectangle",
+        fx: 0.2,
+        fy: 0.26,
+        px: 0.5,
+        py: 0.18,
+        w: 156,
+        h: 84,
+        fill: "neutral",
+      },
+      {
+        id: "worker",
+        label: "Worker",
+        kind: "rectangle",
+        fx: 0.68,
+        fy: 0.26,
+        px: 0.5,
+        py: 0.48,
+        w: 156,
+        h: 84,
+        fill: "neutral",
+      },
+      {
+        id: "database",
+        label: "Database",
+        kind: "rectangle",
+        fx: 0.68,
+        fy: 0.7,
+        px: 0.5,
+        py: 0.77,
+        w: 156,
+        h: 84,
+        fill: "neutral",
+      },
+    ];
+    const initialEdges = () => [
+      { id: "request", start: "gateway", end: "worker" },
+      { id: "write", start: "worker", end: "database" },
+    ];
+    const savedViews = (value) => value?.privateContent?.views ?? value?.views ?? {};
+    let restored = savedViews(window.openai?.widgetState);
+    function persist(name) {
+      if (!window.openai?.setWidgetState) return;
+      const privateViews = {};
+      views.forEach((v, key) => {
+        privateViews[key] = v.snapshot();
+      });
+      const v = views.get(name);
+      window.openai
+        .setWidgetState({
+          modelContent: {
+            lastInteractedDesign: name,
+            viewport: v.options.viewport,
+            selected: v.state.selected,
+            openPanel: v.state.panel,
+          },
+          privateContent: { views: privateViews },
+        })
+        .catch(() => {});
+    }
+    root.querySelectorAll("[data-variant]").forEach((variant, variantIndex) => {
+      const name = variant.dataset.variant;
+      variant.querySelector(".h-mount").append(template.content.cloneNode(true));
+      const app = variant.querySelector(".h-app");
+      const q = (s) => app.querySelector(s);
+      const all = (s) => Array.from(app.querySelectorAll(s));
+      q("marker").id = `h-arrow-${variantIndex}`;
+      const options = { viewport: "Desktop", scene: "Diagram", grid: false };
+      const state = {
+        nodes: initialNodes(),
+        edges: initialEdges(),
+        selected: [],
+        panel: null,
+        tool: "select",
+        editing: null,
+        dragging: false,
+        zoom: 1,
+        pan: { x: 0, y: 0 },
+        name: "Request flow",
+      };
+      const past = [],
+        future = [];
+      let priorFocus = null,
+        drag = null,
+        connectionStart = null,
+        editOriginal = "",
+        preset = options.scene;
+      function snapshot() {
+        return {
+          nodes: state.nodes,
+          edges: state.edges,
+          selected: state.selected,
+          name: state.name,
+          viewport: options.viewport,
+          grid: options.grid,
+        };
+      }
+      function applySaved(s) {
+        if (
+          !s ||
+          !Array.isArray(s.nodes) ||
+          s.nodes.length > 20 ||
+          !s.nodes.every(
+            (n) =>
+              typeof n.id === "string" &&
+              typeof n.label === "string" &&
+              Number.isFinite(n.fx) &&
+              Number.isFinite(n.fy) &&
+              Number.isFinite(n.w) &&
+              Number.isFinite(n.h),
+          )
+        )
+          return;
+        state.nodes = clone(s.nodes);
+        state.edges = Array.isArray(s.edges)
+          ? clone(s.edges).filter(
+              (e) =>
+                state.nodes.some((n) => n.id === e.start) &&
+                state.nodes.some((n) => n.id === e.end),
+            )
+          : [];
+        state.selected = Array.isArray(s.selected)
+          ? s.selected.filter(
+              (id) => state.nodes.some((n) => n.id === id) || state.edges.some((e) => e.id === id),
+            )
+          : [];
+        state.name = typeof s.name === "string" ? s.name.slice(0, 120) : "Request flow";
+        options.viewport = s.viewport === "Phone" ? "Phone" : "Desktop";
+        options.grid = !!s.grid;
+      }
+      applySaved(restored[name]);
+      const phone = () => options.viewport === "Phone" || app.clientWidth <= 660;
+      const node = (id) => state.nodes.find((n) => n.id === id);
+      const selectedNodes = () => state.nodes.filter((n) => state.selected.includes(n.id));
+      function position(n) {
+        const w = n.w * state.zoom,
+          h = n.h * state.zoom,
+          roomY = app.clientHeight - 250;
+        const x = 16 + (app.clientWidth - n.w - 32) * (phone() ? (n.px ?? 0.5) : n.fx);
+        const y = 150 + roomY * (phone() ? (n.py ?? n.fy) : n.fy);
+        return {
+          x: (x - app.clientWidth / 2) * state.zoom + app.clientWidth / 2 + state.pan.x,
+          y: (y - app.clientHeight / 2) * state.zoom + app.clientHeight / 2 + state.pan.y,
+          w,
+          h,
+        };
+      }
+      function checkpoint() {
+        past.push(clone({ nodes: state.nodes, edges: state.edges }));
+        if (past.length > 30) past.shift();
+        future.length = 0;
+      }
+      function panel(key, trigger) {
+        state.panel = state.panel === key ? null : key;
+        priorFocus = trigger ?? priorFocus;
+        render();
+        if (state.panel) q(`[data-panel="${state.panel}"] button`)?.focus();
+        persist(name);
+      }
+      function closePanel(restore = true) {
+        state.panel = null;
+        render();
+        if (restore && priorFocus?.isConnected) priorFocus.focus();
+        persist(name);
+      }
+      function selection(id, additive = false) {
+        state.selected = additive
+          ? state.selected.includes(id)
+            ? state.selected.filter((x) => x !== id)
+            : [...state.selected, id]
+          : [id];
+        state.panel = null;
+        state.tool = "select";
+        render();
+        persist(name);
+      }
+      function startEditing() {
+        const n = selectedNodes()[0];
+        if (!n || selectedNodes().length !== 1) return;
+        state.editing = n.id;
+        editOriginal = n.label;
+        state.panel = null;
+        render();
+        q(".h-inline").value = n.label;
+        q(".h-inline").focus();
+        q(".h-inline").select();
+      }
+      function finishEditing(cancel = false) {
+        if (!state.editing) return;
+        const n = node(state.editing);
+        const value = q(".h-inline").value.trim();
+        if (n && !cancel && value !== n.label) {
+          checkpoint();
+          n.label = value || "Component";
+        }
+        state.editing = null;
+        render();
+        app.querySelector(`[data-node="${n?.id}"]`)?.focus();
+        persist(name);
+      }
+      function add(kind = "rectangle", location) {
+        if (state.nodes.length >= 12) return;
+        checkpoint();
+        const id = `item-${Date.now()}-${state.nodes.length}`;
+        const n = {
+          id,
+          label: kind === "text" ? "Note" : "Component",
+          kind,
+          fx: 0.43,
+          fy: 0.4,
+          px: 0.5,
+          py: 0.35,
+          w: kind === "text" ? 200 : 156,
+          h: kind === "text" ? 50 : 84,
+          fill: "neutral",
+        };
+        state.nodes.push(n);
+        state.selected = [id];
+        state.tool = "select";
+        if (location) moveTo(n, location.x - n.w / 2, location.y - n.h / 2);
+        render();
+        if (kind === "text") startEditing();
+        persist(name);
+      }
+      function remove() {
+        if (!state.selected.length) return;
+        checkpoint();
+        const ids = new Set(state.selected);
+        state.nodes = state.nodes.filter((n) => !ids.has(n.id));
+        state.edges = state.edges.filter(
+          (e) => !ids.has(e.id) && !ids.has(e.start) && !ids.has(e.end),
+        );
+        state.selected = [];
+        state.panel = null;
+        render();
+        persist(name);
+      }
+      function duplicate() {
+        const nodes = selectedNodes();
+        if (!nodes.length || state.nodes.length + nodes.length > 12) return;
+        checkpoint();
+        const ids = new Map();
+        nodes.forEach((n, i) => ids.set(n.id, `copy-${Date.now()}-${i}`));
+        const copies = nodes.map((n) => ({
+          ...n,
+          id: ids.get(n.id),
+          fx: clamp(n.fx + 0.06, 0, 1),
+          fy: clamp(n.fy + 0.12, 0, 1),
+          py: clamp((n.py ?? n.fy) + 0.12, 0, 1),
+        }));
+        const edges = state.edges
+          .filter((e) => ids.has(e.start) && ids.has(e.end))
+          .map((e, i) => ({
+            ...e,
+            id: `edge-copy-${Date.now()}-${i}`,
+            start: ids.get(e.start),
+            end: ids.get(e.end),
+          }));
+        state.nodes.push(...copies);
+        state.edges.push(...edges);
+        state.selected = copies.map((n) => n.id);
+        state.panel = null;
+        render();
+        persist(name);
+      }
+      function moveTo(n, x, y) {
+        const localX =
+          ((x - state.pan.x - app.clientWidth / 2) / state.zoom + app.clientWidth / 2 - 16) /
+          (app.clientWidth - n.w - 32);
+        const localY =
+          ((y - state.pan.y - app.clientHeight / 2) / state.zoom + app.clientHeight / 2 - 150) /
+          (app.clientHeight - 250);
+        if (phone()) {
+          n.px = clamp(localX, 0, 1);
+          n.py = clamp(localY, -0.1, 1);
+        } else {
+          n.fx = clamp(localX, 0, 1);
+          n.fy = clamp(localY, -0.15, 1);
+        }
+      }
+      function color(n) {
+        return n?.fill === "neutral" ? "var(--h-node)" : `var(--h-node-${n?.fill ?? "green"})`;
+      }
+      function render() {
+        variant.classList.toggle("h-phone", options.viewport === "Phone");
+        app.classList.toggle("h-grid", options.grid);
+        q(".h-board-name").textContent = state.name;
+        q(".h-name-input").value = state.name;
+        all("[data-tool]").forEach((el) =>
+          el.setAttribute("aria-pressed", String(el.dataset.tool === state.tool)),
+        );
+        q(".h-canvas").style.cursor =
+          state.tool === "hand" ? "grab" : state.tool === "select" ? "default" : "crosshair";
+        const nodesLayer = q(".h-nodes");
+        nodesLayer.querySelectorAll("[data-node]").forEach((el) => {
+          if (!node(el.dataset.node)) el.remove();
+        });
+        state.nodes.forEach((n) => {
+          let el = nodesLayer.querySelector(`[data-node="${n.id}"]`);
+          if (!el) {
+            el = document.createElement("button");
+            el.type = "button";
+            el.dataset.node = n.id;
+            el.className = "h-node cursor-interaction";
+            nodesLayer.append(el);
+          }
+          const p = position(n);
+          Object.assign(el.style, {
+            left: `${p.x}px`,
+            top: `${p.y}px`,
+            width: `${p.w}px`,
+            height: `${p.h}px`,
+            background: n.kind === "text" ? "transparent" : color(n),
+            fontSize: `${Math.max(12, (n.fontSize ?? 15) * state.zoom)}px`,
+            fontWeight: n.bold ? "600" : "500",
+          });
+          el.textContent = n.label;
+          el.setAttribute("aria-label", `Select ${n.label}`);
+          el.setAttribute("aria-pressed", String(state.selected.includes(n.id)));
+          el.classList.toggle("is-selected", state.selected.includes(n.id));
+          el.classList.toggle("h-text-node", n.kind === "text");
+          el.classList.toggle("h-editing", state.editing === n.id);
+        });
+        const g = q(".h-wires g");
+        g.replaceChildren();
+        all(".h-edge").forEach((el) => el.remove());
+        state.edges.forEach((e) => {
+          const a = node(e.start),
+            b = node(e.end);
+          if (!a || !b) return;
+          const pa = position(a),
+            pb = position(b),
+            vertical = phone();
+          const start = vertical
+            ? { x: pa.x + pa.w / 2, y: pa.y + pa.h }
+            : { x: pa.x + pa.w, y: pa.y + pa.h / 2 };
+          const end = vertical ? { x: pb.x + pb.w / 2, y: pb.y } : { x: pb.x, y: pb.y + pb.h / 2 };
+          const line = document.createElementNS("http://www.w3.org/2000/svg", "path");
+          line.setAttribute("d", `M${start.x},${start.y} L${end.x},${end.y}`);
+          line.setAttribute(
+            "class",
+            `h-wire${state.selected.includes(e.id) ? " is-selected" : ""}`,
+          );
+          if (e.arrowhead !== false)
+            line.setAttribute("marker-end", `url(#h-arrow-${variantIndex})`);
+          line.style.stroke = state.selected.includes(e.id)
+            ? "var(--h-selection)"
+            : e.color === "green"
+              ? "var(--h-green)"
+              : "var(--h-muted)";
+          g.append(line);
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "h-edge cursor-interaction";
+          button.dataset.edge = e.id;
+          button.setAttribute("aria-label", `Select connection from ${a.label} to ${b.label}`);
+          const dx = end.x - start.x,
+            dy = end.y - start.y;
+          Object.assign(button.style, {
+            left: `${start.x}px`,
+            top: `${start.y - 12}px`,
+            width: `${Math.hypot(dx, dy)}px`,
+            transform: `rotate(${Math.atan2(dy, dx)}rad)`,
+          });
+          app.append(button);
+        });
+        const selected = selectedNodes(),
+          edge = state.selected.length === 1 && state.edges.some((e) => e.id === state.selected[0]);
+        const showContext =
+          state.selected.length > 0 &&
+          !state.editing &&
+          !state.dragging &&
+          state.tool !== "hand" &&
+          !["board", "objects", "help"].includes(state.panel);
+        const context = q(".h-context");
+        context.hidden = !showContext;
+        q(".h-context-label").textContent =
+          selected.length > 1
+            ? `${selected.length} selected`
+            : edge
+              ? "Connector"
+              : selected[0]?.kind === "text"
+                ? "Text"
+                : "Rectangle";
+        q('[data-action="color"]').hidden = !edge && selected.length !== 1;
+        q('[data-action="color"]').setAttribute(
+          "aria-label",
+          edge ? "Change ink" : selected[0]?.kind === "text" ? "Text style" : "Change fill",
+        );
+        q('[data-action="arrowhead"]').hidden = !edge;
+        q('[data-action="reverse"]').hidden = !edge;
+        q('[data-action="edit"]').hidden = selected.length !== 1;
+        q('[data-action="arrange"]').hidden = selected.length < 2;
+        q('[data-action="precision"]').hidden = selected.length !== 1;
+        q('[data-action="duplicate"]').hidden = !selected.length;
+        q(".h-sample").style.background = color(selected[0]);
+        q(".h-color-label").textContent = edge
+          ? "Ink"
+          : selected[0]?.kind === "text"
+            ? "Style"
+            : "Fill";
+        q('[data-action="bold"]').setAttribute("aria-pressed", String(!!selected[0]?.bold));
+        if (document.activeElement !== q("[data-text-size]"))
+          q("[data-text-size]").value = selected[0]?.fontSize ?? 16;
+        if (variant.classList.contains("h-direct") && !phone() && showContext) {
+          const boxes = selected.map(position);
+          const box = boxes[0];
+          if (box) {
+            const cx = clamp(
+              box.x + box.w / 2,
+              context.offsetWidth / 2 + 14,
+              app.clientWidth - context.offsetWidth / 2 - 14,
+            );
+            const cy = box.y > 170 ? box.y - 60 : box.y + box.h + 16;
+            context.style.left = `${cx}px`;
+            context.style.top = `${clamp(cy, 132, app.clientHeight - 130)}px`;
+            context.style.bottom = "auto";
+          }
+        } else {
+          context.style.left = "50%";
+          context.style.top = "";
+          context.style.bottom = "";
+        }
+        all("[data-panel]").forEach((el) => (el.hidden = state.panel !== el.dataset.panel));
+        q(".h-empty").hidden = state.nodes.length > 0;
+        q(".h-zoom").textContent = `${Math.round(state.zoom * 100)}%`;
+        q('[data-action="undo"]').disabled = !past.length;
+        q('[data-action="redo"]').disabled = !future.length;
+        q('[data-action="board"]').setAttribute("aria-expanded", String(state.panel === "board"));
+        q(".h-inline").hidden = !state.editing;
+        if (state.editing) {
+          const n = node(state.editing);
+          if (n) {
+            const p = position(n);
+            Object.assign(q(".h-inline").style, {
+              left: `${p.x + 10}px`,
+              top: `${p.y + p.h / 2 - 18}px`,
+              width: `${Math.max(80, p.w - 20)}px`,
+            });
+          }
+        }
+        const hint = q(".h-hint");
+        hint.hidden = state.tool === "select" || !!state.editing;
+        hint.textContent =
+          state.tool === "connector"
+            ? connectionStart
+              ? "Choose the destination"
+              : "Choose two components"
+            : state.tool === "hand"
+              ? "Drag to pan"
+              : state.tool === "text"
+                ? "Click to place text"
+                : "Click to place a rectangle";
+        const rows = q(".h-object-rows");
+        rows.replaceChildren();
+        state.nodes.forEach((n) => {
+          const b = document.createElement("button");
+          b.className = "h-object-row cursor-interaction";
+          b.type = "button";
+          b.dataset.outline = n.id;
+          b.textContent = n.label;
+          b.setAttribute("aria-pressed", String(state.selected.includes(n.id)));
+          rows.append(b);
+        });
+        if (!state.nodes.length) {
+          const empty = document.createElement("span");
+          empty.textContent = "No objects";
+          rows.append(empty);
+        }
+        all("[data-fill]").forEach((b) =>
+          b.setAttribute("aria-pressed", String(selected[0]?.fill === b.dataset.fill)),
+        );
+        if (selected[0]) {
+          const p = position(selected[0]);
+          all("[data-field]").forEach((input) => {
+            if (document.activeElement !== input)
+              input.value = Math.round(
+                input.dataset.field === "w"
+                  ? selected[0].w
+                  : input.dataset.field === "h"
+                    ? selected[0].h
+                    : p[input.dataset.field],
+              );
+          });
+        }
+        all("[data-align]").forEach((b) => (b.disabled = selected.length < 2));
+      }
+      function saveNative() {
+        const shapes = [];
+        state.nodes.forEach((n) => {
+          const p = position(n);
+          if (n.kind === "rectangle")
+            shapes.push({
+              id: n.id,
+              type: "rectangle",
+              x: p.x,
+              y: p.y,
+              width: n.w,
+              height: n.h,
+              fill:
+                { neutral: "#e7eefb", green: "#e6f2ea", sand: "#fff0d5", rose: "#f7e4ed" }[
+                  n.fill
+                ] ?? "#e7eefb",
+            });
+          shapes.push({
+            id: `label-${n.id}`,
+            type: "text",
+            x: p.x + 12,
+            y: p.y + 20,
+            width: Math.max(80, n.w - 24),
+            height: 32,
+            text: n.label,
+            fontSize: 16,
+            fontWeight: 400,
+            textAlign: "center",
+            color: "#243e33",
+          });
+        });
+        const connectors = state.edges
+          .filter((e) => node(e.start)?.kind === "rectangle" && node(e.end)?.kind === "rectangle")
+          .map((e) => ({
+            id: e.id,
+            type: "connector",
+            start: { type: "binding", shapeId: e.start },
+            end: { type: "binding", shapeId: e.end },
+            color: "#243e33",
+            arrowhead: "arrow",
+          }));
+        const url = URL.createObjectURL(
+          new Blob(
+            [
+              JSON.stringify({
+                format: "hydraw",
+                version: 2,
+                name: state.name,
+                shapes,
+                connectors,
+              }),
+            ],
+            { type: "application/json" },
+          ),
+        );
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "hydraw-concept.hydraw.json";
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+      app.addEventListener("click", (event) => {
+        const target = event.target.closest("button");
+        if (!target || drag?.moved) return;
+        if (target.dataset.node) {
+          if (state.tool === "connector") {
+            if (!connectionStart) {
+              connectionStart = target.dataset.node;
+              state.selected = [connectionStart];
+              render();
+            } else if (connectionStart !== target.dataset.node) {
+              checkpoint();
+              state.edges.push({
+                id: `connection-${Date.now()}`,
+                start: connectionStart,
+                end: target.dataset.node,
+              });
+              connectionStart = null;
+              state.tool = "select";
+              selection(target.dataset.node);
+            }
+          } else selection(target.dataset.node, event.shiftKey);
+          return;
+        }
+        if (target.dataset.edge) {
+          selection(target.dataset.edge, event.shiftKey);
+          return;
+        }
+        if (target.dataset.outline) {
+          selection(target.dataset.outline, event.shiftKey);
+          return;
+        }
+        if (target.dataset.tool) {
+          state.tool = target.dataset.tool;
+          state.panel = null;
+          connectionStart = null;
+          render();
+          persist(name);
+          return;
+        }
+        if (target.dataset.fill) {
+          const n = selectedNodes()[0];
+          const e = state.edges.find((e) => state.selected.includes(e.id));
+          if (n || e) {
+            checkpoint();
+            if (n) n.fill = target.dataset.fill;
+            else e.color = target.dataset.fill;
+          }
+          closePanel();
+          return;
+        }
+        if (target.dataset.align) {
+          const selected = selectedNodes();
+          if (selected.length < 2) return;
+          checkpoint();
+          const first = position(selected[0]);
+          selected.slice(1).forEach((n) => {
+            const p = position(n);
+            moveTo(
+              n,
+              target.dataset.align === "left"
+                ? first.x
+                : target.dataset.align === "center"
+                  ? first.x + (first.w - p.w) / 2
+                  : p.x,
+              target.dataset.align === "top" ? first.y : p.y,
+            );
+          });
+          render();
+          persist(name);
+          return;
+        }
+        const action = target.dataset.action;
+        if (action === "color" && selectedNodes()[0]?.kind === "text") {
+          panel("textstyle", target);
+          return;
+        }
+        if (action === "arrowhead" || action === "reverse") {
+          const edge = state.edges.find((e) => state.selected.includes(e.id));
+          if (edge) {
+            checkpoint();
+            if (action === "reverse") [edge.start, edge.end] = [edge.end, edge.start];
+            else edge.arrowhead = edge.arrowhead === false;
+            render();
+            persist(name);
+          }
+          return;
+        }
+        if (action === "bold") {
+          const n = selectedNodes()[0];
+          if (n) {
+            checkpoint();
+            n.bold = !n.bold;
+            render();
+            persist(name);
+          }
+          return;
+        }
+        if (["board", "objects", "precision", "color", "arrange", "help"].includes(action)) {
+          panel(action, target);
+          return;
+        }
+        if (action === "close") {
+          closePanel();
+          return;
+        }
+        if (action === "edit") {
+          startEditing();
+          return;
+        }
+        if (action === "duplicate") {
+          duplicate();
+          return;
+        }
+        if (action === "delete") {
+          remove();
+          return;
+        }
+        if (action === "add") {
+          add();
+          return;
+        }
+        if (action === "save") {
+          saveNative();
+          return;
+        }
+        if (action === "grid") {
+          options.grid = !options.grid;
+          render();
+          persist(name);
+          return;
+        }
+        if (action === "in" || action === "out") {
+          state.zoom = clamp(state.zoom * (action === "in" ? 1.15 : 1 / 1.15), 0.75, 1.5);
+          render();
+          persist(name);
+          return;
+        }
+        if (action === "fit") {
+          state.zoom = 1;
+          state.pan = { x: 0, y: 0 };
+          render();
+          persist(name);
+          return;
+        }
+        if (action === "undo" || action === "redo") {
+          const from = action === "undo" ? past : future,
+            to = action === "undo" ? future : past;
+          if (from.length) {
+            to.push(clone({ nodes: state.nodes, edges: state.edges }));
+            Object.assign(state, from.pop());
+            state.selected = state.selected.filter(
+              (id) => node(id) || state.edges.some((e) => e.id === id),
+            );
+            render();
+            persist(name);
+          }
+        }
+      });
+      app.addEventListener("dblclick", (event) => {
+        const b = event.target.closest("[data-node]");
+        if (b) {
+          selection(b.dataset.node);
+          startEditing();
+        }
+      });
+      q(".h-canvas").addEventListener("click", (event) => {
+        if (drag?.moved) return;
+        if (state.panel) {
+          closePanel(false);
+          return;
+        }
+        if (state.editing) return;
+        const box = app.getBoundingClientRect();
+        if (state.tool === "rectangle" || state.tool === "text") {
+          add(state.tool, { x: event.clientX - box.left, y: event.clientY - box.top });
+        } else if (state.tool !== "hand") {
+          state.selected = [];
+          render();
+          persist(name);
+        }
+      });
+      app.addEventListener("pointerdown", (event) => {
+        if (event.button !== 0) return;
+        const b = event.target.closest("[data-node]");
+        if (b && state.tool === "select" && !event.shiftKey && !state.editing) {
+          const n = node(b.dataset.node),
+            p = position(n);
+          drag = {
+            kind: "node",
+            id: n.id,
+            x: event.clientX,
+            y: event.clientY,
+            left: p.x,
+            top: p.y,
+            before: clone({ nodes: state.nodes, edges: state.edges }),
+            moved: false,
+          };
+          b.setPointerCapture(event.pointerId);
+        } else if (event.target === q(".h-canvas") && state.tool === "hand") {
+          drag = {
+            kind: "pan",
+            x: event.clientX,
+            y: event.clientY,
+            beforePan: { ...state.pan },
+            moved: false,
+          };
+          q(".h-canvas").setPointerCapture(event.pointerId);
+        }
+      });
+      app.addEventListener("pointermove", (event) => {
+        if (!drag) return;
+        const dx = event.clientX - drag.x,
+          dy = event.clientY - drag.y;
+        if (Math.hypot(dx, dy) < 4 && !drag.moved) return;
+        drag.moved = true;
+        state.dragging = true;
+        state.panel = null;
+        if (drag.kind === "pan") {
+          state.pan = { x: drag.beforePan.x + dx, y: drag.beforePan.y + dy };
+        } else {
+          state.selected = [drag.id];
+          moveTo(node(drag.id), drag.left + dx, drag.top + dy);
+        }
+        render();
+      });
+      app.addEventListener("pointerup", () => {
+        if (!drag) return;
+        const old = drag;
+        if (old.moved && old.kind === "node") {
+          past.push(old.before);
+          future.length = 0;
+        }
+        state.dragging = false;
+        render();
+        if (old.moved) persist(name);
+        setTimeout(() => {
+          if (drag === old) drag = null;
+        }, 0);
+      });
+      app.addEventListener("pointercancel", () => {
+        if (drag?.before) Object.assign(state, drag.before);
+        if (drag?.beforePan) state.pan = drag.beforePan;
+        drag = null;
+        state.dragging = false;
+        render();
+      });
+      q(".h-inline").addEventListener("keydown", (event) => {
+        event.stopPropagation();
+        if (event.isComposing) return;
+        if (event.key === "Enter") {
+          event.preventDefault();
+          finishEditing();
+        }
+        if (event.key === "Escape") {
+          event.preventDefault();
+          q(".h-inline").value = editOriginal;
+          finishEditing(true);
+        }
+      });
+      q(".h-inline").addEventListener("blur", () => finishEditing());
+      q(".h-name-input").addEventListener("change", (event) => {
+        state.name = event.target.value.trim() || "Untitled board";
+        render();
+        persist(name);
+      });
+      q("[data-text-size]").addEventListener("change", (event) => {
+        const n = selectedNodes()[0];
+        if (n) {
+          checkpoint();
+          n.fontSize = clamp(Number(event.target.value) || 16, 12, 32);
+          render();
+          persist(name);
+        }
+      });
+      all("[data-field]").forEach((input) =>
+        input.addEventListener("change", () => {
+          const n = selectedNodes()[0],
+            v = Number(input.value);
+          if (!n || !Number.isFinite(v)) return;
+          checkpoint();
+          const p = position(n);
+          if (input.dataset.field === "w") n.w = clamp(v, 70, 300);
+          else if (input.dataset.field === "h") n.h = clamp(v, 50, 180);
+          else
+            moveTo(n, input.dataset.field === "x" ? v : p.x, input.dataset.field === "y" ? v : p.y);
+          render();
+          persist(name);
+        }),
+      );
+      app.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          if (state.panel) {
+            event.preventDefault();
+            closePanel();
+            return;
+          }
+          state.selected = [];
+          connectionStart = null;
+          state.tool = "select";
+          render();
+          persist(name);
+          return;
+        }
+        if (event.target.matches("input")) return;
+        if (
+          event.target.closest("button") &&
+          !event.target.closest("[data-node],[data-edge]") &&
+          !event.ctrlKey &&
+          !event.metaKey
+        )
+          return;
+        const key = event.key.toLowerCase();
+        if ((event.ctrlKey || event.metaKey) && key === "a") {
+          event.preventDefault();
+          state.selected = state.nodes.map((n) => n.id);
+          render();
+          persist(name);
+          return;
+        }
+        if ((event.ctrlKey || event.metaKey) && key === "d") {
+          event.preventDefault();
+          duplicate();
+          return;
+        }
+        if (key === "delete" || key === "backspace") {
+          event.preventDefault();
+          remove();
+          return;
+        }
+        if (key === "enter" && state.selected.length === 1) {
+          event.preventDefault();
+          startEditing();
+          return;
+        }
+        const tools = { v: "select", r: "rectangle", c: "connector", t: "text", h: "hand" };
+        if (tools[key] && !event.ctrlKey && !event.metaKey) {
+          state.tool = tools[key];
+          state.panel = null;
+          render();
+          persist(name);
+        }
+      });
+      app.addEventListener("pointerdown", (event) => {
+        if (
+          state.panel &&
+          !event.target.closest("[data-panel]") &&
+          !event.target.closest("[data-action]")
+        )
+          closePanel(false);
+      });
+      function presetScene() {
+        if (options.scene !== preset) {
+          preset = options.scene;
+          state.nodes = initialNodes();
+          state.edges = initialEdges();
+          state.selected = [];
+          state.panel = null;
+          state.editing = null;
+          state.pan = { x: 0, y: 0 };
+          state.zoom = 1;
+          state.tool = "select";
+          past.length = 0;
+          future.length = 0;
+          if (preset === "Empty") {
+            state.nodes = [];
+            state.edges = [];
+          } else if (preset === "Rectangle") state.selected = ["gateway"];
+          else if (preset === "Text") {
+            state.nodes.push({
+              id: "note",
+              label: "Incoming requests",
+              kind: "text",
+              fx: 0.2,
+              fy: 0.6,
+              px: 0.5,
+              py: 0.2,
+              w: 210,
+              h: 52,
+              fill: "neutral",
+            });
+            state.selected = ["note"];
+          } else if (preset === "Connector") state.selected = ["request"];
+          else if (preset === "Multiple") state.selected = ["gateway", "worker"];
+          else if (preset === "Editing") {
+            state.selected = ["gateway"];
+          }
+        }
+        render();
+        if (preset === "Editing" && !state.editing) startEditing();
+        persist(name);
+      }
+      views.set(name, { state, options, snapshot, applySaved, render });
+      render();
+      new ResizeObserver(() => render()).observe(app);
+      if (globalThis.Tweak) {
+        const tweak = new Tweak({ container: app, onChange: presetScene });
+        tweak.addSelect(options, "viewport", { label: "Viewport", options: ["Desktop", "Phone"] });
+        tweak.addSelect(options, "scene", {
+          label: "Canvas state",
+          options: ["Diagram", "Empty", "Rectangle", "Text", "Connector", "Multiple", "Editing"],
+        });
+        tweak.addToggle(options, "grid", { label: "Grid" });
+      }
+    });
+    window.addEventListener("openai:set_globals", (event) => {
+      const values = savedViews(event.detail?.globals?.widgetState);
+      views.forEach((view, key) => {
+        if (values[key]) {
+          view.applySaved(values[key]);
+          view.render();
+        }
+      });
+    });
+    globalThis.lucide?.createIcons({ attrs: { width: 17, height: 17 } });
+  })();
+</script>

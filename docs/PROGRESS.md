@@ -142,6 +142,26 @@ canvas controls, plus primary-agent layout integration and product sequencing.
   connector, multiselection, narrow drawer and short-window layouts were visually inspected. Docker and other browsers
   were not rerun.
 
-See [the UX plan](UX_PLAN.md) for design decisions and [the current product
-sequence](NEXT.md) for the next milestones. Attached rectangle labels now precede
-clipboard and visual export so the named-diagram workflow can be completed.
+See [the original UX record](design/WORKSPACE_V1.md) for this milestone's design
+decisions. Subsequent feedback rejected the permanent header/sidebar hierarchy;
+the replacement proposal below supersedes that direction.
+
+## Design study — canvas-first workspace
+
+Prepared on 20 October 2026 after feedback on milestone 8. Production behavior
+is unchanged. Luna critiques informed the interaction hierarchy and product
+sequence; the study compares a stable selection shelf with actions anchored near
+selected objects. The default sidebar and reserved header disappear in both.
+
+[The proposal](UX_PLAN.md) specifies selection states, responsive placement,
+focus/dismissal contracts, component responsibilities and implementation gates.
+[The interactive study](design/README.md) records prototype scope and checks.
+[The revised release sequence](NEXT.md) puts fit navigation with the workspace,
+then attached labels, visual export, clipboard and placement/connector polish.
+
+`pnpm run check` passes formatting, lint, types and dependency boundaries.
+Chromium prototype interactions and both alternatives were checked at 320, 390,
+736 and 1024 px, including dark appearance. No horizontal overflow or script
+errors were observed in those checks. Production unit/browser suites were not
+rerun because production code did not change; the milestone 8 results remain
+the latest full-suite baseline.
