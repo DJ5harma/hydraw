@@ -4,7 +4,7 @@ import { BoardTransferDialog } from "../board/BoardTransferDialog.tsx";
 import type { TransferMode } from "../board/BoardTransferDialog.tsx";
 import { downloadBoard } from "../board/files.ts";
 import { BoardHeader } from "../board/BoardHeader.tsx";
-import type { BoardSession } from "../board/useBoardSession.ts";
+import type { BoardSession } from "../board/session.ts";
 import { useBoardPersistence } from "../board/useBoardPersistence.ts";
 import { BoardInspector } from "./BoardInspector.tsx";
 import { CanvasControls } from "./CanvasControls.tsx";

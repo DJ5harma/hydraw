@@ -221,3 +221,16 @@ test("ignores cancellation from a pointer that does not own the drag", async ({ 
   await page.mouse.up();
   await expect(x).toHaveValue(String(originalX + 50));
 });
+
+test("reports an unavailable canvas instead of leaving startup pending", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.addInitScript(() => {
+    HTMLCanvasElement.prototype.getContext = () => null;
+  });
+  await page.goto("/");
+  await expect(page.getByRole("alert")).toContainText("could not measure text");
+  await expect(page.getByRole("button", { name: "Reload canvas" })).toBeVisible();
+  await expect(page.getByText("Opening your canvas…")).toHaveCount(0);
+  expect(errors).toEqual([]);
+});

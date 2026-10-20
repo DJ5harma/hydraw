@@ -59,23 +59,31 @@ export class BoardPersistence {
   }
 
   connect(): () => void {
-    return this.editor.subscribe(() => {
+    const storage = this.storage;
+    const observe = () => {
       const current = this.editor.getSnapshot();
       if (current.revision === this.observedRevision) return;
       this.observedRevision = current.revision;
-      if (this.applyingReplacement || !this.storage) return;
+      if (this.applyingReplacement || !storage) return;
       this.publish({ saveState: "saving" });
       void this.enqueue(async () => {
-        await this.storage!.save(current.document);
+        await storage.save(current.document);
         if (this.editor.getSnapshot().revision === current.revision)
           this.publish({ saveState: "saved", saveError: null });
-      }).catch((error: unknown) => this.publish({ saveState: "error", saveError: message(error) }));
-    });
+      }).catch((error: unknown) => {
+        if (this.editor.getSnapshot().revision === current.revision)
+          this.publish({ saveState: "error", saveError: message(error) });
+      });
+    };
+    const disconnect = this.editor.subscribe(observe);
+    observe();
+    return disconnect;
   }
 
   async replace(next: BoardDocument): Promise<void> {
     const document = this.editor.prepareDocument(next);
-    if (!this.storage)
+    const storage = this.storage;
+    if (!storage)
       throw new Error(
         "Import needs local storage so a recovery copy can be saved. Export your current work and enable local storage first.",
       );
@@ -85,7 +93,7 @@ export class BoardPersistence {
     this.publish({ replacing: true });
     try {
       await this.enqueue(async () => {
-        await this.storage!.replace(previous, document);
+        await storage.replace(previous, document);
         this.applyingReplacement = true;
         try {
           lock.replace(document);

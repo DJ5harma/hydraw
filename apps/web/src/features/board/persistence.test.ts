@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it, vi } from "vite-plus/test";
 import { createDocument, decodeDocument } from "@hydraw/document";
 import { Editor } from "@hydraw/editor";
 import { BoardPersistence } from "./persistence.ts";
@@ -26,11 +26,54 @@ function setup() {
     },
   };
   const persistence = new BoardPersistence(editor, storage, null);
-  persistence.connect();
-  return { editor, persistence, storage, writes, stored: () => ({ primary, recovery }) };
+  const disconnect = persistence.connect();
+  return {
+    editor,
+    persistence,
+    storage,
+    writes,
+    disconnect,
+    stored: () => ({ primary, recovery }),
+  };
 }
 
 describe("board persistence coordination", () => {
+  it("saves edits made while disconnected when observation resumes", async () => {
+    const { editor, persistence, writes, disconnect, stored } = setup();
+    disconnect();
+    editor.rename("Changed while disconnected");
+    expect(writes).toEqual([]);
+    const stop = persistence.connect();
+    await vi.waitFor(() => expect(persistence.getSnapshot().saveState).toBe("saved"));
+    expect(stored().primary.name).toBe("Changed while disconnected");
+    expect(writes).toEqual(["save:Changed while disconnected"]);
+    stop();
+  });
+
+  it("does not report an obsolete failure while the latest revision is still saving", async () => {
+    const { editor, persistence, storage } = setup();
+    let failOld!: (error: Error) => void;
+    let finishLatest!: () => void;
+    const old = new Promise<void>((_, reject) => {
+      failOld = reject;
+    });
+    const latest = new Promise<void>((resolve) => {
+      finishLatest = resolve;
+    });
+    const started: string[] = [];
+    storage.save = async (document) => {
+      started.push(document.name);
+      await (document.name === "Old" ? old : latest);
+    };
+    editor.rename("Old");
+    await vi.waitFor(() => expect(started).toEqual(["Old"]));
+    editor.rename("Latest");
+    failOld(new Error("Obsolete failure"));
+    await vi.waitFor(() => expect(started).toEqual(["Old", "Latest"]));
+    expect(persistence.getSnapshot()).toMatchObject({ saveState: "saving", saveError: null });
+    finishLatest();
+    await vi.waitFor(() => expect(persistence.getSnapshot().saveState).toBe("saved"));
+  });
   it("drains autosaves before replacement, resets history, and swaps the recovery board", async () => {
     const { editor, persistence, writes, stored } = setup();
     editor.rename("Original");

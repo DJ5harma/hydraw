@@ -3,8 +3,6 @@ import type { Editor } from "@hydraw/editor";
 import { BoardPersistence } from "./persistence.ts";
 import type { LocalBoard } from "./storage.ts";
 
-export type { SaveState } from "./persistence.ts";
-
 export function useBoardPersistence(
   editor: Editor,
   storage: LocalBoard | null,

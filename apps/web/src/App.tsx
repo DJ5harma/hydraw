@@ -3,7 +3,15 @@ import { useBoardSession } from "./features/board/useBoardSession.ts";
 import { Workspace } from "./features/editor/Workspace.tsx";
 
 export function App() {
-  const session = useBoardSession();
+  const { session, error } = useBoardSession();
+  if (error)
+    return (
+      <div className="loading" role="alert">
+        <Mark />
+        <p>{error}</p>
+        <button onClick={() => window.location.reload()}>Reload canvas</button>
+      </div>
+    );
   if (!session)
     return (
       <div className="loading">

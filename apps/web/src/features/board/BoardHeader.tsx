@@ -1,5 +1,5 @@
 import { Icon, Mark } from "../../components/icons.tsx";
-import type { SaveState } from "./useBoardPersistence.ts";
+import type { SaveState } from "./persistence.ts";
 export function BoardHeader({
   name,
   saveState,
