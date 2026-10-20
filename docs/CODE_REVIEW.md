@@ -17,7 +17,7 @@ cleanup; missing product features are not code defects.
 | Session initialization couples resource acquisition and React state publication                     | Editor initialization failures can retain the writer lock and database      | Fixed: resource-owning session factory, cancellation cleanup and explicit startup errors |
 | Persistence only observes future subscription events                                                | Changes made while disconnected can miss autosave after reconnect           | Fixed: reconnect reconciles revisions; obsolete saves cannot replace current status      |
 | Inspector combines object navigation, styling and selection actions; palettes/numeric drafts repeat | UI responsibilities and validation behavior can drift                       | Fixed: object navigation, numeric drafts and typed palettes have focused components      |
-| Missing built assets fall through to the HTML navigation fallback                                   | Stale script/style URLs report success with the wrong content type          | Open                                                                                     |
+| Missing built assets fall through to the HTML navigation fallback                                   | Stale script/style URLs report success with the wrong content type          | Fixed: missing assets return 404; dotted frontend routes still receive the SPA           |
 
 Keep the existing package direction, atomic replacement queue, mutation lease,
 version migrations, native text input and gesture-scoped history. These mechanisms

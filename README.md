@@ -1,6 +1,6 @@
 # Hydraw
 
-An owned visual workspace, built incrementally. The current increment is a local visual editor with rectangles, text and bound connectors with a React shell and a framework-independent Canvas 2D engine. See [PLAN.md](PLAN.md) for the larger product direction and [the milestone log](docs/PROGRESS.md) for what actually exists.
+An owned visual workspace, built incrementally. The current increment is a local visual editor with rectangles, text and bound connectors with a React shell and a framework-independent Canvas 2D engine. See [PLAN.md](PLAN.md) for the larger product direction, [the milestone log](docs/PROGRESS.md) for what actually exists, and [the code audit](docs/CODE_REVIEW.md) for cleanup findings.
 
 ## Run locally
 
@@ -29,7 +29,7 @@ docker build -t hydraw .
 docker run --rm -p 3000:3000 hydraw
 ```
 
-The Dockerfile builds React and Hono together. The runtime image contains the bundled backend and frontend assets; it does not install workspace dependencies or run a separate frontend server. A single Hono process listens on port 3000: `/api` and `/api/*` belong to the backend, and other GET/HEAD paths serve frontend files or React's entry point. Frontend deep links may contain dots.
+The Dockerfile builds React and Hono together. The runtime image contains the bundled backend and frontend assets; it does not install workspace dependencies or run a separate frontend server. A single Hono process listens on port 3000: `/api` and `/api/*` belong to the backend, and other GET/HEAD paths serve frontend files or React's entry point. Missing built assets return 404 instead of HTML. Frontend deep links may contain dots.
 
 ## Current slice
 

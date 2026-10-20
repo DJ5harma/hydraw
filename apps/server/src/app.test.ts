@@ -39,3 +39,20 @@ it("mounts backend routes under /api and the built frontend everywhere else", as
     service: "hydraw",
   });
 });
+
+it("returns 404 for missing built assets while retaining dotted application routes", async () => {
+  const app = createApp(root);
+  for (const path of ["/assets", "/assets/old-build.js", "/assets/old-build.css"]) {
+    const response = await app.request(path);
+    expect(response.status).toBe(404);
+    expect(await response.text()).not.toContain("<title>Hydraw</title>");
+    const head = await app.request(path, { method: "HEAD" });
+    expect(head.status).toBe(404);
+    expect(await head.text()).toBe("");
+  }
+  const asset = await app.request("/assets/app-abc.js", { method: "HEAD" });
+  expect(asset.status).toBe(200);
+  expect(await asset.text()).toBe("");
+  const navigation = await app.request("/board/architecture.v2", { method: "HEAD" });
+  expect(navigation.status).toBe(200);
+});
