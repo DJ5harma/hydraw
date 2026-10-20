@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 import {
+  MAX_DOCUMENT_BYTES,
   createDocument,
   decodeDocument,
   hitTest,
@@ -10,7 +11,9 @@ import {
 describe("semantic documents", () => {
   it("rejects malformed JSON and measures the file limit in UTF-8 bytes", () => {
     expect(() => parseDocument("{broken")).toThrow("not valid JSON");
-    expect(() => parseDocument('"' + "😀".repeat(500_000) + '"')).toThrow("too large");
+    expect(() => parseDocument('"' + "😀".repeat(MAX_DOCUMENT_BYTES / 4) + '"')).toThrow(
+      "too large",
+    );
   });
   const shape = rectangleBetween("a", { x: 90, y: 80 }, { x: 10, y: 20 }, "#e7eefb");
   it("normalizes reverse drawing and round-trips known semantic data", () => {
@@ -31,7 +34,7 @@ describe("semantic documents", () => {
     expect(() => decodeDocument({ ...createDocument(), shapes: [shape, shape] })).toThrow(
       "invalid",
     );
-    expect(() => parseDocument(" ".repeat(2_000_001))).toThrow("too large");
+    expect(() => parseDocument(" ".repeat(MAX_DOCUMENT_BYTES + 1))).toThrow("too large");
   });
   it("hits the topmost shape and includes its border", () => {
     const front = { ...shape, id: "front" };

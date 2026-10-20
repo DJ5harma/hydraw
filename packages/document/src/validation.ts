@@ -72,6 +72,11 @@ export function decodeDocument(value: unknown): BoardDocument {
   });
 }
 
+/** Compact native encoding; never serialize view state or unknown input fields. */
+export function serializeDocument(document: BoardDocument): string {
+  return JSON.stringify(decodeDocument(document));
+}
+
 export function parseDocument(json: string): BoardDocument {
   if (json.length > MAX_DOCUMENT_BYTES) throw new Error("This board file is too large.");
   let bytes = 0;

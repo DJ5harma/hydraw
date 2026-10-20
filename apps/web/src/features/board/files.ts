@@ -1,9 +1,9 @@
-import { MAX_DOCUMENT_BYTES, parseDocument } from "@hydraw/document";
+import { MAX_DOCUMENT_BYTES, parseDocument, serializeDocument } from "@hydraw/document";
 import type { BoardDocument } from "@hydraw/document";
 
 export function downloadBoard(document: BoardDocument): void {
   const url = URL.createObjectURL(
-    new Blob([JSON.stringify(document, null, 2)], { type: "application/json" }),
+    new Blob([serializeDocument(document)], { type: "application/json" }),
   );
   const anchor = window.document.createElement("a");
   anchor.href = url;
@@ -14,6 +14,8 @@ export function downloadBoard(document: BoardDocument): void {
 
 export async function readBoardFile(file: File): Promise<BoardDocument> {
   if (file.size > MAX_DOCUMENT_BYTES)
-    throw new Error("This board file is too large. The limit is 2 MB.");
+    throw new Error(
+      `This board file is too large. The limit is ${MAX_DOCUMENT_BYTES / 1_000_000} MB.`,
+    );
   return parseDocument(await file.text());
 }

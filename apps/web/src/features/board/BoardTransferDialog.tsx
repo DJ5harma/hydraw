@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
+import { MAX_DOCUMENT_BYTES } from "@hydraw/document";
 import type { BoardDocument } from "@hydraw/document";
 import { Icon } from "../../components/icons.tsx";
 import { downloadBoard, readBoardFile } from "./files.ts";
@@ -109,7 +110,7 @@ export function BoardTransferDialog({
               void choose(file);
             }}
           />
-          <small>{fileName || "Versions 0–2 · up to 2 MB"}</small>
+          <small>{fileName || `Versions 0–2 · up to ${MAX_DOCUMENT_BYTES / 1_000_000} MB`}</small>
         </label>
       )}
       {reading && <p className="transfer-reading">Reading and validating your board…</p>}

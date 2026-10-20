@@ -49,7 +49,7 @@ The Dockerfile builds React and Hono together. The runtime image contains the bu
 - Deleting a shape removes its attached connectors in one undoable action. Clearing an existing text object follows the same rule.
 - Rename the board and export version 2 semantic JSON as `.hydraw.json`. Existing version 0 rectangle and version 1 text boards migrate when opened.
 - Recover the current board from IndexedDB after reload. Save status changes only after the storage transaction commits.
-- Import version 0, 1 or 2 `.hydraw.json` files up to 2 MB, with validation and a name/object-count preview before opening. Export the current board directly from the review dialog.
+- Import version 0, 1 or 2 `.hydraw.json` files up to 80 MB, with validation and a name/object-count preview before opening. Export the current board directly from the review dialog.
 - Keep one previous board when importing or restoring. The current board and recovery copy change in one storage transaction; failed imports preserve both. Restore is reversible by restoring again.
 
 One tab owns the local writer lock. Additional tabs enter an explicitly unsaved session instead of overwriting that board. If storage fails or saved data cannot be decoded, the app preserves existing storage and offers in-memory editing/export. Browser storage can still be cleared or evicted; export valuable work.
@@ -89,7 +89,7 @@ An already loaded page can edit without network access. Offline application star
 
 Text has one system font family; custom fonts, rich text, rectangle labels and automatic camera scrolling during long edits are future work. Whitespace-only text drafts are discarded; clearing an existing object removes it as an undoable edit. Font metrics can vary across platforms, so text height is recalculated on opening/import.
 
-Connector routing is straight, with automatic perimeter attachments. Elbow routing, custom ports, self-loops and connector labels are future work. Edges render beneath nodes and share a separate collection; no arbitrary node/edge stacking controls yet. Current limits are 5,000 shapes, 5,000 connectors and 2 MB imported files.
+Connector routing is straight, with automatic perimeter attachments. Elbow routing, custom ports, self-loops and connector labels are future work. Edges render beneath nodes and share a separate collection; no arbitrary node/edge stacking controls yet. Current limits are 5,000 shapes, 5,000 connectors and 80 MB imported files.
 
 Selection currently supports translation, duplication, deletion, alignment and center distribution. Group resizing/rotation, clipboard transfer and bulk styling are future work. Distribution uses equal center spacing rather than equal edge gaps; it does not prevent overlaps. Selection itself is transient and is not persisted or recorded in document history.
 

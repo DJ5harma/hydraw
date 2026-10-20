@@ -1,3 +1,4 @@
+import { MAX_DOCUMENT_BYTES } from "../../packages/document/src/index.ts";
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
@@ -116,9 +117,14 @@ test("invalid, unsupported and oversized imports leave the saved board untouched
       "duplicate",
     ],
     [JSON.stringify({ ...imported, shapes: [{ ...imported.shapes[0], width: -1 }] }), "invalid"],
-    [" ".repeat(2_000_001), "too large"],
+    ["oversized", "too large"],
   ];
   for (const [json, message] of cases) {
+    if (json === "oversized") {
+      await page.evaluate((size) => {
+        Object.defineProperty(File.prototype, "size", { get: () => size });
+      }, MAX_DOCUMENT_BYTES + 1);
+    }
     await choose(page, json);
     await expect(page.getByRole("dialog").getByRole("alert")).toContainText(message);
     await expect(page.getByRole("button", { name: "Open imported board" })).toBeDisabled();
