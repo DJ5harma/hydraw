@@ -25,6 +25,20 @@ have concrete correctness responsibilities and should not be removed as cosmetic
 "simplification". Do not introduce a general state framework, plugin system or
 speculative cloud abstractions during this cleanup.
 
-Validation: focused regressions with each correctness change, existing browser
-journeys for interaction refactors, then the complete `pnpm run ready` suite.
-Docker verification is separate and should be reported explicitly if not run.
+Verification completed on 20 October 2026:
+
+- `pnpm run ready` passed formatting/lint, strict types, package boundaries, 95
+  unit/server tests, production builds and 62 development/production Chromium
+  browser journeys.
+- Focused regressions cover large export round trips, worst-case JSON size,
+  transaction identity changes and collection sharing, boundary movement, failed
+  gestures, pointer ownership, indexed connector geometry, text layout caching,
+  session cancellation/failure, persistence reconnects and missing asset routes.
+- Numeric-input error layouts were visually checked at 1440×900 and 900×700.
+- No new dependencies were added. Docker and other browsers were not rerun.
+
+This closes the findings in this review; it does not establish that every possible
+bug has been eliminated. Large-board latency/memory measurements, broader input
+and accessibility QA, and the product roadmap remain separate work. The 80 MB
+file envelope accommodates the existing record limits; it is not a performance
+claim for maximum-size documents.

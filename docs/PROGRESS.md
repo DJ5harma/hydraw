@@ -84,3 +84,32 @@ Implemented on 20 October 2026:
 - 81 unit/server tests and 58 development/production browser checks passed, including all alignment modes, distribution, text/binding preservation, undo/redo, reload and coordinate-error recovery. Desktop and narrower inspector layouts visually checked. No runtime dependencies or schema version changes.
 
 Next: clipboard copy/paste. Keep each slice runnable and verified before expanding.
+
+## Maintenance — code audit and simplification
+
+Completed on 20 October 2026 after milestone 7. See [the audit](CODE_REVIEW.md) for
+all eleven findings and their resolution.
+
+- Native export now uses validated compact JSON. The import envelope is 80 MB so
+  supported text-heavy boards can reopen their backups; shape, connector and text
+  limits are unchanged.
+- Shared atomic collection application removes duplicated transaction rules and
+  retains untouched arrays. Connector batches use a derived shape index; canvas
+  text layouts use a per-renderer weak cache.
+- Pure gesture planning is separate from editor coordination. Single-object and
+  group drags share translation constraints. Failed completions clear previews,
+  and pointer cleanup respects the owning pointer.
+- A board-session factory owns startup resources independently of React.
+  Initialization failures release storage, cancellation does not publish stale
+  sessions, and unavailable canvas support produces an explicit startup error.
+- Persistence observation reconciles missed revisions on reconnect and ignores
+  obsolete write failures when reporting the current save state.
+- Inspector object navigation, color swatches and validated numeric controls have
+  focused components. Missing built assets return 404 while frontend navigation
+  retains its SPA fallback.
+- `pnpm run ready` passed: lint/format, strict types, package boundaries, 95
+  unit/server tests, production builds and 62 Chromium browser journeys.
+  Desktop/narrow numeric-error layouts were inspected. No dependencies added;
+  Docker and other browsers were not rerun.
+
+The next product milestone remains clipboard copy/paste.
