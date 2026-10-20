@@ -13,12 +13,14 @@ import { CanvasSurface } from "./CanvasSurface.tsx";
 import { EditorToolbar } from "./EditorToolbar.tsx";
 import { EmptyCanvas } from "./EmptyCanvas.tsx";
 import { createEditorControls } from "./controls.ts";
+import { useInspectorPanel } from "./useInspectorPanel.ts";
 import { useEditorSnapshot } from "./useEditorSnapshot.ts";
 
 export function Workspace({ session }: { session: BoardSession }) {
   const { editor, storage } = session;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const snapshot = useEditorSnapshot(editor);
+  const inspector = useInspectorPanel(snapshot.textEditing !== null);
   const [actionError, setActionError] = useState<string | null>(null);
   function runSelectionAction(action: () => void) {
     try {
@@ -44,21 +46,26 @@ export function Workspace({ session }: { session: BoardSession }) {
   const [transfer, setTransfer] = useState<TransferMode | null>(null);
   return (
     <main className="workspace" onKeyDown={keyboard}>
-      <BoardHeader
-        name={snapshot.document.name}
-        saveState={saveState}
-        onRename={(name) => editor.rename(name)}
-        onExport={() => downloadBoard(editor.getSnapshot().document)}
-        onImport={() => {
-          editor.cancelGesture();
-          setTransfer("import");
-        }}
-        onRestore={() => {
-          editor.cancelGesture();
-          setTransfer("restore");
-        }}
-        canRestore={recovery !== null}
-      />
+      <div className="workspace-header" inert={inspector.open && inspector.narrow}>
+        <BoardHeader
+          inspectorOpen={inspector.open}
+          onToggleInspector={inspector.toggle}
+          inspectorToggleRef={inspector.toggleRef}
+          name={snapshot.document.name}
+          saveState={saveState}
+          onRename={(name) => editor.rename(name)}
+          onExport={() => downloadBoard(editor.getSnapshot().document)}
+          onImport={() => {
+            editor.cancelGesture();
+            setTransfer("import");
+          }}
+          onRestore={() => {
+            editor.cancelGesture();
+            setTransfer("restore");
+          }}
+          canRestore={recovery !== null}
+        />
+      </div>
       {actionError && (
         <div className="storage-warning selection-warning" role="alert">
           {actionError}
@@ -79,9 +86,17 @@ export function Workspace({ session }: { session: BoardSession }) {
         </div>
       )}
       <div className="workspace-body">
-        <section className="stage" aria-label="Drawing workspace">
+        <section
+          className="stage"
+          aria-label="Drawing workspace"
+          inert={inspector.open && inspector.narrow}
+        >
           <CanvasSurface editor={editor} canvasRef={canvasRef} />
-          <InlineTextEditor editor={editor} canvasRef={canvasRef} />
+          <InlineTextEditor
+            editor={editor}
+            canvasRef={canvasRef}
+            interactive={!inspector.open || !inspector.narrow}
+          />
           <EditorToolbar editor={editor} selectTool={selectTool} />
           {snapshot.document.shapes.length === 0 &&
             snapshot.document.connectors.length === 0 &&
@@ -93,13 +108,37 @@ export function Workspace({ session }: { session: BoardSession }) {
             )}
           <CanvasControls editor={editor} center={center} />
         </section>
-        <BoardInspector
-          editor={editor}
-          center={center}
-          onDuplicate={duplicate}
-          onAlign={align}
-          onDistribute={distribute}
-        />
+        {inspector.open && inspector.narrow && (
+          <button
+            className="inspector-scrim"
+            aria-hidden="true"
+            onClick={inspector.close}
+            tabIndex={-1}
+          />
+        )}
+        <div
+          className="inspector-shell"
+          hidden={!inspector.open}
+          ref={inspector.panelRef}
+          role={inspector.narrow ? "dialog" : undefined}
+          aria-modal={inspector.narrow && inspector.open ? true : undefined}
+          aria-label={inspector.narrow ? "Inspector" : undefined}
+          onKeyDown={inspector.keyboard}
+        >
+          <div className="inspector-drawer-header">
+            <span>Inspector</span>
+            <button className="icon-button" aria-label="Close inspector" onClick={inspector.close}>
+              ×
+            </button>
+          </div>
+          <BoardInspector
+            editor={editor}
+            center={center}
+            onDuplicate={duplicate}
+            onAlign={align}
+            onDistribute={distribute}
+          />
+        </div>
       </div>
       {transfer && (
         <BoardTransferDialog

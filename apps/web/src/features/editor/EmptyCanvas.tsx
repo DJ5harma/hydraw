@@ -1,24 +1,15 @@
 import { Icon } from "../../components/icons.tsx";
+
 export function EmptyCanvas({ onStart }: { onStart: () => void }) {
   return (
     <div className="empty-canvas">
-      <div className="empty-symbol">
-        <span />
-        <span />
-        <i />
-      </div>
-      <span className="eyebrow">ROOM TO THINK</span>
-      <h1>
-        Every idea starts
-        <br />
-        with a little space.
-      </h1>
-      <p>Make your first mark. The rest can follow.</p>
+      <h1>Create your first diagram</h1>
+      <p>Draw a shape to get started. You can move and style it anytime.</p>
       <button className="start-button" onClick={onStart}>
         Draw a rectangle <Icon name="arrow" />
       </button>
       <span className="empty-shortcut">
-        or focus the canvas and press <kbd>Enter</kbd>
+        Press <kbd>R</kbd> to choose the rectangle tool
       </span>
     </div>
   );

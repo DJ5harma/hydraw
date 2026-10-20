@@ -7,7 +7,7 @@ import { ColorSwatches, inkPalette } from "./ColorSwatches.tsx";
 export function TextStyleControls({ shape, editor }: { shape: TextShape; editor: Editor }) {
   return (
     <section className="inspector-section text-style-controls">
-      <h3>TEXT</h3>
+      <h3>Text</h3>
       <button className="file-button edit-text-button" onClick={() => editor.editText(shape.id)}>
         Edit text
       </button>
@@ -49,10 +49,6 @@ export function TextStyleControls({ shape, editor }: { shape: TextShape; editor:
         suffix="text"
         ink
       />
-      <p className="inspector-note">
-        Double-click text or press Enter to edit. Resize its width to wrap; height grows
-        automatically.
-      </p>
     </section>
   );
 }

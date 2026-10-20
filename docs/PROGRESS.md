@@ -113,3 +113,30 @@ all eleven findings and their resolution.
   Docker and other browsers were not rerun.
 
 The next product milestone remains clipboard copy/paste.
+
+## Milestone 8 — canvas workspace usability
+
+Implemented on 20 October 2026 with Luna agents owning the header, inspector and
+canvas controls, plus primary-agent layout integration and product sequencing.
+
+- Compact 56 px header keeps board identity, local save feedback and file actions
+  visible. Enter commits a rename; Escape cancels it. An inspector toggle expands
+  the desktop canvas without changing selection or content.
+- Relevant properties and compact selection actions replace decorative inspector
+  copy. Bounded object navigation and a short insertion row remain accessible.
+- A smaller tool dock, quiet empty state, stable zoom controls and dismissible
+  keyboard reference give the canvas a clearer hierarchy. The reference supports
+  close, Escape and outside-pointer dismissal with focus restoration.
+- Below 900 px the inspector opens as a drawer with an explicit close control,
+  contained keyboard focus and an inactive background. Closing restores the
+  trigger; starting text editing releases the drawer and focuses the native input.
+- Header, inspector and canvas controls own their stylesheets over shared design
+  tokens. No production dependencies or document schema changes were added.
+- Formatting/lint, strict types, package boundaries, 95 unit/server tests and 74
+  development/production Chromium browser journeys passed. Blank, selected, text
+  and narrow drawer layouts were visually inspected. Docker and other browsers
+  were not rerun.
+
+See [the UX plan](UX_PLAN.md) for design decisions and [the current product
+sequence](NEXT.md) for the next milestones. Attached rectangle labels now precede
+clipboard and visual export so the named-diagram workflow can be completed.

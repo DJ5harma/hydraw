@@ -1,0 +1,370 @@
+.toolbar {
+  position: absolute;
+  z-index: 3;
+  top: 16px;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  max-width: calc(100% - 24px);
+  padding: 5px;
+  transform: translateX(-50%);
+  border: 1px solid var(--line, #e0e5eb);
+  border-radius: var(--radius, 10px);
+  background: var(--surface, #fff);
+  box-shadow: var(--shadow, 0 8px 24px #1424380a);
+}
+
+.tool-button {
+  position: relative;
+  display: flex;
+  flex: 0 0 38px;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-muted, #647182);
+}
+
+.tool-button svg {
+  width: 17px;
+  height: 17px;
+}
+
+.tool-button:hover:not(:disabled) {
+  background: var(--surface-muted, #f7f9fb);
+  color: var(--text, #202a35);
+}
+
+.tool-button.is-active {
+  background: var(--accent-soft, #e8f4ee);
+  color: var(--accent, #176b52);
+}
+
+.tool-button:focus-visible,
+.zoom-controls button:focus-visible,
+.help-button:focus-visible,
+.shortcuts-close:focus-visible,
+.start-button:focus-visible {
+  outline: 2px solid var(--accent, #176b52);
+  outline-offset: 2px;
+}
+
+.tool-button kbd {
+  position: absolute;
+  right: 3px;
+  bottom: 2px;
+  color: var(--text-muted, #647182);
+  font-size: 8px;
+  line-height: 1;
+}
+
+.tool-button.is-active kbd {
+  color: var(--accent, #176b52);
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 24px;
+  margin: 0 3px;
+  background: var(--line, #e0e5eb);
+}
+
+.history-button {
+  flex-basis: 34px;
+  width: 34px;
+}
+
+.history-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.empty-canvas {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(420px, calc(100% - 36px));
+  transform: translate(-50%, -42%);
+  text-align: center;
+  pointer-events: none;
+}
+
+.empty-canvas h1 {
+  margin: 0 0 9px;
+  color: var(--text, #202a35);
+  font-size: clamp(20px, 2.6vw, 25px);
+  font-weight: 620;
+  letter-spacing: -0.55px;
+  line-height: 1.25;
+}
+
+.empty-canvas p {
+  margin: 0 auto 20px;
+  color: var(--text-muted, #647182);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.start-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 38px;
+  padding: 0 13px;
+  border: 1px solid var(--accent, #176b52);
+  border-radius: 7px;
+  background: var(--accent, #176b52);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 560;
+  pointer-events: auto;
+}
+
+.start-button:hover {
+  filter: brightness(0.94);
+}
+
+.start-button svg {
+  width: 14px;
+  height: 14px;
+}
+
+.empty-shortcut {
+  display: block;
+  margin-top: 13px;
+  color: var(--text-muted, #647182);
+  font-size: 11px;
+}
+
+.empty-shortcut kbd,
+.canvas-bottom kbd,
+.shortcuts kbd {
+  padding: 2px 5px;
+  border: 1px solid var(--line, #e0e5eb);
+  border-radius: 4px;
+  background: var(--surface-muted, #f7f9fb);
+  color: var(--text, #202a35);
+  font-size: 10px;
+}
+
+.canvas-bottom {
+  position: absolute;
+  right: 18px;
+  bottom: 16px;
+  left: 18px;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.zoom-controls {
+  display: flex;
+  padding: 3px;
+  border: 1px solid var(--line, #e0e5eb);
+  border-radius: 8px;
+  background: var(--surface, #fff);
+  box-shadow: var(--shadow, 0 8px 24px #1424380a);
+  pointer-events: auto;
+}
+
+.zoom-controls button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 29px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-muted, #647182);
+}
+
+.zoom-controls button:hover {
+  background: var(--surface-muted, #f7f9fb);
+  color: var(--text, #202a35);
+}
+
+.zoom-controls svg {
+  width: 14px;
+  height: 14px;
+}
+
+.zoom-controls .zoom-value {
+  width: 45px;
+  color: var(--text, #202a35);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.canvas-bottom p {
+  overflow: hidden;
+  margin: 0;
+  color: var(--text-muted, #647182);
+  font-size: 11px;
+  line-height: 1.4;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.canvas-bottom p span {
+  margin: 0 4px;
+  color: var(--line, #e0e5eb);
+}
+
+.help-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 31px;
+  height: 31px;
+  padding: 0;
+  border: 1px solid var(--line, #e0e5eb);
+  border-radius: 50%;
+  background: var(--surface, #fff);
+  color: var(--text-muted, #647182);
+  font-size: 14px;
+  font-weight: 600;
+  pointer-events: auto;
+  box-shadow: var(--shadow, 0 8px 24px #1424380a);
+}
+
+.help-button:hover,
+.help-button[aria-expanded="true"] {
+  border-color: var(--accent, #176b52);
+  color: var(--accent, #176b52);
+}
+
+.shortcuts {
+  position: absolute;
+  right: 18px;
+  bottom: 58px;
+  z-index: 5;
+  width: min(350px, calc(100% - 24px));
+  max-height: min(70%, 560px);
+  overflow: auto;
+  padding: 15px;
+  border: 1px solid var(--line, #e0e5eb);
+  border-radius: var(--radius, 10px);
+  background: var(--surface, #fff);
+  box-shadow: var(--shadow, 0 8px 24px #1424380a);
+}
+
+.shortcuts-heading {
+  position: sticky;
+  top: -15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: -15px -15px 8px;
+  padding: 13px 15px 10px;
+  border-bottom: 1px solid var(--line, #e0e5eb);
+  background: var(--surface, #fff);
+}
+
+.shortcuts h2 {
+  margin: 0;
+  color: var(--text, #202a35);
+  font-size: 13px;
+  font-weight: 620;
+}
+
+.shortcuts-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted, #647182);
+  font-size: 20px;
+  line-height: 1;
+}
+
+.shortcuts-close:hover {
+  background: var(--surface-muted, #f7f9fb);
+  color: var(--text, #202a35);
+}
+
+.shortcuts dl {
+  display: grid;
+  gap: 1px;
+  margin: 0;
+}
+
+.shortcuts dl > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 27px;
+  padding: 5px 1px;
+  border-bottom: 1px solid var(--surface-muted, #f7f9fb);
+  color: var(--text-muted, #647182);
+  font-size: 11px;
+}
+
+.shortcuts dt,
+.shortcuts dd {
+  margin: 0;
+}
+
+.shortcuts dd {
+  flex-shrink: 0;
+  text-align: right;
+}
+
+@media (max-width: 520px) {
+  .tool-button {
+    flex-basis: 36px;
+    width: 36px;
+  }
+
+  .history-button {
+    flex-basis: 31px;
+    width: 31px;
+  }
+
+  .canvas-bottom {
+    right: 12px;
+    left: 12px;
+    gap: 8px;
+  }
+
+  .canvas-bottom p {
+    font-size: 10px;
+  }
+
+  .canvas-bottom p span,
+  .canvas-bottom p kbd {
+    display: none;
+  }
+
+  .shortcuts {
+    right: 12px;
+    bottom: 54px;
+  }
+}
+
+@media (max-width: 360px) {
+  .canvas-bottom p {
+    display: none;
+  }
+
+  .canvas-bottom {
+    grid-template-columns: auto 1fr auto;
+  }
+}

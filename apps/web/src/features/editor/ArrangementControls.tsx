@@ -21,7 +21,7 @@ export function ArrangementControls({
 }) {
   return (
     <section className="inspector-section arrangement-controls">
-      <h3>ARRANGE SHAPES</h3>
+      <h3>Arrange shapes</h3>
       <div className="alignment-grid" role="group" aria-label="Align selected shapes">
         {alignments.map((alignment) => (
           <button
@@ -60,11 +60,6 @@ export function ArrangementControls({
           </button>
         ))}
       </div>
-      <p className="inspector-note">
-        {shapeCount < 2
-          ? "Select at least two rectangles or text objects to align, or three to distribute."
-          : "Align to selected shape bounds. Distribute with equal center spacing; outer shapes stay fixed. Attached arrows follow."}
-      </p>
     </section>
   );
 }

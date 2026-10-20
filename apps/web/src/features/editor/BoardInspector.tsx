@@ -8,6 +8,7 @@ import { ArrangementControls } from "./ArrangementControls.tsx";
 import { GeometryFields } from "./GeometryFields.tsx";
 import { ColorSwatches, fillPalette } from "./ColorSwatches.tsx";
 import { ObjectList } from "./ObjectList.tsx";
+import "./inspector.css";
 export function BoardInspector({
   editor,
   center,
@@ -29,32 +30,14 @@ export function BoardInspector({
   const selectedIds = new Set(snapshot.selectedIds);
   const multiple = selectedIds.size > 1;
   return (
-    <aside className="inspector" aria-label="Board inspector">
+    <aside id="board-inspector" className="inspector" aria-label="Board inspector">
       <div className="inspector-heading">
-        <h2>
-          {multiple
-            ? `${selectedIds.size} objects`
-            : selectedConnector
-              ? "Connector"
-              : selected?.type === "text"
-                ? "Text"
-                : selected
-                  ? "Rectangle"
-                  : "Your canvas"}
-        </h2>
-        <span className="small-label">{selectedIds.size ? "SELECTED" : "LOCAL"}</span>
+        <h2>Properties</h2>
+        {multiple && <span className="inspector-count">{selectedIds.size} selected</span>}
       </div>
       {multiple ? (
-        <section className="inspector-section">
-          <h3>SELECTION</h3>
-          <p className="inspector-note">
-            Drag a selected object or use arrow keys to move the selection. Shift-click to add or
-            remove objects.
-          </p>
-          <button className="delete-button" onClick={() => editor.removeSelection()}>
-            <Icon name="trash" />
-            Delete selection
-          </button>
+        <section className="inspector-section selection-properties">
+          <h3>{selectedIds.size} objects</h3>
         </section>
       ) : selectedConnector ? (
         <ConnectorInspector
@@ -66,7 +49,7 @@ export function BoardInspector({
         <TextStyleControls key={selected.id} shape={selected} editor={editor} />
       ) : (
         <section className="inspector-section">
-          <h3>FILL COLOR</h3>
+          <h3>Fill</h3>
           <ColorSwatches
             palette={fillPalette}
             value={selected?.fill ?? snapshot.fill}
@@ -74,21 +57,12 @@ export function BoardInspector({
             label="Rectangle fill color"
             suffix="fill"
           />
-          <p className="inspector-note">
-            {selected
-              ? "A little color, a little clarity."
-              : "Choose a color for your next rectangle."}
-          </p>
         </section>
       )}
       {selected && (
         <section className="inspector-section">
-          <h3>GEOMETRY</h3>
+          <h3>Geometry</h3>
           <GeometryFields key={selected.id} shape={selected} editor={editor} />
-          <button className="delete-button" onClick={() => editor.removeSelection()}>
-            <Icon name="trash" />
-            Delete {selected.type === "text" ? "text" : "rectangle"}
-          </button>
         </section>
       )}
       {multiple && (
@@ -99,26 +73,42 @@ export function BoardInspector({
         />
       )}
       {selectedIds.size > 0 && (
-        <section className="inspector-section selection-actions">
-          <button className="file-button" onClick={onDuplicate}>
-            <Icon name="duplicate" />
-            Duplicate selection
+        <section className="inspector-section selection-actions" aria-label="Selection actions">
+          <button
+            className="file-button"
+            aria-label="Duplicate selection"
+            title="Duplicate selection"
+            onClick={onDuplicate}
+          >
+            <Icon name="duplicate" /> <span>Duplicate</span>
           </button>
-          <p className="inspector-note">Ctrl/⌘ D · Connected copies keep their internal arrows.</p>
-          <button className="add-object" onClick={() => editor.select(null)}>
+          <button
+            className="delete-button"
+            aria-label={
+              multiple
+                ? "Delete selection"
+                : selectedConnector
+                  ? "Delete connector"
+                  : `Delete ${selected?.type === "text" ? "text" : "rectangle"}`
+            }
+            title={
+              multiple
+                ? "Delete selection"
+                : selectedConnector
+                  ? "Delete connector"
+                  : `Delete ${selected?.type === "text" ? "text" : "rectangle"}`
+            }
+            onClick={() => editor.removeSelection()}
+          >
+            <Icon name="trash" />
+            <span>Delete</span>
+          </button>
+          <button className="clear-selection" onClick={() => editor.select(null)}>
             Clear selection
           </button>
         </section>
       )}
       <ObjectList editor={editor} center={center} />
-      <div className="inspector-footer">
-        <span className="footer-flower">✳</span>
-        <p>
-          A little less friction.
-          <br />A little more possibility.
-        </p>
-        <span>HYDRAW · LOCAL ALPHA 01</span>
-      </div>
     </aside>
   );
 }

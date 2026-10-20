@@ -1,0 +1,167 @@
+.topbar {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex: 0 0 56px;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+  padding: 0 20px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+
+.hydraw-mark {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+}
+
+.hydraw-mark svg {
+  display: block;
+  width: 25px;
+  height: 25px;
+}
+
+.board-identity {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.board-title {
+  width: min(320px, 100%);
+  min-width: 0;
+  padding: 2px 5px;
+  margin-left: -5px;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 5px;
+}
+
+.board-title:hover {
+  background: var(--surface-muted);
+  border-color: var(--line);
+}
+
+.board-title:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.save-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 10px;
+  line-height: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 6px;
+  background: var(--accent);
+  border-radius: 50%;
+  opacity: 0.68;
+}
+
+.save-status.has-error {
+  color: var(--danger);
+}
+
+.save-status.has-error .status-dot {
+  background: var(--danger);
+  opacity: 1;
+}
+
+.board-file-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 7px;
+  margin-left: auto;
+}
+
+.board-file-actions .file-button,
+.board-file-actions .export-button {
+  display: inline-flex;
+  width: 36px;
+  height: 34px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 10px;
+  border-radius: 7px;
+}
+
+.board-file-actions .file-button svg,
+.board-file-actions .export-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.board-file-actions .import-button,
+.board-file-actions .export-button {
+  width: auto;
+  font-size: 12px;
+  font-weight: 550;
+  white-space: nowrap;
+}
+
+.board-file-actions .inspector-toggle {
+  margin-left: 3px;
+}
+
+.board-file-actions .inspector-toggle.is-open {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: #c8e2d4;
+}
+
+@media (max-width: 640px) {
+  .topbar {
+    gap: 11px;
+    padding: 0 12px;
+  }
+
+  .board-file-actions {
+    gap: 5px;
+  }
+
+  .board-file-actions .file-button,
+  .board-file-actions .export-button {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+  }
+
+  .board-file-actions .import-button > span,
+  .board-file-actions .export-button > span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+}

@@ -7,30 +7,42 @@ import type { RefObject } from "react";
 export function InlineTextEditor({
   editor,
   canvasRef,
+  interactive = true,
 }: {
   editor: Editor;
   canvasRef: RefObject<HTMLCanvasElement | null>;
+  interactive?: boolean;
 }) {
   const snapshot = useSyncExternalStore(editor.subscribe, editor.getSnapshot);
   const editing = snapshot.textEditing;
   if (!editing) return null;
-  return <TextDraft key={editing.draft.id} editor={editor} canvasRef={canvasRef} />;
+  return (
+    <TextDraft
+      key={editing.draft.id}
+      editor={editor}
+      canvasRef={canvasRef}
+      interactive={interactive}
+    />
+  );
 }
 
 function TextDraft({
   editor,
   canvasRef,
+  interactive,
 }: {
   editor: Editor;
   canvasRef: RefObject<HTMLCanvasElement | null>;
+  interactive: boolean;
 }) {
   const { camera, textEditing } = useSyncExternalStore(editor.subscribe, editor.getSnapshot);
   const input = useRef<HTMLTextAreaElement>(null);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
+    if (!interactive) return;
     input.current?.focus({ preventScroll: true });
     input.current?.select();
-  }, []);
+  }, [interactive]);
   if (!textEditing) return null;
   const { draft } = textEditing;
   function finish(cancel = false) {
