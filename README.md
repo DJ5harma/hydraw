@@ -33,6 +33,8 @@ The Dockerfile builds React and Hono together. The runtime image contains the bu
 
 ## Current slice
 
+- Compact canvas workspace with a collapsible inspector. On narrow screens, the inspector opens as a drawer so properties and object navigation stay reachable. Keyboard shortcuts have a dismissible reference panel.
+
 - Draw rectangles, select and move them, change their fill, and delete them.
 - Resize with eight edge/corner handles or edit X, Y, width and height in the inspector. Dragging across the opposite edge keeps dimensions positive. Invalid numeric edits stay out of saved documents.
 - Shift-click objects on the canvas or in the object list to toggle selection. Drag empty canvas to select fully enclosed nodes and arrows; Shift + drag adds enclosed objects. Ctrl/⌘ A or Select all objects selects the whole board.

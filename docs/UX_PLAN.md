@@ -59,3 +59,13 @@ workspace interaction regressions. No new production dependencies are required.
 This is a responsive shell improvement, not a claim of complete touch/mobile or
 screen-reader editing support. The owned canvas still needs broader input and
 accessibility testing.
+
+## Verification result
+
+Implemented and verified on 20 October 2026. `pnpm run ready` passes formatting,
+lint, types, package boundaries, builds, 96 unit/server tests and 76 Chromium
+browser journeys across development and production. Browser regressions cover
+rename commit/cancel, inspector visibility, drawer focus, mobile text placement,
+help dismissal and Escape ownership when dialogs overlap. Blank, selected shape,
+text, connector, multiselection, mobile and short-window layouts were inspected.
+Docker, other browser engines and complete touch editing were not verified here.

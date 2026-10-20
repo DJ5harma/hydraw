@@ -126,7 +126,8 @@ canvas controls, plus primary-agent layout integration and product sequencing.
   copy. Bounded object navigation and a short insertion row remain accessible.
 - A smaller tool dock, quiet empty state, stable zoom controls and dismissible
   keyboard reference give the canvas a clearer hierarchy. The reference supports
-  close, Escape and outside-pointer dismissal with focus restoration.
+  close, Escape and outside-pointer dismissal with focus restoration. Escape
+  belongs to the active dialog rather than an underlying shortcuts reference.
 - Below 900 px the inspector opens as a drawer with an explicit close control,
   contained keyboard focus and an inactive background. Closing restores the
   trigger; starting text editing releases the drawer and focuses the native input.
@@ -135,9 +136,10 @@ canvas controls, plus primary-agent layout integration and product sequencing.
   checks verify that the initial text box fits inside the canvas.
 - Header, inspector and canvas controls own their stylesheets over shared design
   tokens. No production dependencies or document schema changes were added.
-- Formatting/lint, strict types, package boundaries, 96 unit/server tests and 74
+- `pnpm run ready` passed formatting/lint, strict types, package boundaries,
+  production builds, 96 unit/server tests and 76
   development/production Chromium browser journeys passed. Blank, selected, text
-  and narrow drawer layouts were visually inspected. Docker and other browsers
+  connector, multiselection, narrow drawer and short-window layouts were visually inspected. Docker and other browsers
   were not rerun.
 
 See [the UX plan](UX_PLAN.md) for design decisions and [the current product

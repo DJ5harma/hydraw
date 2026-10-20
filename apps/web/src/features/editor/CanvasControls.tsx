@@ -55,7 +55,15 @@ export function CanvasControls({ editor, center }: { editor: Editor; center: () 
     }
 
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
+      const target = event.target;
+      const activeElement = document.activeElement;
+      const belongsToHelp =
+        (target instanceof Node && helpRef.current?.contains(target)) ||
+        (target instanceof Node && triggerRef.current?.contains(target)) ||
+        (activeElement instanceof Node && helpRef.current?.contains(activeElement)) ||
+        (activeElement instanceof Node && triggerRef.current?.contains(activeElement));
+
+      if (event.key === "Escape" && belongsToHelp) {
         event.preventDefault();
         event.stopPropagation();
         closeHelp();

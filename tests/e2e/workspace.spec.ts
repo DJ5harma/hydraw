@@ -158,3 +158,20 @@ test("mobile text creation and editing close the drawer and focus the canvas inp
   await toggle.click();
   await expect(page.getByRole("button", { name: "Text 1 · Gateway", exact: true })).toBeVisible();
 });
+
+test("Escape dismisses the active import dialog before an underlying shortcuts reference", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Keyboard shortcuts", exact: true }).click();
+  const shortcuts = page.getByRole("dialog", { name: "Keyboard shortcuts reference", exact: true });
+  await expect(shortcuts).toBeVisible();
+  const importButton = page.getByRole("button", { name: "Import board", exact: true });
+  await importButton.focus();
+  await importButton.press("Enter");
+  const importing = page.getByRole("dialog", { name: "Import a board", exact: true });
+  await expect(importing).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(importing).toHaveCount(0);
+  await expect(shortcuts).toBeVisible();
+});
