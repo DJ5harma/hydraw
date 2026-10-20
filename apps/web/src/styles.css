@@ -1000,6 +1000,8 @@ kbd {
 }
 .text-size-field {
   display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   justify-content: space-between;
   align-items: center;
   font-size: 12px;
@@ -1024,7 +1026,8 @@ kbd {
   background: #e7eedd;
   border-color: #8a9e77;
 }
-.text-field-error {
+.number-field-error {
+  flex-basis: 100%;
   color: #a13636;
   font-size: 11px;
   margin: 0;

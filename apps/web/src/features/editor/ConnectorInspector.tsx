@@ -1,9 +1,8 @@
-import { TEXT_COLORS } from "@hydraw/document";
 import type { BoardDocument, Connector, Endpoint } from "@hydraw/document";
 import type { Editor } from "@hydraw/editor";
 import { Icon } from "../../components/icons.tsx";
 
-const colorNames = ["Forest", "Blue", "Rose", "Ochre", "Ink"];
+import { ColorSwatches, inkPalette } from "./ColorSwatches.tsx";
 function endpointName(endpoint: Endpoint, document: BoardDocument): string {
   if (endpoint.type === "point") return "Canvas point";
   const index = document.shapes.findIndex((shape) => shape.id === endpoint.shapeId);
@@ -49,20 +48,14 @@ export function ConnectorInspector({
         />
         Arrowhead
       </label>
-      <div className="swatches" role="group" aria-label="Connector color">
-        {TEXT_COLORS.map((color, index) => (
-          <button
-            key={color}
-            className={`swatch ${connector.color === color ? "is-selected" : ""}`}
-            style={{ backgroundColor: color, color: "white" }}
-            aria-label={`${colorNames[index]} connector`}
-            aria-pressed={connector.color === color}
-            onClick={() => editor.setConnectorStyle({ color })}
-          >
-            {connector.color === color && <Icon name="check" />}
-          </button>
-        ))}
-      </div>
+      <ColorSwatches
+        palette={inkPalette}
+        value={connector.color}
+        onChange={(color) => editor.setConnectorStyle({ color })}
+        label="Connector color"
+        suffix="connector"
+        ink
+      />
       <button className="file-button" onClick={() => editor.reverseConnector()}>
         Reverse direction
       </button>
