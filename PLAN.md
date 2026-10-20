@@ -41,6 +41,17 @@ Desktop editing comes first. Tablet drawing follows input QA; phones initially s
 
 ## 2. Scope and sequencing
 
+### Current execution sequence
+
+The local engine now has seven working increments and a verified code cleanup.
+The next release should complete one useful architecture-diagram workflow rather
+than expand the entire tool catalog at once. [The current next-step plan](docs/NEXT.md)
+sets the order: workspace usability, attached rectangle labels, selection clipboard,
+SVG/PNG export, navigation/snapping and connector clarity, followed by a measured
+local-alpha gate. [The workspace UX plan](docs/UX_PLAN.md) specifies this UI increment.
+Cloud saving and collaboration follow their own correctness prototype; they do not
+block improving the local drawing experience.
+
 ### Local alpha: the editor earns trust
 
 - Pan/zoom, selection, multiselection, drag, resize, rotate, duplicate, clipboard, keyboard shortcuts.
