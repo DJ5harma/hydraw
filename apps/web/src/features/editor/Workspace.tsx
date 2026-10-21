@@ -2,6 +2,7 @@ import type { Alignment, DistributionAxis } from "@hydraw/document";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { BoardTransferDialog } from "../board/BoardTransferDialog.tsx";
 import type { TransferMode } from "../board/BoardTransferDialog.tsx";
+import { downloadVisual } from "../board/visual-export.ts";
 import { downloadBoard } from "../board/files.ts";
 import { BoardMenu } from "../board/BoardMenu.tsx";
 import type { BoardSession } from "../board/session.ts";
@@ -53,6 +54,24 @@ export function Workspace({ session }: { session: BoardSession }) {
     storage,
     session.error,
   );
+  const [exporting, setExporting] = useState(false);
+  async function exportImage(format: "svg" | "png", selectionOnly: boolean) {
+    setExporting(true);
+    try {
+      editor.finishTextEditing();
+      const current = editor.getSnapshot();
+      await downloadVisual(
+        current.document,
+        format,
+        selectionOnly ? current.selectedIds : undefined,
+      );
+      setActionError(null);
+    } catch (cause) {
+      setActionError(cause instanceof Error ? cause.message : "The image could not be exported.");
+    } finally {
+      setExporting(false);
+    }
+  }
   const [transfer, setTransfer] = useState<TransferMode | null>(null);
   const previousTransfer = useRef(transfer);
   useLayoutEffect(() => {
@@ -93,6 +112,12 @@ export function Workspace({ session }: { session: BoardSession }) {
           onObjects={() => overlay.open("objects")}
           onRename={(name) => editor.rename(name)}
           onExport={() => downloadBoard(editor.getSnapshot().document)}
+          onVisualExport={(format, selectionOnly) => {
+            void exportImage(format, selectionOnly);
+          }}
+          selectionCount={snapshot.selectedIds.length}
+          hasContent={snapshot.document.shapes.length + snapshot.document.connectors.length > 0}
+          exporting={exporting}
           onImport={() => {
             editor.cancelGesture();
             setTransfer("import");

@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Icon, Mark } from "../../components/icons.tsx";
 import type { SaveState } from "./persistence.ts";
 import "./board-menu.css";
@@ -8,6 +8,10 @@ export function BoardMenu({
   saveState,
   onRename,
   onExport,
+  onVisualExport,
+  selectionCount,
+  hasContent,
+  exporting,
   onImport,
   onRestore,
   canRestore,
@@ -20,6 +24,10 @@ export function BoardMenu({
   saveState: SaveState;
   onRename: (name: string) => void;
   onExport: () => void;
+  onVisualExport: (format: "svg" | "png", selectionOnly: boolean) => void;
+  selectionCount: number;
+  hasContent: boolean;
+  exporting: boolean;
   onImport: () => void;
   onRestore: () => void;
   canRestore: boolean;
@@ -29,6 +37,7 @@ export function BoardMenu({
   onObjects: () => void;
 }) {
   const cancelledEdit = useRef(false);
+  const [selectionOnly, setSelectionOnly] = useState(false);
   const status =
     saveState === "saving"
       ? "Saving locally…"
@@ -136,6 +145,34 @@ export function BoardMenu({
               <Icon name="recover" />
               <span>Restore previous board</span>
             </button>
+            <div className="board-menu-divider" />
+            <label className="board-export-area">
+              Export image
+              <select
+                aria-label="Export area"
+                value={selectionOnly && selectionCount ? "selection" : "board"}
+                onChange={(event) => setSelectionOnly(event.target.value === "selection")}
+              >
+                <option value="board">Whole board</option>
+                <option value="selection" disabled={!selectionCount}>
+                  Selection ({selectionCount})
+                </option>
+              </select>
+            </label>
+            <div className="board-export-formats">
+              {(["svg", "png"] as const).map((format) => (
+                <button
+                  key={format}
+                  className="file-button"
+                  disabled={!hasContent || exporting}
+                  onClick={() =>
+                    runAndClose(() => onVisualExport(format, selectionOnly && selectionCount > 0))
+                  }
+                >
+                  Export {format.toUpperCase()}
+                </button>
+              ))}
+            </div>
             <div className="board-menu-divider" />
             <button type="button" className="board-menu-action" onClick={onObjects}>
               <Icon name="layers" />

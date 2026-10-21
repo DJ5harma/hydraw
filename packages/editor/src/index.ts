@@ -5,3 +5,5 @@ export type { Tool, Camera, EditorSnapshot, EditorChromeSnapshot } from "./types
 
 export { layoutText, TEXT_FONT_FAMILY, TEXT_LINE_HEIGHT, TEXT_PADDING } from "./text-layout.ts";
 export type { TextMeasurer } from "./text-layout.ts";
+
+export { exportSvg } from "./svg-export.ts";

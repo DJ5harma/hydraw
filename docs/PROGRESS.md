@@ -259,3 +259,17 @@ records; see [ADR 0009](adr/0009-shape-kinds-and-labels.md).
 Three focused editor checks pass for label lifecycle/migration and silhouette
 geometry, and editor type checking passes. Browser integration is verified with
 the following export/clipboard increment.
+
+## Milestone 12 — SVG and PNG handoff
+
+Implemented on 21 October 2026. Board menu exports whole-board or explicit
+selection images as SVG or 2× PNG, while editable JSON export remains available.
+SVG shares semantic geometry, text wrapping and label clipping with the renderer;
+image exports exclude grid, selection and UI. Bound connector endpoints resolve
+against the full document even for selection-only export. Background is transparent
+except the connector-label backing. System fonts remain a portability limitation.
+
+A pure serializer owns SVG; the browser adapter owns rasterization, bounded PNG
+allocation and download URL cleanup. Export errors remain visible and do not
+change the board. Three focused serializer checks and editor types pass; browser
+SVG/PNG download verification accompanies the next integration check.
