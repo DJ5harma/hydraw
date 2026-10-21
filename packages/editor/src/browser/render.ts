@@ -1,7 +1,7 @@
 import { rectangleAppearance, createConnectorResolver } from "@hydraw/document";
 import type { Rectangle, Shape, TextShape, Connector } from "@hydraw/document";
 import { drawConnector, drawConnectorHandles } from "./render-connectors.ts";
-import { labelClipBounds, labelTextShape } from "../labels.ts";
+import { labelBackdropBounds, labelClipBounds, labelTextShape } from "../labels.ts";
 import type { TextMeasurer } from "../text-layout.ts";
 import { selectionScene } from "../selection.ts";
 import { drawSelection } from "./render-selection.ts";
@@ -120,12 +120,13 @@ function drawLabel(
   );
   ctx.clip();
   if (owner.type === "connector") {
+    const backing = labelBackdropBounds(label, measure);
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(
-      label.x * camera.zoom + camera.x,
-      label.y * camera.zoom + camera.y,
-      label.width * camera.zoom,
-      Math.min(label.height, clip.height) * camera.zoom,
+      backing.x * camera.zoom + camera.x,
+      backing.y * camera.zoom + camera.y,
+      backing.width * camera.zoom,
+      Math.min(backing.height, clip.height) * camera.zoom,
     );
   } else ctx.globalAlpha = rectangleAppearance(owner).opacity / 100;
   drawText(ctx, label, camera, textLayout);

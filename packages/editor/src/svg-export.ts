@@ -7,7 +7,7 @@ import type {
   Shape,
   TextShape,
 } from "@hydraw/document";
-import { labelClipBounds, labelTextShape } from "./labels.ts";
+import { labelBackdropBounds, labelClipBounds, labelTextShape } from "./labels.ts";
 import { layoutText, TEXT_FONT_FAMILY, TEXT_LINE_HEIGHT, TEXT_PADDING } from "./text-layout.ts";
 import type { TextMeasurer } from "./text-layout.ts";
 
@@ -131,9 +131,10 @@ function labelElements(
   const clipBounds = labelClipBounds(owner, shapes);
   const clipId = `label-clip-${key}`;
   const defs = `<clipPath id="${escapeXml(clipId)}"><rect x="${number(clipBounds.x)}" y="${number(clipBounds.y)}" width="${number(clipBounds.width)}" height="${number(clipBounds.height)}"/></clipPath>`;
+  const backing = labelBackdropBounds(label, measure);
   const background =
     owner.type === "connector"
-      ? `<rect x="${number(clipBounds.x)}" y="${number(clipBounds.y)}" width="${number(clipBounds.width)}" height="${number(clipBounds.height)}" fill="#ffffff"/>`
+      ? `<rect x="${number(backing.x)}" y="${number(backing.y)}" width="${number(backing.width)}" height="${number(Math.min(backing.height, clipBounds.height))}" fill="#ffffff"/>`
       : "";
   return {
     svg: `<g opacity="${number(owner.type === "rectangle" ? rectangleAppearance(owner).opacity / 100 : 1)}">${background}${textElements(label, measure, clipId)}</g>`,

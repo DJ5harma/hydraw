@@ -7,6 +7,7 @@ import {
   resolveConnector,
 } from "@hydraw/document";
 import type { BoardDocument, Connector, Endpoint, Point, Shape } from "@hydraw/document";
+import { labelClipBounds } from "./labels.ts";
 import { clamp, screenToWorld } from "./geometry.ts";
 import type { Camera, EditorSnapshot } from "./types.ts";
 
@@ -29,7 +30,15 @@ export function hitConnector(
   const resolve = createConnectorResolver(document.shapes);
   return document.connectors.findLast((connector) => {
     const { start, end } = resolve(connector);
-    return distanceToSegment(point, start, end) <= tolerance;
+    if (distanceToSegment(point, start, end) <= tolerance) return true;
+    if (!connector.label?.text.trim()) return false;
+    const bounds = labelClipBounds(connector, document.shapes);
+    return (
+      point.x >= bounds.x &&
+      point.x <= bounds.x + bounds.width &&
+      point.y >= bounds.y &&
+      point.y <= bounds.y + bounds.height
+    );
   });
 }
 

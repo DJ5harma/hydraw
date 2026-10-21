@@ -273,3 +273,29 @@ A pure serializer owns SVG; the browser adapter owns rasterization, bounded PNG
 allocation and download URL cleanup. Export errors remain visible and do not
 change the board. Three focused serializer checks and editor types pass; browser
 SVG/PNG download verification accompanies the next integration check.
+
+## Milestone 13 — connected-selection clipboard and release integration
+
+Implemented on 21 October 2026. Copy/cut/paste uses validated Hydraw selection
+fragments with fresh pasted identities. Internal bound edges travel with copied
+nodes; external references detach to their resolved points. Paste is centered in
+the viewport, bounded by document capacity, and one atomic undo step. Clipboard
+fragments are limited to 1 MB. Native text controls and dialogs retain their own
+clipboard behavior. Errors leave the document intact and appear visibly.
+
+Final integration keeps native label drafts aligned to their current text layout,
+allows connector-caption selection, and uses matching compact caption backings in
+Canvas and SVG. Label text wrapping can clip when the owner is too small; it does
+not automatically resize shapes. Direct shape tools remain visible at 320 px.
+
+Focused verification: 13 label/shape/export/clipboard checks pass, including large
+paste capacity, and formatting/lint/types/boundaries pass. One Chromium journey
+covers named ellipse/diamond creation, bound connector labels, native clipboard
+handlers, atomic paste undo/redo, JSON/SVG/PNG downloads, native-input clipboard
+isolation and the narrow toolbar. Its completed diagram was visually inspected.
+The full browser matrix, other engines and OS clipboard permissions were not
+rerun. The journey dispatches ClipboardEvents to verify browser event integration.
+
+This completes the first everyday-drawing release from the cross-platform
+feature sequence. Smart guides, groups/locking/order, frames and reusable presets
+remain subsequent milestones in NEXT.md, not completed features.

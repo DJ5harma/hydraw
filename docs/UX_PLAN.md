@@ -32,7 +32,7 @@ new discovery problem.
 | Surface                       | Behavior                                                                                                                                                                                  |
 | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Board chip, upper left        | Menu, board name, truthful local persistence indicator. Rename, import, editable-file export, recovery and board actions live inside the menu. Save errors remain visible until resolved. |
-| Tool dock, upper center       | Select, rectangle, connector, text, pan. One active tool; shortcut hints remain visible on the buttons. No slots for future tools.                                                        |
+| Tool dock, upper center       | Select, rectangle, ellipse, diamond, connector, text, pan. One active tool; shortcut hints remain visible on the buttons. No slots for future tools.                                      |
 | View/history, lower left      | Zoom, fit board/selection, undo and redo. Disabled history controls retain their positions.                                                                                               |
 | Floating selection properties | Relevant styling appears automatically on selection, without a Fill/Style click. Absent when nothing is selected.                                                                         |
 | Help, lower right             | Discoverable shortcuts and input guidance, opened deliberately.                                                                                                                           |
@@ -140,11 +140,9 @@ navigator mounts only on request, searches records and renders pages of at most
 includes the whole document, not only the visible page. Close it to return to the
 selection shelf, or use Fit selection to reveal a selected offscreen record.
 
-The dock currently contains five tools. When additional shape families become
-useful, introduce one shape picker with a small common set and a searchable full
-catalog, rather than another always-visible button per shape kind. Keep tool
-configuration separate from record navigation. Do not build that picker before
-there is a second shape family to choose.
+Rectangle, ellipse and diamond have direct buttons and R/O/D shortcuts, following
+the user's explicit preference. There is no shape picker. The seven-button dock
+fits at 320 px. Tool buttons represent shape kinds, never individual board objects.
 
 Single selection shows type-specific style directly, duplicate/delete and geometry only
 for records that have editable geometry. Multiple selection directly shows count,
@@ -166,6 +164,6 @@ Rectangle background/transparent fill, stroke color/width/style, opacity and
 square/rounded corners are implemented and persist in native format v3. Text and
 connector selections immediately expose their existing controls. These are the
 first useful gaps against Excalidraw's [element defaults](https://github.com/excalidraw/excalidraw/blob/master/packages/common/src/constants.ts),
-not a claim of full parity. Patterned fills, sketch roughness, ellipses/diamonds,
-rotation, groups and layer ordering still need owned engine support. Do not show
-inactive controls for those features. Attached labels remain next in NEXT.md.
+not a claim of full parity. Patterned fills, sketch roughness, rotation, groups and layer ordering still need
+owned engine support. Do not show
+inactive controls for those features. Attached node/connector labels, visual export and clipboard reuse are now implemented; see NEXT.md.

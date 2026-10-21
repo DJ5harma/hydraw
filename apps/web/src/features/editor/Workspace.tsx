@@ -16,6 +16,7 @@ import { EditorToolbar } from "./EditorToolbar.tsx";
 import { EmptyCanvas } from "./EmptyCanvas.tsx";
 import { createEditorControls } from "./controls.ts";
 import { useWorkspaceOverlay } from "./useWorkspaceOverlay.ts";
+import { useClipboard } from "./useClipboard.ts";
 import { useEditorSnapshot } from "./useEditorSnapshot.ts";
 
 export function Workspace({ session }: { session: BoardSession }) {
@@ -49,6 +50,7 @@ export function Workspace({ session }: { session: BoardSession }) {
   const distribute = (axis: DistributionAxis) =>
     runSelectionAction(() => editor.distributeSelection(axis));
   const { center, selectTool, keyboard } = createEditorControls(editor, canvasRef, duplicate);
+  useClipboard({ editor, center, onError: setActionError });
   const { saveState, saveError, recovery, recoveryWarning, persistence } = useBoardPersistence(
     editor,
     storage,

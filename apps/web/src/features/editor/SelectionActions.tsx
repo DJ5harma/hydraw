@@ -119,7 +119,7 @@ export function SelectionActions({
                 ? "Delete selection"
                 : selectedConnector
                   ? "Delete connector"
-                  : `Delete ${selectedShape?.type === "text" ? "text" : "rectangle"}`
+                  : `Delete ${selectedShape?.type === "text" ? "text" : (selectedShape?.kind ?? "rectangle")}`
             }
             onClick={() => editor.removeSelection()}
           >

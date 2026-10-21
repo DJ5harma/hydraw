@@ -41,6 +41,7 @@ import { hitConnector, hitConnectorEnd } from "./connector-interactions.ts";
 import type { ConnectorEnd } from "./connector-interactions.ts";
 import { clamp, hitResizeHandle, screenToWorld } from "./geometry.ts";
 import type { ResizeHandle } from "./geometry.ts";
+import { createClipboardFragment, pastedSelection } from "./clipboard.ts";
 import { IDLE_GESTURE, previewGesture, startGesture } from "./gestures.ts";
 import type { Gesture } from "./gestures.ts";
 import { objectIds, selectionBounds } from "./selection.ts";
@@ -348,6 +349,33 @@ export class Editor {
     this.publish({ selectedIds: objectIds(this.snapshot.document), tool: "select" });
   }
 
+  copySelection(): string | null {
+    return createClipboardFragment(this.snapshot.document, this.snapshot.selectedIds);
+  }
+
+  pasteSelection(serialized: string, screen: Point): void {
+    this.assertWritable();
+    this.finishTextEditing();
+    this.cancelGesture();
+    const result = pastedSelection(
+      this.snapshot.document,
+      serialized,
+      this.makeId,
+      screenToWorld(screen, this.snapshot.camera),
+    );
+    if (!result.transaction) return;
+    const transaction = {
+      ...result.transaction,
+      changes: result.transaction.changes.map((change) =>
+        change.type === "shape" && change.after?.type === "text"
+          ? { ...change, after: this.fitText(change.after) }
+          : change,
+      ),
+    };
+    this.commit(transaction);
+    this.publish({ selectedIds: result.ids, tool: "select" });
+  }
+
   duplicateSelection(): void {
     this.assertWritable();
     this.finishTextEditing();
@@ -530,10 +558,18 @@ export class Editor {
       throw new Error(`Text must be at most ${MAX_TEXT_LENGTH} characters.`);
     const content = { ...editing.draft, text: normalized };
     if (editing.ownerId) decodeLabel(content);
-    const draft =
-      editing.ownerId && this.measureText
-        ? { ...content, height: layoutText(content, this.measureText).height }
-        : this.fitText(content);
+    let draft: TextShape;
+    if (editing.ownerId && this.measureText) {
+      const owner =
+        this.snapshot.document.shapes.find((item) => item.id === editing.ownerId) ??
+        this.snapshot.document.connectors.find((item) => item.id === editing.ownerId);
+      if (!owner || owner.type === "text") return;
+      draft = labelTextShape(
+        { ...owner, label: decodeLabel(content) },
+        this.snapshot.document.shapes,
+        this.measureText,
+      )!;
+    } else draft = this.fitText(content);
     this.publish({ textEditing: { ...editing, draft } });
   }
 

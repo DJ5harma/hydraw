@@ -47,3 +47,13 @@ export function labelTextShape(
   const { height } = layoutText(draft, measure);
   return { ...draft, height, y: box.y + Math.max(0, (box.height - height) / 2) };
 }
+
+/** Back only the visible caption, not its entire wrapping area. */
+export function labelBackdropBounds(label: TextShape, measure: TextMeasurer): Bounds {
+  const layout = layoutText(label, measure);
+  const width = Math.min(
+    label.width,
+    Math.max(1, ...layout.lines.map((line) => measure(line, label))) + 8,
+  );
+  return { x: label.x + (label.width - width) / 2, y: label.y, width, height: label.height };
+}

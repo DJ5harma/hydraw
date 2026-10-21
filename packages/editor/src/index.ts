@@ -7,3 +7,5 @@ export { layoutText, TEXT_FONT_FAMILY, TEXT_LINE_HEIGHT, TEXT_PADDING } from "./
 export type { TextMeasurer } from "./text-layout.ts";
 
 export { exportSvg } from "./svg-export.ts";
+
+export { createClipboardFragment, decodeClipboardFragment } from "./clipboard.ts";

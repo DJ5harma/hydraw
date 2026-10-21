@@ -1,6 +1,6 @@
 # Hydraw: product and engineering plan
 
-Planning baseline: 20 October 2026. Status: proposed architecture with the first eight local editor increments implemented; hosted deployment and later product stages remain planned. See [the milestone log](docs/PROGRESS.md) for implemented scope and [ADR 0001](docs/adr/0001-owned-local-editor.md) for current engineering decisions. The repository was empty when this plan was written.
+Planning baseline: 20 October 2026. Status: local drawing, labels, visual export and clipboard workflow implemented; hosted deployment and later product stages remain planned. See [the milestone log](docs/PROGRESS.md) for implemented scope and [ADR 0001](docs/adr/0001-owned-local-editor.md) for current engineering decisions. The repository was empty when this plan was written.
 
 ## 1. Product direction
 
@@ -46,9 +46,9 @@ Desktop editing comes first. Tablet drawing follows input QA; phones initially s
 The local engine and canvas-first workspace are implemented, with verified code cleanup.
 The next release should complete one useful architecture-diagram workflow rather
 than expand the entire tool catalog at once. [The current next-step plan](docs/NEXT.md)
-records the completed canvas-first workspace and fit navigation, followed by
-attached rectangle labels, SVG/PNG export, selection clipboard, then snapping and
-connector clarity, before a measured local-alpha gate. [The workspace UX record](docs/UX_PLAN.md)
+records the completed canvas-first workspace, fit navigation, direct shape tools,
+attached labels, SVG/PNG export and clipboard reuse. Smart placement, grouping and
+object ordering follow before a measured local-alpha gate. [The workspace UX record](docs/UX_PLAN.md)
 specifies the replacement for the previous header/sidebar shell.
 Cloud saving and collaboration follow their own correctness prototype; they do not
 block improving the local drawing experience.

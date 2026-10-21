@@ -8,6 +8,7 @@ const strokePalette = [{ color: "#364152", name: "Slate" }, ...inkPalette.slice(
 
 export function RectangleStyleControls({ shape, editor }: { shape: Rectangle; editor: Editor }) {
   const style = rectangleAppearance(shape);
+  const kind = shape.kind ? shape.kind[0]!.toUpperCase() + shape.kind.slice(1) : "Rectangle";
   return (
     <div className="rectangle-style-controls">
       <button className="file-button" onClick={() => editor.editText(shape.id)}>
@@ -19,7 +20,7 @@ export function RectangleStyleControls({ shape, editor }: { shape: Rectangle; ed
           palette={strokePalette}
           value={style.stroke}
           onChange={(stroke) => editor.setRectangleStyle({ stroke })}
-          label="Rectangle stroke color"
+          label={`${kind} stroke color`}
           suffix="stroke"
           ink
         />
@@ -30,7 +31,7 @@ export function RectangleStyleControls({ shape, editor }: { shape: Rectangle; ed
           palette={fillPalette}
           value={shape.fill}
           onChange={(fill) => editor.setFill(fill)}
-          label="Rectangle fill color"
+          label={`${kind} fill color`}
           suffix="fill"
         />
       </section>
