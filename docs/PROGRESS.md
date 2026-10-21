@@ -165,3 +165,16 @@ Chromium prototype interactions and both alternatives were checked at 320, 390,
 errors were observed in those checks. Production unit/browser suites were not
 rerun because production code did not change; the milestone 8 results remain
 the latest full-suite baseline.
+
+## Milestone 9a — fit navigation foundation
+
+Implemented on 21 October 2026. Editor-level fit navigation frames board or
+selection bounds, including resolved connectors, within an adapter-supplied safe
+screen rectangle. Camera changes preserve document revision, selection and undo
+history. Empty-board fit resets the camera. Overview zoom supports the portable
+coordinate range; ordinary zoom remains anchored to the pointer.
+
+`pnpm exec vp test --run packages/editor/src` passes 49 editor tests, including
+negative coordinates, offset safe areas, connector bounds, large documents and
+history preservation. Editor type checking passes. The following workspace
+increment exposes this navigation through its floating controls.

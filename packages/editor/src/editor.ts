@@ -38,7 +38,8 @@ import { clamp, hitResizeHandle, screenToWorld } from "./geometry.ts";
 import type { ResizeHandle } from "./geometry.ts";
 import { IDLE_GESTURE, previewGesture, startGesture } from "./gestures.ts";
 import type { Gesture } from "./gestures.ts";
-import { objectIds } from "./selection.ts";
+import { objectIds, selectionBounds } from "./selection.ts";
+import { fittedCamera, MIN_ZOOM, MAX_ZOOM } from "./viewport.ts";
 import { layoutText } from "./text-layout.ts";
 import type { TextMeasurer } from "./text-layout.ts";
 import { TransactionHistory } from "./history.ts";
@@ -629,8 +630,26 @@ export class Editor {
   zoomAt(screen: Point, factor: number): void {
     if (this.gesture || !Number.isFinite(factor) || factor <= 0) return;
     const world = screenToWorld(screen, this.snapshot.camera);
-    const zoom = clamp(this.snapshot.camera.zoom * factor, 0.1, 4);
+    const zoom = clamp(this.snapshot.camera.zoom * factor, MIN_ZOOM, MAX_ZOOM);
     this.publish({ camera: { x: screen.x - world.x * zoom, y: screen.y - world.y * zoom, zoom } });
+  }
+
+  /** Camera-only navigation; viewport excludes the adapter's floating controls. */
+  fitView(viewport: Bounds, selectionOnly = false): void {
+    this.finishTextEditing();
+    this.cancelGesture();
+    const { document, selectedIds } = this.snapshot;
+    const bounds = selectionBounds(
+      document.shapes,
+      document.connectors,
+      selectionOnly ? selectedIds : objectIds(document),
+    );
+    if (!bounds) {
+      if (!selectionOnly) this.resetCamera();
+      return;
+    }
+    const camera = fittedCamera(bounds, viewport);
+    if (camera) this.publish({ camera });
   }
 
   resetCamera(): void {
