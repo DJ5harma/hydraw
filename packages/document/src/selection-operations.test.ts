@@ -117,6 +117,8 @@ describe("atomic selection operations", () => {
       {
         ...edge,
         id: "copy-3",
+        locked: false,
+        zIndex: 1,
         start: { type: "binding", shapeId: "copy-1" },
         end: { type: "binding", shapeId: "copy-2" },
       },

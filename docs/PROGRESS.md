@@ -322,3 +322,18 @@ and Alt drags, grouped movement, front ordering, lock protection, navigator unlo
 mobile command access and reload persistence. Its mobile layout was inspected.
 Formatting, lint, workspace types and module-boundary checks pass. The full browser
 matrix and performance benchmarks were not rerun.
+
+## Regression follow-up — full test review
+
+Reviewed on 21 October 2026. The full unit run exposed an additive-selection
+ordering regression and an outdated duplicate-connector metadata expectation.
+Selection publication now preserves existing selection order while appending group
+members; the copy expectation includes the new unlocked stack metadata.
+
+The full browser run passed 82 of 88 checks. The six failures represented three
+workflows in production and development: the taller properties surface obstructed
+selection drags, additive marquees and switching from an arrow to an adjacent node.
+Panel avoidance now includes grouped/connector bounds and nearby shapes, and
+recalculates after overlay dismissal. All six failed checks pass on focused reruns.
+All 128 unit tests and formatting/lint/types/boundary checks pass. Existing tests
+cover the fixes; no new test suite was added.

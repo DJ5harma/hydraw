@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Alignment, DistributionAxis } from "@hydraw/document";
+import { selectionBounds } from "@hydraw/editor";
 import type { Editor } from "@hydraw/editor";
 import { Icon } from "../../components/icons.tsx";
 import { ArrangementControls } from "./ArrangementControls.tsx";
@@ -33,21 +34,37 @@ export function SelectionActions({
   const [commandError, setCommandError] = useState<string | null>(null);
   useLayoutEffect(() => {
     const panel = panelRef.current;
-    const shape = snapshot.document.shapes.find((item) => item.id === snapshot.selectedId);
-    if (!panel || !shape || window.innerWidth <= 660) {
+    const bounds = selectionBounds(
+      snapshot.document.shapes,
+      snapshot.document.connectors,
+      snapshot.selectedIds,
+    );
+    if (!panel || !bounds || window.innerWidth <= 660) {
       setRight(false);
       return;
     }
     const camera = editor.getSnapshot().camera;
-    const x = shape.x * camera.zoom + camera.x;
-    const y = shape.y * camera.zoom + camera.y;
-    const overlaps =
-      x < 272 &&
-      x + shape.width * camera.zoom > 0 &&
-      y < 88 + panel.offsetHeight &&
-      y + shape.height * camera.zoom > 88;
+    const overlaps = [bounds, ...snapshot.document.shapes].some((item) => {
+      const x = item.x * camera.zoom + camera.x;
+      const y = item.y * camera.zoom + camera.y;
+      return (
+        x < 272 &&
+        x + item.width * camera.zoom > 0 &&
+        y < 88 + panel.offsetHeight &&
+        y + item.height * camera.zoom > 88
+      );
+    });
     setRight(overlaps);
-  }, [editor, snapshot.selectedId, snapshot.document, snapshot.interacting, snapshot.zoom]);
+  }, [
+    editor,
+    overlay,
+    snapshot.selectedIds,
+    snapshot.document,
+    snapshot.interacting,
+    snapshot.zoom,
+    snapshot.tool,
+    snapshot.textEditing,
+  ]);
   const ids = snapshot.selectedIds;
   const selectedShape = snapshot.document.shapes.find((shape) => shape.id === snapshot.selectedId);
   const selectedConnector = snapshot.document.connectors.find(

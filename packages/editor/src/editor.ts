@@ -139,7 +139,12 @@ export class Editor {
   private publish(patch: Partial<Omit<EditorSnapshot, "selectedId">>): void {
     let selectedIds = patch.selectedIds ?? this.snapshot.selectedIds;
     if (patch.selectedIds || patch.document)
-      selectedIds = expandGroups(patch.document ?? this.snapshot.document, selectedIds);
+      selectedIds = [
+        ...new Set([
+          ...selectedIds,
+          ...expandGroups(patch.document ?? this.snapshot.document, selectedIds),
+        ]),
+      ];
     if (patch.document) {
       const valid = new Set(objectIds(patch.document));
       selectedIds = selectedIds.filter((id) => valid.has(id));
