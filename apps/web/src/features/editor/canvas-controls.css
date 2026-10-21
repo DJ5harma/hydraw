@@ -32,6 +32,18 @@
 .tool-button svg {
   width: 17px;
   height: 17px;
+  transform: translateY(-2px);
+}
+
+.tool-shortcut {
+  position: absolute;
+  right: 3px;
+  bottom: 1px;
+  color: var(--text-muted, #647182);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  pointer-events: none;
 }
 
 .tool-button:hover:not(:disabled) {

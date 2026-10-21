@@ -29,6 +29,9 @@ export function EditorToolbar({
           onClick={() => selectTool(tool.id)}
         >
           <Icon name={tool.id} />
+          <kbd className="tool-shortcut" aria-hidden="true">
+            {tool.key}
+          </kbd>
         </button>
       ))}
     </div>

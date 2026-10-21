@@ -21,7 +21,7 @@ test("canvas fills the window with no header or sidebar and properties appear on
   await expect(page.getByRole("spinbutton")).toHaveCount(0);
   await addRectangle(page);
   await expect(page.getByRole("navigation", { name: "Selection actions" })).toBeVisible();
-  await expect(page.getByRole("spinbutton")).toHaveCount(0);
+  await expect(page.getByRole("group", { name: "Rectangle fill color" })).toBeVisible();
   await openGeometry(page);
   await expect(page.getByRole("spinbutton", { name: "Rectangle width" })).toHaveValue("180");
   const width = page.getByRole("spinbutton", { name: "Rectangle width" });
@@ -29,7 +29,7 @@ test("canvas fills the window with no header or sidebar and properties appear on
   await width.press("Escape");
   await expect(width).toHaveValue("180");
   await expect(page.getByRole("dialog", { name: "Precise geometry" })).toBeVisible();
-  await page.getByRole("button", { name: "Close selection properties" }).focus();
+  await page.getByRole("button", { name: "Close precise geometry" }).focus();
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "More properties" })).toBeFocused();
@@ -217,4 +217,46 @@ test("board actions remain reachable in a short landscape window", async ({ page
   await expect(page.getByRole("searchbox")).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(page.getByRole("button", { name: "Board menu", exact: true })).toBeFocused();
+});
+
+test("selection exposes styling directly, keeps shortcut hints, and saves rectangle appearance", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await addRectangle(page);
+  const properties = page.getByRole("region", { name: "Selection properties", exact: true });
+  await expect(properties).toBeVisible();
+  await expect(page.locator("canvas")).toBeFocused();
+  await expect(
+    page.getByRole("button", { name: "Rectangle (R)", exact: true }).locator("kbd"),
+  ).toHaveText("R");
+  await page.getByRole("button", { name: "Rose fill", exact: true }).click();
+  await page.getByRole("button", { name: "Blue stroke", exact: true }).click();
+  await page.getByRole("button", { name: "Thick stroke", exact: true }).click();
+  await page.getByRole("button", { name: "dashed stroke", exact: true }).click();
+  await page.getByRole("button", { name: "Square", exact: true }).click();
+  await page.getByRole("spinbutton", { name: "Shape opacity", exact: true }).fill("60");
+  await page.locator("canvas").click({ position: { x: 400, y: 180 } });
+  await expect(page.getByRole("status")).toHaveText("Saved in this browser");
+  await page.reload();
+  await openObjects(page);
+  await page.getByRole("button", { name: "Rectangle 1", exact: true }).click();
+  await closeOverlay(page);
+  await expect(page.getByRole("button", { name: "Rose fill", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await expect(page.getByRole("button", { name: "dashed stroke", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await expect(page.getByRole("spinbutton", { name: "Shape opacity", exact: true })).toHaveValue(
+    "60",
+  );
+  await page.setViewportSize({ width: 390, height: 740 });
+  await expect(properties).toBeVisible();
+  const bounds = (await properties.boundingBox())!;
+  expect(bounds.x).toBeGreaterThanOrEqual(0);
+  expect(bounds.x + bounds.width).toBeLessThanOrEqual(390);
+  expect(bounds.y + bounds.height).toBeLessThanOrEqual(740);
 });

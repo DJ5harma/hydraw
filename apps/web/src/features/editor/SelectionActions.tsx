@@ -1,16 +1,15 @@
+import { useLayoutEffect, useRef, useState } from "react";
 import type { Alignment, DistributionAxis } from "@hydraw/document";
 import type { Editor } from "@hydraw/editor";
 import { Icon } from "../../components/icons.tsx";
 import { ArrangementControls } from "./ArrangementControls.tsx";
-import { ColorSwatches, fillPalette } from "./ColorSwatches.tsx";
 import { ConnectorInspector } from "./ConnectorInspector.tsx";
 import { GeometryFields } from "./GeometryFields.tsx";
+import { RectangleStyleControls } from "./RectangleStyleControls.tsx";
 import { TextStyleControls } from "./TextStyleControls.tsx";
 import { useEditorSnapshot } from "./useEditorSnapshot.ts";
+import type { WorkspaceOverlay } from "./useWorkspaceOverlay.ts";
 import "./selection-actions.css";
-
-import type { ReactNode } from "react";
-import type { WorkspaceOverlay as SelectionOverlay } from "./useWorkspaceOverlay.ts";
 import "./property-controls.css";
 
 export function SelectionActions({
@@ -25,10 +24,29 @@ export function SelectionActions({
   onDuplicate: () => void;
   onAlign: (alignment: Alignment) => void;
   onDistribute: (axis: DistributionAxis) => void;
-  overlay: SelectionOverlay;
-  onOverlay: (name: SelectionOverlay) => void;
+  overlay: WorkspaceOverlay;
+  onOverlay: (name: WorkspaceOverlay) => void;
 }) {
   const snapshot = useEditorSnapshot(editor);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [right, setRight] = useState(false);
+  useLayoutEffect(() => {
+    const panel = panelRef.current;
+    const shape = snapshot.document.shapes.find((item) => item.id === snapshot.selectedId);
+    if (!panel || !shape || window.innerWidth <= 660) {
+      setRight(false);
+      return;
+    }
+    const camera = editor.getSnapshot().camera;
+    const x = shape.x * camera.zoom + camera.x;
+    const y = shape.y * camera.zoom + camera.y;
+    const overlaps =
+      x < 272 &&
+      x + shape.width * camera.zoom > 0 &&
+      y < 88 + panel.offsetHeight &&
+      y + shape.height * camera.zoom > 88;
+    setRight(overlaps);
+  }, [editor, snapshot.selectedId, snapshot.document, snapshot.interacting, snapshot.zoom]);
   const ids = snapshot.selectedIds;
   const selectedShape = snapshot.document.shapes.find((shape) => shape.id === snapshot.selectedId);
   const selectedConnector = snapshot.document.connectors.find(
@@ -46,43 +64,26 @@ export function SelectionActions({
   const multi = ids.length > 1;
   const selectedSet = new Set(ids);
   const shapeCount = snapshot.document.shapes.filter((shape) => selectedSet.has(shape.id)).length;
-  const panelTitle =
-    overlay === "geometry"
-      ? "Precise geometry"
-      : multi
-        ? "Arrange selection"
-        : selectedConnector
-          ? "Connector style"
-          : selectedShape?.type === "text"
-            ? "Text style"
-            : "Rectangle style";
-  const isOpen = multi ? overlay === "arrange" : overlay === "style" || overlay === "geometry";
-  const trigger = (name: SelectionOverlay, label: string, children: ReactNode) => (
-    <button
-      className="selection-action"
-      data-overlay-trigger={name ?? undefined}
-      aria-label={label}
-      aria-expanded={overlay === name}
-      onClick={() => onOverlay(overlay === name ? null : name)}
-    >
-      {children}
-    </button>
-  );
+  const title = multi
+    ? `${ids.length} objects`
+    : selectedConnector
+      ? "Connector style"
+      : selectedShape?.type === "text"
+        ? "Text style"
+        : "Rectangle style";
+  const geometryOpen = overlay === "geometry" && selectedShape !== undefined && !multi;
 
   return (
-    <div className="selection-actions-root" data-workspace-overlay-root>
-      {isOpen && (
-        <section className="selection-popover" role="dialog" aria-label={panelTitle}>
-          <header>
-            <h2>{panelTitle}</h2>
-            <button
-              className="selection-close"
-              aria-label="Close selection properties"
-              onClick={() => onOverlay(null)}
-            >
-              ×
-            </button>
-          </header>
+    <div
+      ref={panelRef}
+      className={`selection-properties-root${right ? " is-right" : ""}`}
+      data-workspace-overlay-root
+    >
+      <section className="selection-properties" role="region" aria-label="Selection properties">
+        <header className="selection-properties-heading">
+          <h2>{title}</h2>
+        </header>
+        <div className="selection-properties-content">
           {multi ? (
             <ArrangementControls
               shapeCount={shapeCount}
@@ -96,75 +97,64 @@ export function SelectionActions({
               editor={editor}
             />
           ) : selectedShape?.type === "text" ? (
-            overlay === "geometry" ? (
-              <GeometryFields shape={selectedShape} editor={editor} />
-            ) : (
-              <TextStyleControls key={selectedShape.id} shape={selectedShape} editor={editor} />
-            )
-          ) : selectedShape ? (
-            overlay === "geometry" ? (
-              <GeometryFields shape={selectedShape} editor={editor} />
-            ) : (
-              <div className="selection-property-content">
-                <h3>Fill</h3>
-                <ColorSwatches
-                  palette={fillPalette}
-                  value={selectedShape.fill}
-                  onChange={(fill) => editor.setFill(fill)}
-                  label="Rectangle fill color"
-                  suffix="fill"
-                />
-              </div>
-            )
+            <TextStyleControls key={selectedShape.id} shape={selectedShape} editor={editor} />
+          ) : selectedShape?.type === "rectangle" ? (
+            <RectangleStyleControls shape={selectedShape} editor={editor} />
           ) : null}
+        </div>
+        <nav className="selection-shelf" aria-label="Selection actions">
+          <button
+            className="selection-action"
+            aria-label="Duplicate selection"
+            title="Duplicate selection"
+            onClick={onDuplicate}
+          >
+            <Icon name="duplicate" />
+            <span>Duplicate</span>
+          </button>
+          <button
+            className="selection-action is-danger"
+            aria-label={
+              multi
+                ? "Delete selection"
+                : selectedConnector
+                  ? "Delete connector"
+                  : `Delete ${selectedShape?.type === "text" ? "text" : "rectangle"}`
+            }
+            onClick={() => editor.removeSelection()}
+          >
+            <Icon name="trash" />
+            <span>Delete</span>
+          </button>
+          {!multi && selectedShape && (
+            <button
+              className="selection-action geometry-trigger"
+              data-overlay-trigger="geometry"
+              aria-label="More properties"
+              aria-expanded={geometryOpen}
+              onClick={() => onOverlay(geometryOpen ? null : "geometry")}
+            >
+              <Icon name="settings" />
+              <span>Geometry</span>
+            </button>
+          )}
+        </nav>
+      </section>
+      {geometryOpen && selectedShape && (
+        <section className="selection-popover" role="dialog" aria-label="Precise geometry">
+          <header>
+            <h2>Precise geometry</h2>
+            <button
+              className="selection-close"
+              aria-label="Close precise geometry"
+              onClick={() => onOverlay(null)}
+            >
+              ×
+            </button>
+          </header>
+          <GeometryFields shape={selectedShape} editor={editor} />
         </section>
       )}
-      <nav className="selection-shelf" aria-label="Selection actions">
-        {multi && (
-          <span className="selection-count" role="heading" aria-level={2}>
-            {ids.length} objects
-          </span>
-        )}
-        {!multi &&
-          trigger(
-            "style",
-            selectedConnector
-              ? "Connector style"
-              : selectedShape?.type === "text"
-                ? "Text style"
-                : "Fill",
-            <>
-              {selectedShape?.type === "text" ? "Text style" : selectedConnector ? "Style" : "Fill"}
-            </>,
-          )}
-        <button
-          className="selection-action"
-          aria-label="Duplicate selection"
-          title="Duplicate selection"
-          onClick={onDuplicate}
-        >
-          <Icon name="duplicate" />
-          <span>Duplicate</span>
-        </button>
-        <button
-          className="selection-action is-danger"
-          aria-label={
-            multi
-              ? "Delete selection"
-              : selectedConnector
-                ? "Delete connector"
-                : `Delete ${selectedShape?.type === "text" ? "text" : "rectangle"}`
-          }
-          onClick={() => editor.removeSelection()}
-        >
-          <Icon name="trash" />
-          <span>Delete</span>
-        </button>
-        {!multi &&
-          selectedShape &&
-          trigger("geometry", "More properties", <Icon name="settings" />)}
-        {multi && trigger("arrange", "Arrange selection", <>Arrange</>)}
-      </nav>
     </div>
   );
 }

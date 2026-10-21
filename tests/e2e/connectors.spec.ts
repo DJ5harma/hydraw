@@ -85,7 +85,7 @@ test("draws a bound arrow, follows moved/resized nodes, and undoes cascade delet
   await openObjects(page);
   await page.getByRole("button", { name: "Connector 1", exact: true }).click();
   await openStyle(page);
-  await expect(page.getByRole("dialog", { name: "Connector style" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Connector style" })).toBeVisible();
   await page.getByRole("button", { name: "Delete connector", exact: true }).click();
   expect((await exportBoard(page)).shapes).toEqual(changed.shapes);
   await page.getByRole("button", { name: "Undo", exact: true }).click();

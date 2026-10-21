@@ -1,8 +1,9 @@
 # Canvas-first Hydraw
 
 Updated 21 October 2026. **Quiet canvas is now implemented in the production app.**
-The reserved header and default inspector have been removed; board actions,
-selection properties and object navigation are transient canvas overlays.
+The reserved header and default inspector have been removed. Selection now
+automatically reveals a floating properties panel; board actions, precision
+geometry and object navigation remain requested overlays.
 [The first workspace pass](design/WORKSPACE_V1.md) is historical. The
 [interactive concept](design/canvas-concepts.html) remains a design study: its
 attached labels and simplified gestures are not production features.
@@ -31,16 +32,18 @@ new discovery problem.
 | Surface                       | Behavior                                                                                                                                                                                  |
 | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Board chip, upper left        | Menu, board name, truthful local persistence indicator. Rename, import, editable-file export, recovery and board actions live inside the menu. Save errors remain visible until resolved. |
-| Tool dock, upper center       | Select, rectangle, connector, text, pan. One active tool; shortcuts appear in tooltips/help. No slots for future tools.                                                                   |
+| Tool dock, upper center       | Select, rectangle, connector, text, pan. One active tool; shortcut hints remain visible on the buttons. No slots for future tools.                                                        |
 | View/history, lower left      | Zoom, fit board/selection, undo and redo. Disabled history controls retain their positions.                                                                                               |
-| Selection shelf, lower center | Only actions applicable to the selected records. Absent when nothing is selected. Stable location, content sized to the task.                                                             |
+| Floating selection properties | Relevant styling appears automatically on selection, without a Fill/Style click. Absent when nothing is selected.                                                                         |
 | Help, lower right             | Discoverable shortcuts and input guidance, opened deliberately.                                                                                                                           |
-| On-demand surfaces            | Objects, precise geometry, arrangement and detailed styling. One active surface at a time; opening another replaces it.                                                                   |
+| On-demand surfaces            | Objects and precise geometry. One active surface at a time; opening another replaces it.                                                                                                  |
 
-The alternative **Direct editing** moves the tool dock down and anchors selection
-actions near the object. It reduces pointer travel but introduces collision and
-movement risks. Compare it with the stable shelf in the concept; prefer the stable
-shelf until real task trials demonstrate a benefit from anchoring.
+The earlier bottom shelf is superseded by the automatically shown floating
+properties panel. It defaults to the left and flips right when it would cover a
+selected rectangle. It reserves no canvas space, does not take keyboard focus,
+and disappears while dragging, editing text or opening board/objects/help.
+On phones it becomes a bounded scrollable panel above the tools, with actions
+remaining reachable. The older interactive concept is historical design work.
 
 Excalidraw's documented [main menu](https://docs.excalidraw.com/docs/@excalidraw/excalidraw/api/children-components/main-menu)
 groups occasional commands, its [welcome screen](https://docs.excalidraw.com/docs/@excalidraw/excalidraw/api/children-components/welcome-screen)
@@ -55,8 +58,8 @@ and adapts the principle to Hydraw's much smaller tool set.
 | ------------------------- | --------------------------------------------------------------------------------------- |
 | Empty board               | One brief draw prompt; disappears after the first object.                               |
 | Unselected diagram        | No property surface. Tools, board and navigation remain.                                |
-| Rectangle selected        | Fill, edit label when implemented, duplicate, delete, more properties.                  |
-| Text selected             | Text style, edit, duplicate, delete; no rectangle geometry form by default.             |
+| Rectangle selected        | Background, stroke color/width/style, opacity, corners, duplicate/delete, geometry.     |
+| Text selected             | Text formatting and edit, duplicate, delete; no rectangle geometry form by default.     |
 | Connector selected        | Stroke/arrowhead controls and delete; no unrelated fill controls.                       |
 | Multiple records          | Arrange, duplicate, delete; shared styles only when semantically valid.                 |
 | Dragging/resizing/panning | Suspend contextual overlays that obstruct the gesture. Retain stable tool/view anchors. |
@@ -143,8 +146,8 @@ catalog, rather than another always-visible button per shape kind. Keep tool
 configuration separate from record navigation. Do not build that picker before
 there is a second shape family to choose.
 
-Single selection shows type-specific style, duplicate/delete and geometry only
-for records that have editable geometry. Multiple selection shows count,
+Single selection shows type-specific style directly, duplicate/delete and geometry only
+for records that have editable geometry. Multiple selection directly shows count,
 duplicate/delete and arrangement; alignment is available for at least two shapes,
 distribution for at least three. Connectors do not inflate those shape counts.
 Selection controls disappear during gestures/text editing and while board,
@@ -156,3 +159,13 @@ Fit navigation takes a safe screen rectangle from the web adapter; semantic
 bounds and camera calculations live in the editor package. It preserves selection,
 revision and history, includes resolved connector endpoints and supports overview
 zoom for documents spanning the coordinate limits.
+
+## Shape styling baseline
+
+Rectangle background/transparent fill, stroke color/width/style, opacity and
+square/rounded corners are implemented and persist in native format v3. Text and
+connector selections immediately expose their existing controls. These are the
+first useful gaps against Excalidraw's [element defaults](https://github.com/excalidraw/excalidraw/blob/master/packages/common/src/constants.ts),
+not a claim of full parity. Patterned fills, sketch roughness, ellipses/diamonds,
+rotation, groups and layer ordering still need owned engine support. Do not show
+inactive controls for those features. Attached labels remain next in NEXT.md.

@@ -9,6 +9,7 @@ const fillNames: Record<Fill, string> = {
   "#fff0d5": "Sand",
   "#f7e4ed": "Rose",
   "#ffffff": "White",
+  transparent: "Transparent",
 };
 const inkNames: Record<TextColor, string> = {
   "#243e33": "Forest",
@@ -42,6 +43,7 @@ export function ColorSwatches<Color extends string>({
           key={color}
           className={`swatch ${value === color ? "is-selected" : ""}`}
           style={{ backgroundColor: color, color: ink ? "white" : undefined }}
+          data-transparent={color === "transparent" ? true : undefined}
           aria-label={`${name} ${suffix}`}
           aria-pressed={value === color}
           onClick={() => onChange(color)}

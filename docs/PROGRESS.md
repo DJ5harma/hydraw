@@ -223,3 +223,23 @@ isolates dash/opacity state per object. See [ADR 0008](adr/0008-rectangle-appear
 
 Focused verification passed four tests covering migration, styling round-trip,
 bindings, undo/redo, invalid opacity and existing text migration; editor types pass.
+
+## Milestone 10b — automatic floating properties and visible shortcuts
+
+Implemented on 21 October 2026 after feedback that selecting a shape should expose
+its common styling directly. A Luna agent implemented the floating panel and
+shortcut hints; primary-agent integration added working rectangle controls.
+
+- Selection immediately shows rectangle, text, connector or multiple-selection
+  properties without an extra Fill/Style click. No layout space is reserved and
+  no focus is taken from the canvas. Precision geometry stays explicit.
+- The panel flips away from selected rectangles near the left edge; narrow screens
+  use a short scrollable surface above the tools with a reachable action footer.
+  Gestures, text input and board/navigation/help surfaces suspend it.
+- V/R/C/T/H hints are visible again. Their removal had reduced discoverability.
+- Automatic properties flush native numeric drafts before an outside gesture;
+  they do not consume the first canvas click like explicit popovers do.
+- Updated affected browser helpers/assertions for the changed interaction contract.
+  Validation is intentionally focused: type/lint/boundary checks, four domain tests
+  from 10a and one Chromium styling/reload/narrow-layout journey. The full browser
+  matrix was not rerun for this change, per the user's request.

@@ -38,7 +38,8 @@ export async function openGeometry(page: Page) {
   await page.getByRole("button", { name: "More properties", exact: true }).click();
 }
 export async function openStyle(page: Page) {
-  if (await page.locator('[data-overlay-trigger="style"][aria-expanded="true"]').count()) return;
   await closeOverlay(page);
-  await page.locator('[data-overlay-trigger="style"]').click();
+  await expect(
+    page.getByRole("region", { name: "Selection properties", exact: true }),
+  ).toBeVisible();
 }

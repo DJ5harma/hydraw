@@ -1,14 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { KeyboardEvent, RefObject } from "react";
 
-export type WorkspaceOverlay =
-  | "board"
-  | "objects"
-  | "style"
-  | "geometry"
-  | "arrange"
-  | "help"
-  | null;
+export type WorkspaceOverlay = "board" | "objects" | "geometry" | "help" | null;
 
 /** One transient surface owns dismissal and focus; document/session state stays elsewhere. */
 export function useWorkspaceOverlay(canvasRef: RefObject<HTMLCanvasElement | null>) {
@@ -22,10 +15,7 @@ export function useWorkspaceOverlay(canvasRef: RefObject<HTMLCanvasElement | nul
     setActive(null);
   }, []);
   const dismissSelection = useCallback(
-    () =>
-      setActive((current) =>
-        ["style", "geometry", "arrange"].includes(current ?? "") ? null : current,
-      ),
+    () => setActive((current) => (current === "geometry" ? null : current)),
     [],
   );
   function open(next: WorkspaceOverlay) {
@@ -61,17 +51,21 @@ export function useWorkspaceOverlay(canvasRef: RefObject<HTMLCanvasElement | nul
   }, [active, canvasRef]);
 
   useEffect(() => {
-    if (!active) return;
     function outside(event: PointerEvent) {
-      if (!(event.target instanceof Node) || rootRef.current?.contains(event.target)) return;
+      const root = active
+        ? rootRef.current
+        : document.querySelector<HTMLElement>(".selection-properties-root");
+      if (!root || !(event.target instanceof Node) || root.contains(event.target)) return;
       const focused = document.activeElement;
       // React may unmount before the browser transfers focus. Flush native drafts first.
       if (
         focused instanceof HTMLElement &&
-        rootRef.current?.contains(focused) &&
+        root.contains(focused) &&
         focused.matches("input, textarea, select")
       )
         focused.blur();
+      // Automatic properties stay open and never add an extra click before editing.
+      if (!active) return;
       // Dismissing a surface cannot also start a drawing/move gesture.
       if (event.target === canvasRef.current) {
         event.preventDefault();

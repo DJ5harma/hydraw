@@ -236,11 +236,11 @@ test("copies external edges independently and scopes Select All to the canvas in
   await openObjects(page);
   await page.getByRole("button", { name: /^Text 3/ }).click();
   await closeOverlay(page);
-  await object(page, "Text style").click();
+  await closeOverlay(page);
   await object(page, "Edit text").click();
   const text = page.getByRole("textbox", { name: "Edit canvas text", exact: true });
   await text.press("Control+a");
   await text.press("Escape");
-  await expect(object(page, "Text style")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Text style" })).toBeVisible();
   expect(await exported(page)).toEqual(copied);
 });
