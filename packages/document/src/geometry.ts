@@ -27,5 +27,7 @@ export function containsShape(shape: Shape, point: Point, tolerance = 0): boolea
   return nx <= 1 && ny <= 1;
 }
 export function hitTest(shapes: readonly Shape[], point: Point): Shape | undefined {
-  return shapes.findLast((shape) => containsShape(shape, point));
+  return shapes
+    .toSorted((a, b) => (a.zIndex ?? 0) - (b.zIndex ?? 0))
+    .findLast((shape) => containsShape(shape, point));
 }

@@ -1,3 +1,4 @@
+import { expandGroups, clonedMetadata } from "./object-scene.ts";
 import { MAX_CONNECTORS, MAX_COORDINATE, MAX_ENDPOINT_COORDINATE, MAX_SHAPES } from "./model.ts";
 import type { BoardDocument, Connector, Endpoint, Point, Shape } from "./model.ts";
 import { createConnectorResolver } from "./connectors.ts";
@@ -117,7 +118,7 @@ export function duplicateObjects(
   makeId: () => string,
   offset: Point = { x: 24, y: 24 },
 ): Readonly<{ transaction: DocumentTransaction | null; ids: readonly string[] }> {
-  const selected = new Set(ids);
+  const selected = new Set(expandGroups(document, ids));
   const nodes = new Set(
     document.shapes.filter((shape) => selected.has(shape.id)).map((shape) => shape.id),
   );
@@ -154,6 +155,9 @@ export function duplicateObjects(
   const used = new Set([
     ...document.shapes.map((shape) => shape.id),
     ...document.connectors.map((connector) => connector.id),
+    ...[...document.shapes, ...document.connectors].flatMap((item) =>
+      item.groupId ? [item.groupId] : [],
+    ),
   ]);
   for (const object of [...updates.shapes, ...updates.connectors]) {
     const id = makeId();
@@ -162,11 +166,15 @@ export function duplicateObjects(
     used.add(id);
     identities.set(object.id, id);
   }
+  const metadata = clonedMetadata(document, document, [...identities.keys()], makeId, [
+    ...identities.values(),
+  ]);
   const changes: DocumentChange[] = [];
   updates.shapes.forEach((shape, position) =>
     changes.push(
       ...shapeTransaction("Duplicate selection", document.shapes.length + position, null, {
         ...shape,
+        ...metadata.get(shape.id),
         id: identities.get(shape.id)!,
       })!.changes,
     ),
@@ -180,6 +188,7 @@ export function duplicateObjects(
     changes.push(
       ...connectorTransaction("Duplicate selection", document.connectors.length + position, null, {
         ...connector,
+        ...metadata.get(connector.id),
         id: identities.get(connector.id)!,
         start: remap(connector.start),
         end: remap(connector.end),

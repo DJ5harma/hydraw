@@ -14,6 +14,7 @@ import {
 } from "./model.ts";
 import type {
   Fill,
+  ObjectMetadata,
   ShapeLabel,
   Rectangle,
   BoardDocument,
@@ -45,7 +46,8 @@ export function decodeDocument(value: unknown): BoardDocument {
       value.version !== 1 &&
       value.version !== 2 &&
       value.version !== 3 &&
-      value.version !== 4)
+      value.version !== 4 &&
+      value.version !== 5)
   ) {
     throw new Error("This board uses an unsupported Hydraw format.");
   }
@@ -68,6 +70,8 @@ export function decodeDocument(value: unknown): BoardDocument {
       (value.kind !== undefined || value.label !== undefined)
     )
       throw new Error("Shape kinds and labels require Hydraw version 4.");
+    if (valueVersion < 5 && record(value) && hasMetadata(value))
+      throw new Error("Object organization requires Hydraw version 5.");
     const shape = valueVersion === 0 ? decodeRectangle(value) : decodeShape(value);
     if (ids.has(shape.id)) throw new Error("This board contains invalid duplicate shape IDs.");
     ids.add(shape.id);
@@ -85,11 +89,17 @@ export function decodeDocument(value: unknown): BoardDocument {
     value.connectors.some((item: unknown) => record(item) && item.label !== undefined)
   )
     throw new Error("Connector labels require Hydraw version 4.");
+  if (
+    valueVersion < 5 &&
+    Array.isArray(value.connectors) &&
+    value.connectors.some((item: unknown) => record(item) && hasMetadata(item))
+  )
+    throw new Error("Object organization requires Hydraw version 5.");
   const connectors = decodeConnectors(valueVersion >= 2 ? value.connectors : []);
   assertConnectorGraph(shapes, connectors);
   return Object.freeze({
     format: "hydraw",
-    version: 4,
+    version: 5,
     name,
     shapes: Object.freeze(shapes),
     connectors: Object.freeze(connectors),
@@ -140,6 +150,7 @@ export function decodeRectangle(shape: unknown): Rectangle {
   return Object.freeze({
     id: shape.id,
     type: "rectangle",
+    ...decodeMetadata(shape),
     x: shape.x,
     y: shape.y,
     width: shape.width,
@@ -189,6 +200,7 @@ export function decodeText(shape: unknown): TextShape {
   return Object.freeze({
     id: shape.id,
     type: "text",
+    ...decodeMetadata(shape),
     x: shape.x,
     y: shape.y,
     width: shape.width,
@@ -246,6 +258,7 @@ export function decodeConnector(value: unknown): Connector {
   return Object.freeze({
     id: value.id,
     type: "connector",
+    ...decodeMetadata(value),
     start,
     end,
     color: value.color,
@@ -316,4 +329,22 @@ export function decodeLabel(value: unknown): ShapeLabel {
     fontWeight: value.fontWeight,
     color: value.color,
   });
+}
+
+function hasMetadata(value: Record<string, unknown>): boolean {
+  return value.groupId !== undefined || value.locked !== undefined || value.zIndex !== undefined;
+}
+function decodeMetadata(value: Record<string, unknown>): ObjectMetadata {
+  if (
+    (value.groupId !== undefined &&
+      (typeof value.groupId !== "string" || !value.groupId || value.groupId.length > 100)) ||
+    (value.locked !== undefined && typeof value.locked !== "boolean") ||
+    (value.zIndex !== undefined && !finite(value.zIndex, -1_000_000_000, 1_000_000_000))
+  )
+    throw new Error("This board contains invalid object organization.");
+  return {
+    ...(value.groupId === undefined ? {} : { groupId: value.groupId as string }),
+    ...(value.locked === undefined ? {} : { locked: value.locked as boolean }),
+    ...(value.zIndex === undefined ? {} : { zIndex: value.zIndex as number }),
+  };
 }

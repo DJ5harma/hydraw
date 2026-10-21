@@ -23,7 +23,9 @@ export type ShapeLabel = Readonly<{
   fontWeight: 400 | 700;
   color: TextColor;
 }>;
+export type ObjectMetadata = Readonly<{ groupId?: string; locked?: boolean; zIndex?: number }>;
 export type Rectangle = Bounds &
+  ObjectMetadata &
   Readonly<{
     id: string;
     type: "rectangle";
@@ -35,6 +37,7 @@ export type Rectangle = Bounds &
 export const TEXT_COLORS = ["#243e33", "#3568db", "#8d315a", "#805d20", "#202124"] as const;
 export type TextColor = (typeof TEXT_COLORS)[number];
 export type TextShape = Bounds &
+  ObjectMetadata &
   Readonly<{
     id: string;
     type: "text";
@@ -48,15 +51,16 @@ export type Shape = Rectangle | TextShape;
 export type Endpoint =
   | Readonly<{ type: "point"; x: number; y: number }>
   | Readonly<{ type: "binding"; shapeId: string }>;
-export type Connector = Readonly<{
-  id: string;
-  type: "connector";
-  start: Endpoint;
-  end: Endpoint;
-  color: TextColor;
-  arrowhead: "arrow" | "none";
-  label?: ShapeLabel;
-}>;
+export type Connector = ObjectMetadata &
+  Readonly<{
+    id: string;
+    type: "connector";
+    start: Endpoint;
+    end: Endpoint;
+    color: TextColor;
+    arrowhead: "arrow" | "none";
+    label?: ShapeLabel;
+  }>;
 export const MAX_CONNECTORS = 5_000;
 export const MAX_TEXT_LENGTH = 2_000;
 export const MIN_FONT_SIZE = 12;
@@ -64,7 +68,7 @@ export const MAX_FONT_SIZE = 96;
 
 export type BoardDocument = Readonly<{
   format: "hydraw";
-  version: 4;
+  version: 5;
   name: string;
   shapes: readonly Shape[];
   connectors: readonly Connector[];
@@ -80,5 +84,5 @@ export const MAX_ENDPOINT_COORDINATE = MAX_COORDINATE * 2;
 export const MAX_SIZE = 100_000;
 
 export function createDocument(): BoardDocument {
-  return { format: "hydraw", version: 4, name: "Untitled board", shapes: [], connectors: [] };
+  return { format: "hydraw", version: 5, name: "Untitled board", shapes: [], connectors: [] };
 }

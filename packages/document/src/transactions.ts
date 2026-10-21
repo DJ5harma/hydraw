@@ -1,6 +1,13 @@
 import { rectangleAppearance } from "./appearance.ts";
 import { MAX_SHAPES, MAX_CONNECTORS } from "./model.ts";
-import type { BoardDocument, Shape, ShapeLabel, Connector, Endpoint } from "./model.ts";
+import type {
+  BoardDocument,
+  Shape,
+  ShapeLabel,
+  Connector,
+  Endpoint,
+  ObjectMetadata,
+} from "./model.ts";
 import { decodeName, decodeShape, decodeConnector, assertConnectorGraph } from "./validation.ts";
 
 type ShapeChange = Readonly<{
@@ -33,8 +40,15 @@ function sameLabel(a?: ShapeLabel, b?: ShapeLabel): boolean {
   );
 }
 
+function sameMetadata(a: ObjectMetadata, b: ObjectMetadata): boolean {
+  return (
+    a.groupId === b.groupId && Boolean(a.locked) === Boolean(b.locked) && a.zIndex === b.zIndex
+  );
+}
+
 export function sameShape(a: Shape, b: Shape): boolean {
   if (
+    !sameMetadata(a, b) ||
     a.id !== b.id ||
     a.type !== b.type ||
     a.x !== b.x ||
@@ -92,6 +106,7 @@ function sameEndpoint(a: Endpoint, b: Endpoint): boolean {
 
 export function sameConnector(a: Connector, b: Connector): boolean {
   return (
+    sameMetadata(a, b) &&
     a.id === b.id &&
     a.type === b.type &&
     a.color === b.color &&
