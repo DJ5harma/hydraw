@@ -10,6 +10,9 @@ export function RectangleStyleControls({ shape, editor }: { shape: Rectangle; ed
   const style = rectangleAppearance(shape);
   return (
     <div className="rectangle-style-controls">
+      <button className="file-button" onClick={() => editor.editText(shape.id)}>
+        {shape.label ? "Edit label" : "Add label"}
+      </button>
       <section>
         <h3>Stroke</h3>
         <ColorSwatches
@@ -63,7 +66,7 @@ export function RectangleStyleControls({ shape, editor }: { shape: Rectangle; ed
           ))}
         </div>
       </section>
-      <section>
+      <section hidden={shape.kind === "ellipse" || shape.kind === "diamond"}>
         <h3>Corners</h3>
         <div className="property-options" role="group" aria-label="Corners">
           {([0, 8] as const).map((cornerRadius) => (

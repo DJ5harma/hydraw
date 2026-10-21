@@ -7,7 +7,7 @@ import {
   MAX_SIZE,
   rectangleBetween,
 } from "@hydraw/document";
-import type { Fill, Point, Shape } from "@hydraw/document";
+import type { Fill, Point, Shape, ShapeKind } from "@hydraw/document";
 import { clamp, handlePoint, hitResizeHandle, resizeRectangle, screenToWorld } from "./geometry.ts";
 import type { ResizeHandle } from "./geometry.ts";
 import type { Camera, EditorSnapshot } from "./types.ts";
@@ -25,7 +25,7 @@ import {
 export type Gesture =
   | SelectionGesture
   | ConnectorGesture
-  | { kind: "draw"; start: Point; id: string }
+  | { kind: "draw"; start: Point; id: string; shapeKind: ShapeKind }
   | { kind: "resize"; start: Point; shape: Shape; handle: ResizeHandle }
   | { kind: "pan"; start: Point; camera: Camera };
 
@@ -66,7 +66,7 @@ export function previewGesture(
     x: clamp(point.x, gesture.start.x - MAX_SIZE, gesture.start.x + MAX_SIZE),
     y: clamp(point.y, gesture.start.y - MAX_SIZE, gesture.start.y + MAX_SIZE),
   };
-  return { preview: rectangleBetween(gesture.id, gesture.start, end, fill) };
+  return { preview: rectangleBetween(gesture.id, gesture.start, end, fill, gesture.shapeKind) };
 }
 
 export const IDLE_GESTURE = Object.freeze({
@@ -132,11 +132,11 @@ export function startGesture(
     };
     const id = makeId();
     return {
-      gesture: { kind: "draw", start, id },
+      gesture: { kind: "draw", start, id, shapeKind: snapshot.shapeKind },
       patch: {
         interacting: true,
         selectedIds: [],
-        preview: rectangleBetween(id, start, start, fill),
+        preview: rectangleBetween(id, start, start, fill, snapshot.shapeKind),
       },
     };
   }

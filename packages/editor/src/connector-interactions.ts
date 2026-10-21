@@ -2,6 +2,7 @@ import {
   createConnectorResolver,
   distanceToSegment,
   hitTest,
+  containsShape,
   MAX_ENDPOINT_COORDINATE,
   resolveConnector,
 } from "@hydraw/document";
@@ -16,14 +17,7 @@ export type ConnectorGesture =
 
 export function endpointAt(shapes: readonly Shape[], point: Point, tolerance: number): Endpoint {
   const shape =
-    hitTest(shapes, point) ??
-    shapes.findLast(
-      (shape) =>
-        point.x >= shape.x - tolerance &&
-        point.x <= shape.x + shape.width + tolerance &&
-        point.y >= shape.y - tolerance &&
-        point.y <= shape.y + shape.height + tolerance,
-    );
+    hitTest(shapes, point) ?? shapes.findLast((shape) => containsShape(shape, point, tolerance));
   return shape ? { type: "binding", shapeId: shape.id } : { type: "point", ...point };
 }
 

@@ -17,12 +17,12 @@ export function ObjectNavigator({ editor, onClose }: { editor: Editor; onClose: 
       label:
         shape.type === "text"
           ? `Text ${index + 1} · ${shape.text.slice(0, 32)}`
-          : `Rectangle ${index + 1}`,
+          : `${shape.kind ? shape.kind[0]!.toUpperCase() + shape.kind.slice(1) : "Rectangle"} ${index + 1}${shape.label ? ` · ${shape.label.text.slice(0, 32)}` : ""}`,
       kind: shape.type === "text" ? "T" : "▭",
     }));
     const connectors = snapshot.document.connectors.map((connector, index) => ({
       id: connector.id,
-      label: `Connector ${index + 1}`,
+      label: `Connector ${index + 1}${connector.label ? ` · ${connector.label.text.slice(0, 32)}` : ""}`,
       kind: "↗",
     }));
     return [...shapes, ...connectors];

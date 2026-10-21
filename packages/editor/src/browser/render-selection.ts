@@ -20,7 +20,7 @@ export function drawSelection(
 ): void {
   const { camera, selectedIds } = snapshot;
   const selected =
-    snapshot.textEditing?.draft ??
+    (snapshot.textEditing?.ownerId ? null : snapshot.textEditing?.draft) ??
     snapshot.preview ??
     shapes.find((shape) => shape.id === snapshot.selectedId);
   ctx.save();

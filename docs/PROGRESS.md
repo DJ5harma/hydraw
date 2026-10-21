@@ -243,3 +243,19 @@ shortcut hints; primary-agent integration added working rectangle controls.
   Validation is intentionally focused: type/lint/boundary checks, four domain tests
   from 10a and one Chromium styling/reload/narrow-layout journey. The full browser
   matrix was not rerun for this change, per the user's request.
+
+## Milestone 11 — shape kinds and attached labels
+
+Implemented on 21 October 2026. Rectangle, ellipse and diamond have direct toolbar
+buttons and R/O/D shortcuts, following the user's request to avoid a shape picker.
+Shape hit tests and connector perimeter geometry respect each silhouette.
+
+Nodes and connectors own labels in native format v4. Enter/double-click or Add
+label opens the native text draft; clearing retains the owner. Shared layout
+wraps and clips labels without resizing owners. Movement, resize, duplication,
+file round trips and history preserve labels. Versions 0–3 migrate without losing
+records; see [ADR 0009](adr/0009-shape-kinds-and-labels.md).
+
+Three focused editor checks pass for label lifecycle/migration and silhouette
+geometry, and editor type checking passes. Browser integration is verified with
+the following export/clipboard increment.

@@ -50,8 +50,10 @@ function createKeyboardHandler(
     } else if (!mod && !event.altKey) {
       if (target instanceof HTMLElement && target.closest("button, a")) return;
       if (key === "v") selectTool("select");
-      else if (key === "r") selectTool("rectangle");
-      else if (key === "c") selectTool("connector");
+      else if (key === "r" || key === "o" || key === "d") {
+        editor.setShapeKind(key === "o" ? "ellipse" : key === "d" ? "diamond" : "rectangle");
+        selectTool("rectangle");
+      } else if (key === "c") selectTool("connector");
       else if (key === "t") selectTool("text");
       else if (key === "h") selectTool("hand");
       else if (key === "delete" || key === "backspace") {
@@ -63,12 +65,7 @@ function createKeyboardHandler(
       } else if (key === "enter") {
         event.preventDefault();
         const snapshot = editor.getSnapshot();
-        if (
-          snapshot.document.shapes.some(
-            (shape) => shape.id === snapshot.selectedId && shape.type === "text",
-          )
-        )
-          editor.editText();
+        if (snapshot.tool === "select" && snapshot.selectedId) editor.editText();
         else if (snapshot.tool === "text") editor.addText(center(), "center");
         else if (snapshot.tool === "connector") editor.addConnector(center());
         else editor.addRectangle(center());

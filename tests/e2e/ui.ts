@@ -24,7 +24,7 @@ export async function closeOverlay(page: Page) {
 export async function addRectangle(page: Page) {
   await closeOverlay(page);
   await page.locator("canvas").focus();
-  await page.keyboard.press("v");
+  await page.keyboard.press("r");
   await page.keyboard.press("Enter");
 }
 export async function addText(page: Page) {

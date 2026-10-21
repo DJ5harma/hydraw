@@ -1,6 +1,7 @@
 import type {
   BoardDocument,
   Fill,
+  ShapeKind,
   Shape,
   TextShape,
   Connector,
@@ -20,6 +21,7 @@ export type EditorSnapshot = Readonly<{
   selectedId: string | null;
   tool: Tool;
   fill: Fill;
+  shapeKind: ShapeKind;
   camera: Camera;
   preview: Shape | null;
   selectionPreview: ObjectUpdates | null;
@@ -27,7 +29,7 @@ export type EditorSnapshot = Readonly<{
   connectorPreview: Connector | null;
   bindingTargetId: string | null;
   activeEndpoint: ConnectorEnd | null;
-  textEditing: Readonly<{ before: TextShape | null; draft: TextShape }> | null;
+  textEditing: Readonly<{ before: TextShape | null; draft: TextShape; ownerId?: string }> | null;
   interacting: boolean;
   activeHandle: ResizeHandle | null;
   canUndo: boolean;

@@ -1,6 +1,6 @@
 import { rectangleAppearance } from "./appearance.ts";
 import { MAX_SHAPES, MAX_CONNECTORS } from "./model.ts";
-import type { BoardDocument, Shape, Connector, Endpoint } from "./model.ts";
+import type { BoardDocument, Shape, ShapeLabel, Connector, Endpoint } from "./model.ts";
 import { decodeName, decodeShape, decodeConnector, assertConnectorGraph } from "./validation.ts";
 
 type ShapeChange = Readonly<{
@@ -19,6 +19,20 @@ type NameChange = Readonly<{ type: "name"; before: string; after: string }>;
 export type DocumentChange = ShapeChange | ConnectorChange | NameChange;
 export type DocumentTransaction = Readonly<{ label: string; changes: readonly DocumentChange[] }>;
 
+function sameLabel(a?: ShapeLabel, b?: ShapeLabel): boolean {
+  return (
+    a === b ||
+    Boolean(
+      a &&
+      b &&
+      a.text === b.text &&
+      a.fontSize === b.fontSize &&
+      a.fontWeight === b.fontWeight &&
+      a.color === b.color,
+    )
+  );
+}
+
 export function sameShape(a: Shape, b: Shape): boolean {
   if (
     a.id !== b.id ||
@@ -34,6 +48,8 @@ export function sameShape(a: Shape, b: Shape): boolean {
       right = rectangleAppearance(b);
     return (
       a.fill === b.fill &&
+      (a.kind ?? "rectangle") === (b.kind ?? "rectangle") &&
+      sameLabel(a.label, b.label) &&
       left.stroke === right.stroke &&
       left.strokeWidth === right.strokeWidth &&
       left.strokeStyle === right.strokeStyle &&
@@ -80,6 +96,7 @@ export function sameConnector(a: Connector, b: Connector): boolean {
     a.type === b.type &&
     a.color === b.color &&
     a.arrowhead === b.arrowhead &&
+    sameLabel(a.label, b.label) &&
     sameEndpoint(a.start, b.start) &&
     sameEndpoint(a.end, b.end)
   );

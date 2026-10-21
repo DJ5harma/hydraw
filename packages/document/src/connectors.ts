@@ -14,8 +14,15 @@ function perimeter(endpoint: ResolvedEndpoint, toward: Point, fallback: number):
   const dx = toward.x - origin.x;
   const dy = toward.y - origin.y;
   if (dx === 0 && dy === 0) return { x: origin.x + (fallback * endpoint.width) / 2, y: origin.y };
+  const nx = Math.abs(dx) / (endpoint.width / 2),
+    ny = Math.abs(dy) / (endpoint.height / 2);
   const scale =
-    1 / Math.max(Math.abs(dx) / (endpoint.width / 2), Math.abs(dy) / (endpoint.height / 2));
+    1 /
+    (endpoint.type === "rectangle" && endpoint.kind === "ellipse"
+      ? Math.hypot(nx, ny)
+      : endpoint.type === "rectangle" && endpoint.kind === "diamond"
+        ? nx + ny
+        : Math.max(nx, ny));
   return { x: origin.x + dx * scale, y: origin.y + dy * scale };
 }
 

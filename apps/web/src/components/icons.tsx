@@ -13,6 +13,8 @@ type IconName =
   | "duplicate"
   | "connector"
   | "rectangle"
+  | "ellipse"
+  | "diamond"
   | "text"
   | "hand"
   | "undo"
@@ -107,6 +109,8 @@ const paths: Record<IconName, React.ReactNode> = {
   ),
   connector: <path d="M4 20 20 4M9 4h11v11" />,
   rectangle: <rect x="4" y="4" width="16" height="16" rx="3" />,
+  ellipse: <ellipse cx="12" cy="12" rx="8" ry="6" />,
+  diamond: <path d="m12 3 9 9-9 9-9-9 9-9Z" />,
   hand: (
     <path d="M8 11V5a2 2 0 0 1 4 0v5-6a2 2 0 0 1 4 0v6-4a2 2 0 0 1 4 0v8c0 5-3 7-7 7-3 0-5-1-7-4l-3-5c-1-2 1-4 3-2l2 3" />
   ),

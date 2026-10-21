@@ -21,6 +21,9 @@ export function ConnectorInspector({
   return (
     <section className="inspector-section connector-controls">
       <h3>Connector</h3>
+      <button className="file-button" onClick={() => editor.editText(connector.id)}>
+        {connector.label ? "Edit label" : "Add label"}
+      </button>
       <dl className="connector-endpoints">
         <div>
           <dt>From</dt>

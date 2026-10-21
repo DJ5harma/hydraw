@@ -1,5 +1,6 @@
 import {
   decodeDocument,
+  decodeLabel,
   rectangleAppearance,
   alignShapesTransaction,
   distributeShapesTransaction,
@@ -31,10 +32,12 @@ import type {
   Point,
   Rectangle,
   RectangleAppearance,
+  ShapeKind,
   Shape,
   TextShape,
 } from "@hydraw/document";
-import { hitConnectorEnd } from "./connector-interactions.ts";
+import { labelTextShape } from "./labels.ts";
+import { hitConnector, hitConnectorEnd } from "./connector-interactions.ts";
 import type { ConnectorEnd } from "./connector-interactions.ts";
 import { clamp, hitResizeHandle, screenToWorld } from "./geometry.ts";
 import type { ResizeHandle } from "./geometry.ts";
@@ -54,6 +57,7 @@ function chromeSnapshot(snapshot: EditorSnapshot): EditorChromeSnapshot {
     selectedIds,
     tool,
     fill,
+    shapeKind,
     interacting,
     textEditing,
     canUndo,
@@ -65,6 +69,7 @@ function chromeSnapshot(snapshot: EditorSnapshot): EditorChromeSnapshot {
     selectedIds,
     tool,
     fill,
+    shapeKind,
     interacting,
     textEditing,
     canUndo,
@@ -98,6 +103,7 @@ export class Editor {
       selectedId: null,
       tool: "select",
       fill: "#e7eefb",
+      shapeKind: "rectangle",
       camera: { x: 0, y: 0, zoom: 1 },
       connectorPreview: null,
       bindingTargetId: null,
@@ -296,6 +302,14 @@ export class Editor {
       : null;
   }
 
+  setShapeKind(shapeKind: ShapeKind): void {
+    if (!["rectangle", "ellipse", "diamond"].includes(shapeKind))
+      throw new Error("Unknown shape kind.");
+    this.finishTextEditing();
+    this.cancelGesture();
+    this.publish({ shapeKind, tool: "rectangle" });
+  }
+
   setTool(tool: Tool): void {
     this.finishTextEditing();
     this.cancelGesture();
@@ -416,6 +430,7 @@ export class Editor {
       width: 180,
       height: 120,
       fill,
+      ...(this.snapshot.shapeKind === "rectangle" ? {} : { kind: this.snapshot.shapeKind }),
     };
     this.commitShape("Create rectangle", null, shape);
     this.publish({ selectedIds: [shape.id], tool: "select" });
@@ -466,7 +481,14 @@ export class Editor {
       this.snapshot.document.shapes,
       screenToWorld(screen, this.snapshot.camera),
     );
-    if (shape?.type === "text") this.editText(shape.id);
+    const edge = shape
+      ? undefined
+      : hitConnector(
+          this.snapshot.document,
+          screenToWorld(screen, this.snapshot.camera),
+          7 / this.snapshot.camera.zoom,
+        );
+    if (shape || edge) this.editText(shape?.id ?? edge!.id);
   }
 
   editText(id = this.snapshot.selectedId): void {
@@ -474,12 +496,30 @@ export class Editor {
     this.finishTextEditing();
     this.cancelGesture();
     const shape = this.snapshot.document.shapes.find((shape) => shape.id === id);
-    if (shape?.type === "text")
+    if (shape?.type === "text") {
       this.publish({
         selectedIds: [shape.id],
         tool: "select",
         textEditing: { before: shape, draft: shape },
       });
+      return;
+    }
+    const owner = shape ?? this.snapshot.document.connectors.find((item) => item.id === id);
+    if (!owner) return;
+    if (!this.measureText) throw new Error("Label editing requires text measurement.");
+    const draft = labelTextShape(
+      {
+        ...owner,
+        label: owner.label ?? { text: "", fontSize: 20, fontWeight: 400, color: "#243e33" },
+      },
+      this.snapshot.document.shapes,
+      this.measureText,
+    )!;
+    this.publish({
+      selectedIds: [owner.id],
+      tool: "select",
+      textEditing: { before: owner.label ? draft : null, draft, ownerId: owner.id },
+    });
   }
 
   updateTextDraft(text: string): void {
@@ -488,7 +528,12 @@ export class Editor {
     const normalized = text.replace(/\r\n?/gu, "\n").replace(/\t/gu, "    ");
     if (normalized.length > MAX_TEXT_LENGTH)
       throw new Error(`Text must be at most ${MAX_TEXT_LENGTH} characters.`);
-    const draft = this.fitText({ ...editing.draft, text: normalized });
+    const content = { ...editing.draft, text: normalized };
+    if (editing.ownerId) decodeLabel(content);
+    const draft =
+      editing.ownerId && this.measureText
+        ? { ...content, height: layoutText(content, this.measureText).height }
+        : this.fitText(content);
     this.publish({ textEditing: { ...editing, draft } });
   }
 
@@ -497,6 +542,21 @@ export class Editor {
     if (!editing) return;
     this.assertWritable();
     const { before, draft } = editing;
+    if (editing.ownerId) {
+      const owner =
+        this.snapshot.document.shapes.find((item) => item.id === editing.ownerId) ??
+        this.snapshot.document.connectors.find((item) => item.id === editing.ownerId);
+      if (owner && owner.type !== "text") {
+        const { label: _oldLabel, ...rest } = owner;
+        const label = draft.text.trim() ? decodeLabel(draft) : undefined;
+        const next = label ? { ...rest, label } : rest;
+        if (owner.type === "connector")
+          this.commitConnector("Edit connector label", owner, next as Connector);
+        else this.commitShape("Edit shape label", owner, next as Rectangle);
+      }
+      this.publish({ textEditing: null, selectedIds: owner ? [owner.id] : [] });
+      return;
+    }
     const after = draft.text.trim() ? draft : null;
     this.commitShape(before ? "Edit text" : "Create text", before, after);
     this.publish({ textEditing: null, selectedIds: after ? [after.id] : [] });
@@ -505,7 +565,14 @@ export class Editor {
   cancelTextEditing(): void {
     const editing = this.snapshot.textEditing;
     if (editing)
-      this.publish({ textEditing: null, selectedIds: editing.before ? [editing.before.id] : [] });
+      this.publish({
+        textEditing: null,
+        selectedIds: editing.ownerId
+          ? [editing.ownerId]
+          : editing.before
+            ? [editing.before.id]
+            : [],
+      });
   }
 
   setTextStyle(
@@ -547,7 +614,14 @@ export class Editor {
         this.snapshot.document.shapes,
         screenToWorld(screen, this.snapshot.camera),
       );
-      if (shape?.type === "text") this.editText(shape.id);
+      const edge = shape
+        ? undefined
+        : hitConnector(
+            this.snapshot.document,
+            screenToWorld(screen, this.snapshot.camera),
+            7 / this.snapshot.camera.zoom,
+          );
+      if (shape || edge) this.editText(shape?.id ?? edge!.id);
       else this.addText(screen);
       return;
     }

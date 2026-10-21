@@ -14,6 +14,7 @@ import {
 } from "./model.ts";
 import type {
   Fill,
+  ShapeLabel,
   Rectangle,
   BoardDocument,
   Shape,
@@ -40,7 +41,11 @@ export function decodeDocument(value: unknown): BoardDocument {
   if (
     !record(value) ||
     value.format !== "hydraw" ||
-    (value.version !== 0 && value.version !== 1 && value.version !== 2 && value.version !== 3)
+    (value.version !== 0 &&
+      value.version !== 1 &&
+      value.version !== 2 &&
+      value.version !== 3 &&
+      value.version !== 4)
   ) {
     throw new Error("This board uses an unsupported Hydraw format.");
   }
@@ -57,6 +62,12 @@ export function decodeDocument(value: unknown): BoardDocument {
       (value.appearance !== undefined || value.fill === "transparent")
     )
       throw new Error("Rectangle appearance requires Hydraw version 3.");
+    if (
+      valueVersion < 4 &&
+      record(value) &&
+      (value.kind !== undefined || value.label !== undefined)
+    )
+      throw new Error("Shape kinds and labels require Hydraw version 4.");
     const shape = valueVersion === 0 ? decodeRectangle(value) : decodeShape(value);
     if (ids.has(shape.id)) throw new Error("This board contains invalid duplicate shape IDs.");
     ids.add(shape.id);
@@ -68,11 +79,17 @@ export function decodeDocument(value: unknown): BoardDocument {
     (!Array.isArray(value.connectors) || value.connectors.length !== 0)
   )
     throw new Error("Connectors require Hydraw version 2.");
+  if (
+    valueVersion < 4 &&
+    Array.isArray(value.connectors) &&
+    value.connectors.some((item: unknown) => record(item) && item.label !== undefined)
+  )
+    throw new Error("Connector labels require Hydraw version 4.");
   const connectors = decodeConnectors(valueVersion >= 2 ? value.connectors : []);
   assertConnectorGraph(shapes, connectors);
   return Object.freeze({
     format: "hydraw",
-    version: 3,
+    version: 4,
     name,
     shapes: Object.freeze(shapes),
     connectors: Object.freeze(connectors),
@@ -112,7 +129,11 @@ export function decodeRectangle(shape: unknown): Rectangle {
     !finite(shape.y, -MAX_COORDINATE, MAX_COORDINATE) ||
     !finite(shape.width, 1, MAX_SIZE) ||
     !finite(shape.height, 1, MAX_SIZE) ||
-    !isFill(shape.fill)
+    !isFill(shape.fill) ||
+    (shape.kind !== undefined &&
+      shape.kind !== "rectangle" &&
+      shape.kind !== "ellipse" &&
+      shape.kind !== "diamond")
   ) {
     throw new Error("This board contains an invalid or unsupported shape.");
   }
@@ -124,6 +145,8 @@ export function decodeRectangle(shape: unknown): Rectangle {
     width: shape.width,
     height: shape.height,
     fill: shape.fill,
+    ...(shape.kind === undefined ? {} : { kind: shape.kind }),
+    ...(shape.label === undefined ? {} : { label: decodeLabel(shape.label) }),
     ...(shape.appearance === undefined ? {} : { appearance: decodeAppearance(shape.appearance) }),
   });
 }
@@ -227,6 +250,7 @@ export function decodeConnector(value: unknown): Connector {
     end,
     color: value.color,
     arrowhead: value.arrowhead,
+    ...(value.label === undefined ? {} : { label: decodeLabel(value.label) }),
   });
 }
 
@@ -272,5 +296,24 @@ function decodeAppearance(value: unknown): RectangleAppearance {
     strokeStyle: value.strokeStyle,
     opacity: value.opacity,
     cornerRadius: value.cornerRadius,
+  });
+}
+
+export function decodeLabel(value: unknown): ShapeLabel {
+  if (
+    !record(value) ||
+    typeof value.text !== "string" ||
+    value.text.length > MAX_TEXT_LENGTH ||
+    hasControlCharacters(value.text) ||
+    !finite(value.fontSize, MIN_FONT_SIZE, MAX_FONT_SIZE) ||
+    (value.fontWeight !== 400 && value.fontWeight !== 700) ||
+    !isTextColor(value.color)
+  )
+    throw new Error("This board contains an invalid label.");
+  return Object.freeze({
+    text: value.text,
+    fontSize: value.fontSize,
+    fontWeight: value.fontWeight,
+    color: value.color,
   });
 }

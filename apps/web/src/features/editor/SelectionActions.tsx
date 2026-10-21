@@ -70,7 +70,7 @@ export function SelectionActions({
       ? "Connector style"
       : selectedShape?.type === "text"
         ? "Text style"
-        : "Rectangle style";
+        : `${selectedShape?.type === "rectangle" && selectedShape.kind ? selectedShape.kind[0]!.toUpperCase() + selectedShape.kind.slice(1) : "Rectangle"} style`;
   const geometryOpen = overlay === "geometry" && selectedShape !== undefined && !multi;
 
   return (

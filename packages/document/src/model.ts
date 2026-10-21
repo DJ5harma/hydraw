@@ -16,12 +16,21 @@ export type Bounds = Readonly<{
   width: number;
   height: number;
 }>;
+export type ShapeKind = "rectangle" | "ellipse" | "diamond";
+export type ShapeLabel = Readonly<{
+  text: string;
+  fontSize: number;
+  fontWeight: 400 | 700;
+  color: TextColor;
+}>;
 export type Rectangle = Bounds &
   Readonly<{
     id: string;
     type: "rectangle";
     fill: Fill;
     appearance?: RectangleAppearance;
+    kind?: ShapeKind;
+    label?: ShapeLabel;
   }>;
 export const TEXT_COLORS = ["#243e33", "#3568db", "#8d315a", "#805d20", "#202124"] as const;
 export type TextColor = (typeof TEXT_COLORS)[number];
@@ -46,6 +55,7 @@ export type Connector = Readonly<{
   end: Endpoint;
   color: TextColor;
   arrowhead: "arrow" | "none";
+  label?: ShapeLabel;
 }>;
 export const MAX_CONNECTORS = 5_000;
 export const MAX_TEXT_LENGTH = 2_000;
@@ -54,7 +64,7 @@ export const MAX_FONT_SIZE = 96;
 
 export type BoardDocument = Readonly<{
   format: "hydraw";
-  version: 3;
+  version: 4;
   name: string;
   shapes: readonly Shape[];
   connectors: readonly Connector[];
@@ -70,5 +80,5 @@ export const MAX_ENDPOINT_COORDINATE = MAX_COORDINATE * 2;
 export const MAX_SIZE = 100_000;
 
 export function createDocument(): BoardDocument {
-  return { format: "hydraw", version: 3, name: "Untitled board", shapes: [], connectors: [] };
+  return { format: "hydraw", version: 4, name: "Untitled board", shapes: [], connectors: [] };
 }

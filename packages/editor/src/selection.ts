@@ -79,7 +79,8 @@ export function previewSelectionGesture(
 /** Merge transient records for rendering and selection bounds without changing persisted records. */
 export function selectionScene(snapshot: EditorSnapshot): ObjectUpdates {
   const shapeUpdates = new Map(snapshot.selectionPreview?.shapes.map((shape) => [shape.id, shape]));
-  const node = snapshot.textEditing?.draft ?? snapshot.preview;
+  const node =
+    (snapshot.textEditing?.ownerId ? null : snapshot.textEditing?.draft) ?? snapshot.preview;
   if (node) shapeUpdates.set(node.id, node);
   const connectorUpdates = new Map(
     snapshot.selectionPreview?.connectors.map((connector) => [connector.id, connector]),

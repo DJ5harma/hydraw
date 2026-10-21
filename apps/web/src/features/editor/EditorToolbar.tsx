@@ -2,13 +2,17 @@ import type { Editor, Tool } from "@hydraw/editor";
 import { Icon } from "../../components/icons.tsx";
 import { useEditorSnapshot } from "./useEditorSnapshot.ts";
 import "./canvas-controls.css";
-const tools: { id: Tool; label: string; key: string }[] = [
-  { id: "select", label: "Select", key: "V" },
-  { id: "rectangle", label: "Rectangle", key: "R" },
-  { id: "connector", label: "Connector", key: "C" },
-  { id: "text", label: "Text", key: "T" },
-  { id: "hand", label: "Hand", key: "H" },
-];
+
+const tools = [
+  { id: "select", label: "Select", key: "V", icon: "select" },
+  { id: "rectangle", label: "Rectangle", key: "R", icon: "rectangle", shapeKind: "rectangle" },
+  { id: "rectangle", label: "Ellipse", key: "O", icon: "ellipse", shapeKind: "ellipse" },
+  { id: "rectangle", label: "Diamond", key: "D", icon: "diamond", shapeKind: "diamond" },
+  { id: "connector", label: "Connector", key: "C", icon: "connector" },
+  { id: "text", label: "Text", key: "T", icon: "text" },
+  { id: "hand", label: "Hand", key: "H", icon: "hand" },
+] as const;
+
 export function EditorToolbar({
   editor,
   selectTool,
@@ -19,21 +23,30 @@ export function EditorToolbar({
   const snapshot = useEditorSnapshot(editor);
   return (
     <div className="toolbar" role="toolbar" aria-label="Drawing tools">
-      {tools.map((tool) => (
-        <button
-          key={tool.id}
-          className={`tool-button ${snapshot.tool === tool.id ? "is-active" : ""}`}
-          aria-label={`${tool.label} (${tool.key})`}
-          aria-pressed={snapshot.tool === tool.id}
-          title={`${tool.label} (${tool.key})`}
-          onClick={() => selectTool(tool.id)}
-        >
-          <Icon name={tool.id} />
-          <kbd className="tool-shortcut" aria-hidden="true">
-            {tool.key}
-          </kbd>
-        </button>
-      ))}
+      {tools.map((tool) => {
+        const shape = "shapeKind" in tool;
+        const pressed = shape
+          ? snapshot.tool === "rectangle" && snapshot.shapeKind === tool.shapeKind
+          : snapshot.tool === tool.id;
+        return (
+          <button
+            key={tool.label}
+            className={`tool-button ${pressed ? "is-active" : ""}`}
+            aria-label={`${tool.label} (${tool.key})`}
+            aria-pressed={pressed}
+            title={`${tool.label} (${tool.key})`}
+            onClick={() => {
+              if (shape) editor.setShapeKind(tool.shapeKind);
+              selectTool(tool.id);
+            }}
+          >
+            <Icon name={tool.icon} />
+            <kbd className="tool-shortcut" aria-hidden="true">
+              {tool.key}
+            </kbd>
+          </button>
+        );
+      })}
     </div>
   );
 }

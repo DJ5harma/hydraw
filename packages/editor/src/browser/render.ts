@@ -1,6 +1,8 @@
 import { rectangleAppearance, createConnectorResolver } from "@hydraw/document";
-import type { Rectangle, Shape, TextShape } from "@hydraw/document";
+import type { Rectangle, Shape, TextShape, Connector } from "@hydraw/document";
 import { drawConnector, drawConnectorHandles } from "./render-connectors.ts";
+import { labelClipBounds, labelTextShape } from "../labels.ts";
+import type { TextMeasurer } from "../text-layout.ts";
 import { selectionScene } from "../selection.ts";
 import { drawSelection } from "./render-selection.ts";
 import {
@@ -32,13 +34,22 @@ function drawRectangle(
   ctx.save();
   ctx.globalAlpha = style.opacity / 100;
   ctx.beginPath();
-  ctx.roundRect(
-    x,
-    y,
-    width,
-    height,
-    Math.min(style.cornerRadius * camera.zoom, width / 2, height / 2),
-  );
+  if (shape.kind === "ellipse")
+    ctx.ellipse(x + width / 2, y + height / 2, width / 2, height / 2, 0, 0, Math.PI * 2);
+  else if (shape.kind === "diamond") {
+    ctx.moveTo(x + width / 2, y);
+    ctx.lineTo(x + width, y + height / 2);
+    ctx.lineTo(x + width / 2, y + height);
+    ctx.lineTo(x, y + height / 2);
+    ctx.closePath();
+  } else
+    ctx.roundRect(
+      x,
+      y,
+      width,
+      height,
+      Math.min(style.cornerRadius * camera.zoom, width / 2, height / 2),
+    );
   if (shape.fill !== "transparent") {
     ctx.fillStyle = shape.fill;
     ctx.fill();
@@ -88,6 +99,39 @@ function drawText(
   ctx.restore();
 }
 
+function drawLabel(
+  ctx: CanvasRenderingContext2D,
+  owner: Rectangle | Connector,
+  shapes: readonly Shape[],
+  camera: Camera,
+  textLayout: TextLayouter,
+  measure: TextMeasurer,
+): void {
+  const label = labelTextShape(owner, shapes, measure);
+  if (!label || !label.text) return;
+  const clip = labelClipBounds(owner, shapes);
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(
+    clip.x * camera.zoom + camera.x,
+    clip.y * camera.zoom + camera.y,
+    clip.width * camera.zoom,
+    clip.height * camera.zoom,
+  );
+  ctx.clip();
+  if (owner.type === "connector") {
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(
+      label.x * camera.zoom + camera.x,
+      label.y * camera.zoom + camera.y,
+      label.width * camera.zoom,
+      Math.min(label.height, clip.height) * camera.zoom,
+    );
+  } else ctx.globalAlpha = rectangleAppearance(owner).opacity / 100;
+  drawText(ctx, label, camera, textLayout);
+  ctx.restore();
+}
+
 function drawShape(
   ctx: CanvasRenderingContext2D,
   shape: Shape,
@@ -111,6 +155,7 @@ function renderScene(
   snapshot: EditorSnapshot,
   viewport: Viewport,
   textLayout: TextLayouter,
+  measure: TextMeasurer,
 ): void {
   const { width, height, dpr } = viewport;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -126,7 +171,7 @@ function renderScene(
   const { shapes: sceneShapes, connectors: sceneConnectors } = selectionScene(snapshot);
   const resolveConnector = createConnectorResolver(sceneShapes);
   const selectedIds = new Set(snapshot.selectedIds);
-  for (const connector of sceneConnectors)
+  for (const connector of sceneConnectors) {
     drawConnector(
       ctx,
       connector,
@@ -134,9 +179,15 @@ function renderScene(
       camera,
       selectedIds.has(connector.id) || connector.id === snapshot.connectorPreview?.id,
     );
-  for (const shape of sceneShapes)
-    if (snapshot.textEditing?.draft.id !== shape.id)
+    if (snapshot.textEditing?.ownerId !== connector.id)
+      drawLabel(ctx, connector, sceneShapes, camera, textLayout, measure);
+  }
+  for (const shape of sceneShapes) {
+    if (snapshot.textEditing?.ownerId || snapshot.textEditing?.draft.id !== shape.id)
       drawShape(ctx, shape, camera, viewport, textLayout);
+    if (shape.type === "rectangle" && snapshot.textEditing?.ownerId !== shape.id)
+      drawLabel(ctx, shape, sceneShapes, camera, textLayout, measure);
+  }
   const selectedConnector =
     snapshot.connectorPreview ?? sceneConnectors.find((connector) => connector.id === selectedId);
   if (selectedConnector && (snapshot.tool === "select" || snapshot.connectorPreview))
@@ -159,7 +210,8 @@ function renderScene(
 
 /** Per-canvas caches share the renderer's font metrics and live only as long as the adapter. */
 export function createSceneRenderer(ctx: CanvasRenderingContext2D) {
-  const textLayout = createTextLayouter(createTextMeasurer(ctx));
+  const measure = createTextMeasurer(ctx);
+  const textLayout = createTextLayouter(measure);
   return (snapshot: EditorSnapshot, viewport: Viewport): void =>
-    renderScene(ctx, snapshot, viewport, textLayout);
+    renderScene(ctx, snapshot, viewport, textLayout, measure);
 }
