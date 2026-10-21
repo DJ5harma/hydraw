@@ -9,6 +9,7 @@ const shortcuts = [
   ["Rectangle / ellipse / diamond", "R / O / D"],
   ["Hand", "H"],
   ["Text", "T"],
+  ["Draw frame", "F · drag / Enter"],
   ["Connector", "C · drag / Enter"],
   ["Reconnect endpoint", "Drag endpoint handle"],
   ["Edit selected text or label", "Enter / double-click"],

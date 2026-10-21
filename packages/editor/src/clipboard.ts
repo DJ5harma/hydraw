@@ -1,6 +1,7 @@
 import {
   MAX_CONNECTORS,
   expandGroups,
+  frameSelectionContents,
   clonedMetadata,
   MAX_SHAPES,
   applyTransaction,
@@ -47,7 +48,7 @@ export function createClipboardFragment(
   document: BoardDocument,
   selectedIds: readonly string[],
 ): string | null {
-  const selected = new Set(expandGroups(document, selectedIds));
+  const selected = new Set(frameSelectionContents(document, expandGroups(document, selectedIds)));
   const shapes = document.shapes.filter((shape) => selected.has(shape.id));
   const nodes = new Set(shapes.map((shape) => shape.id));
   const connectors = document.connectors.filter(

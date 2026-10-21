@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 import type { BoardDocument } from "../../packages/document/src/index.ts";
-import { closeOverlay, openBoardMenu, openObjects } from "./ui.ts";
+import { closeOverlay, openBoardMenu } from "./ui.ts";
 
 async function exported(page: Page): Promise<BoardDocument> {
   const pending = page.waitForEvent("download");
@@ -70,7 +70,7 @@ test("smart placement, group lock and ordering remain usable in the floating wor
   await page.getByRole("button", { name: "Front", exact: true }).click();
   await page.getByRole("button", { name: "Lock selection", exact: true }).click();
   const locked = await exported(page);
-  expect(locked.version).toBe(5);
+  expect(locked.version).toBe(6);
   expect(locked.shapes.slice(0, 2)).toMatchObject([
     { x: 320, y: 210, locked: true },
     { x: 520, y: 290, locked: true },
@@ -80,10 +80,8 @@ test("smart placement, group lock and ordering remain usable in the floating wor
   await drag(page, [370, 250], [390, 270]);
   expect(await exported(page)).toEqual(locked);
   await page.reload();
-  await openObjects(page);
-  await page.getByRole("checkbox", { name: "Locked only", exact: true }).check();
-  await expect(page.getByRole("button", { name: "Rectangle 3", exact: true })).toHaveCount(0);
-  await page.getByRole("button", { name: "Unlock Rectangle 1", exact: true }).click();
+  await page.locator("canvas").click({ position: { x: 370, y: 250 } });
+  await page.getByRole("button", { name: "Unlock selection", exact: true }).click();
   await expect(page.getByRole("dialog", { name: "Objects on board" })).toHaveCount(0);
   const unlocked = await exported(page);
   expect(unlocked.shapes.slice(0, 2).every((shape) => !shape.locked)).toBe(true);

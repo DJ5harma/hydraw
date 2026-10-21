@@ -1,3 +1,4 @@
+import { isFrame } from "@hydraw/document";
 import type { BoardDocument, Point } from "@hydraw/document";
 import { selectionBounds } from "./selection-bounds.ts";
 
@@ -31,7 +32,7 @@ export function snapTranslation(
   if (!bounds) return { delta: requested, guides: [] };
   const selectedBounds = bounds;
 
-  const peers = document.shapes.filter((shape) => !selected.has(shape.id));
+  const peers = document.shapes.filter((shape) => !selected.has(shape.id) && !isFrame(shape));
   const tolerance = SCREEN_TOLERANCE / zoom;
   const choose = (candidates: Candidate[]): Candidate | null => {
     candidates.sort(

@@ -1,5 +1,6 @@
 import {
   createConnectorResolver,
+  isFrame,
   distanceToSegment,
   hitTest,
   containsShape,
@@ -18,8 +19,9 @@ export type ConnectorGesture =
   | { kind: "reconnect"; connector: Connector; endpoint: ConnectorEnd };
 
 export function endpointAt(shapes: readonly Shape[], point: Point, tolerance: number): Endpoint {
+  const targets = shapes.filter((shape) => !isFrame(shape));
   const shape =
-    hitTest(shapes, point) ?? shapes.findLast((shape) => containsShape(shape, point, tolerance));
+    hitTest(targets, point) ?? targets.findLast((shape) => containsShape(shape, point, tolerance));
   return shape ? { type: "binding", shapeId: shape.id } : { type: "point", ...point };
 }
 
@@ -96,11 +98,12 @@ export function previewConnectorGesture(
   };
 }
 
-/** Hit the same global stack that the renderer paints; locked objects are transparent to selection. */
+/** Hit the same global stack that the renderer paints; locked hits can be inspected without permitting edits. */
 export function hitSceneObject(
   document: BoardDocument,
   point: Point,
   tolerance: number,
+  includeLocked = false,
 ): Shape | Connector | undefined {
   const resolve = createConnectorResolver(document.shapes);
   const lockedGroups = new Set(
@@ -109,8 +112,28 @@ export function hitSceneObject(
       .map((item) => item.groupId),
   );
   return sceneObjects(document).findLast((object) => {
-    if (object.locked || (object.groupId && lockedGroups.has(object.groupId))) return false;
-    if (object.type !== "connector") return containsShape(object, point);
+    if (!includeLocked && (object.locked || (object.groupId && lockedGroups.has(object.groupId))))
+      return false;
+    if (object.type !== "connector") {
+      if (isFrame(object)) {
+        const title = labelClipBounds(object, document.shapes);
+        if (
+          point.x >= title.x &&
+          point.x <= title.x + title.width &&
+          point.y >= title.y &&
+          point.y <= title.y + title.height
+        )
+          return true;
+        return (
+          containsShape(object, point, tolerance) &&
+          (Math.abs(point.x - object.x) <= tolerance ||
+            Math.abs(point.x - object.x - object.width) <= tolerance ||
+            Math.abs(point.y - object.y) <= tolerance ||
+            Math.abs(point.y - object.y - object.height) <= tolerance)
+        );
+      }
+      return containsShape(object, point);
+    }
     const ends = resolve(object);
     if (distanceToSegment(point, ends.start, ends.end) <= tolerance) return true;
     if (!object.label?.text.trim()) return false;

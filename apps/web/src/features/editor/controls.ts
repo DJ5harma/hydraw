@@ -77,6 +77,9 @@ function createKeyboardHandler(
       else if (key === "r" || key === "o" || key === "d") {
         editor.setShapeKind(key === "o" ? "ellipse" : key === "d" ? "diamond" : "rectangle");
         selectTool("rectangle");
+      } else if (key === "f") {
+        editor.setShapeKind("frame");
+        selectTool("rectangle");
       } else if (key === "c") selectTool("connector");
       else if (key === "t") selectTool("text");
       else if (key === "h") selectTool("hand");

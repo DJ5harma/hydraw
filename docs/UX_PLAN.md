@@ -174,10 +174,25 @@ Translation shows transient edge/center and neighboring equal-gap guides. Alt
 bypasses snapping; a click never snaps. Flat groups select and move as a unit.
 The existing floating selection properties expose Group/Ungroup, Lock and four
 stacking commands. Grouped selections hide individual-member arrangement controls;
-locked selections expose only Unlock. The object navigator marks groups/locks and
-offers a Locked only filter and direct Unlock buttons, including after reload.
-Unlocking a group selects and unlocks all members in one undoable action. Organization commands share the style
+locked selections expose only Unlock. Click a locked object directly on the canvas
+to reveal that control, including after reload; it cannot be dragged or edited.
+The object navigator still marks groups/locks, but no separate lock filter or
+unlock row commands are needed. Organization commands share the style
 panel's scroll area on small screens. No permanent panel or shape picker is added.
 
 Keyboard help includes grouping, locks, ordering and Alt. Direct tool shortcuts
 remain visible. Group resize/rotation and nested groups remain future engine work.
+
+## Named frames and presets
+
+The toolbar retains direct basic tools and adds one Insert (+) surface. It holds
+frame creation and three architecture presets with compact previews. Successful
+insertion fits the new selection into view. F draws a frame; Frame selection
+wraps the current graph. Names sit above transparent borders; empty frame interiors
+allow normal marquee selection. Frame properties expose name, Fit and SVG export.
+The existing image export also handles whole selected frames as SVG/PNG.
+
+Objects has a Frames only filter using the existing search and pagination. Clicking
+a frame entry fits it and closes the navigator. Frame movement carries wholly
+enclosed objects, excludes crossing groups and stops for locked contents. Resize
+changes only the boundary. No nested frames or presentation mode is implied.

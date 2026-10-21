@@ -1,4 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { isFrame } from "@hydraw/document";
+import { FrameProperties } from "./FrameProperties.tsx";
 import type { Alignment, DistributionAxis } from "@hydraw/document";
 import { selectionBounds } from "@hydraw/editor";
 import type { Editor } from "@hydraw/editor";
@@ -20,8 +22,12 @@ export function SelectionActions({
   onDistribute,
   overlay,
   onOverlay,
+  onFitFrame,
+  onExportFrame,
 }: {
   editor: Editor;
+  onFitFrame: () => void;
+  onExportFrame: () => void;
   onDuplicate: () => void;
   onAlign: (alignment: Alignment) => void;
   onDistribute: (axis: DistributionAxis) => void;
@@ -76,7 +82,7 @@ export function SelectionActions({
     snapshot.interacting ||
     snapshot.textEditing ||
     snapshot.tool !== "select" ||
-    ["board", "objects", "help"].includes(overlay ?? "")
+    ["board", "objects", "help", "insert"].includes(overlay ?? "")
   )
     return null;
 
@@ -87,6 +93,8 @@ export function SelectionActions({
     ...snapshot.document.shapes.filter((shape) => selectedSet.has(shape.id)),
     ...snapshot.document.connectors.filter((connector) => selectedSet.has(connector.id)),
   ];
+  const anyFrames = selectedObjects.some((item) => item.type !== "connector" && isFrame(item));
+  const selectedFrame = selectedShape && isFrame(selectedShape) ? selectedShape : undefined;
   const anyLocked = selectedObjects.some((item) => item.locked);
   const anyGrouped = selectedObjects.some((item) => item.groupId !== undefined);
   const groupIds = new Set(selectedObjects.flatMap((item) => (item.groupId ? [item.groupId] : [])));
@@ -96,11 +104,13 @@ export function SelectionActions({
     ? `${ids.length} objects`
     : anyLocked
       ? "Locked selection"
-      : selectedConnector
-        ? "Connector style"
-        : selectedShape?.type === "text"
-          ? "Text style"
-          : `${selectedShape?.type === "rectangle" && selectedShape.kind ? selectedShape.kind[0]!.toUpperCase() + selectedShape.kind.slice(1) : "Rectangle"} style`;
+      : selectedFrame
+        ? "Frame"
+        : selectedConnector
+          ? "Connector style"
+          : selectedShape?.type === "text"
+            ? "Text style"
+            : `${selectedShape?.type === "rectangle" && selectedShape.kind ? selectedShape.kind[0]!.toUpperCase() + selectedShape.kind.slice(1) : "Rectangle"} style`;
   const geometryOpen =
     overlay === "geometry" && selectedShape !== undefined && !multi && !anyLocked;
 
@@ -140,9 +150,20 @@ export function SelectionActions({
             </p>
           )}
           {anyLocked ? (
-            <p className="locked-selection-message">To unlock later, open Board menu → Objects.</p>
-          ) : multi && anyGrouped ? (
-            <p className="locked-selection-message">Ungroup to arrange individual objects.</p>
+            <p className="locked-selection-message">
+              Locked objects can be selected on the canvas. Unlock to edit.
+            </p>
+          ) : selectedFrame ? (
+            <FrameProperties
+              frame={selectedFrame}
+              editor={editor}
+              onFit={onFitFrame}
+              onExport={onExportFrame}
+            />
+          ) : multi && (anyGrouped || anyFrames) ? (
+            <p className="locked-selection-message">
+              Select individual ungrouped objects to arrange them.
+            </p>
           ) : multi ? (
             <ArrangementControls
               shapeCount={shapeCount}
@@ -163,7 +184,12 @@ export function SelectionActions({
           <section className="selection-organize" aria-label="Organize selection">
             <h3>Organize</h3>
             <div className="organization-actions">
-              {multi && !oneGroup && !anyLocked && (
+              {!anyFrames && !anyLocked && (
+                <button onClick={() => runCommand(() => editor.frameSelection())}>
+                  Frame selection
+                </button>
+              )}
+              {multi && !oneGroup && !anyLocked && !anyFrames && (
                 <button onClick={() => runCommand(() => editor.groupSelection())}>Group</button>
               )}
               {anyGrouped && !anyLocked && (
@@ -210,9 +236,11 @@ export function SelectionActions({
               aria-label={
                 multi
                   ? "Delete selection"
-                  : selectedConnector
-                    ? "Delete connector"
-                    : `Delete ${selectedShape?.type === "text" ? "text" : (selectedShape?.kind ?? "rectangle")}`
+                  : selectedFrame
+                    ? "Frame"
+                    : selectedConnector
+                      ? "Delete connector"
+                      : `Delete ${selectedShape?.type === "text" ? "text" : (selectedShape?.kind ?? "rectangle")}`
               }
               onClick={() => editor.removeSelection()}
             >

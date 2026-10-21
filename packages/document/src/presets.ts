@@ -71,7 +71,7 @@ export function insertPreset(
   const groupId = takeId();
   const nodeIds = template.labels.map(() => takeId());
   const edgeIds = [takeId(), takeId()];
-  const x0 = point.x - 220;
+  const x0 = point.x - 280;
   const allObjects = [...document.shapes, ...document.connectors];
   const top = allObjects.reduce((rank, object) => Math.max(rank, object.zIndex ?? 0), 0);
   const rebase = top + 5 > MAX_Z_INDEX;
@@ -82,10 +82,10 @@ export function insertPreset(
     id: nodeIds[index]!,
     type: "rectangle",
     kind: template.kinds[index],
-    x: x0 + index * 220 - 70,
-    y: point.y - 40,
-    width: 140,
-    height: 80,
+    x: x0 + index * 280 - 100,
+    y: point.y - 60,
+    width: 200,
+    height: 120,
     fill: ["#e7eefb", "#e6f2ea", "#fff0d5"][index] as "#e7eefb" | "#e6f2ea" | "#fff0d5",
     label: { text: label, fontSize: 16, fontWeight: 700, color: "#243e33" },
     groupId,

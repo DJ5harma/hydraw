@@ -37,8 +37,11 @@ export function frameContents(document: BoardDocument, frameId: string): readonl
   );
   const groupMembers = new Map<string, string[]>();
   for (const object of [...document.shapes, ...document.connectors])
-    if (object.groupId)
-      groupMembers.set(object.groupId, [...(groupMembers.get(object.groupId) ?? []), object.id]);
+    if (object.groupId) {
+      const members = groupMembers.get(object.groupId) ?? [];
+      members.push(object.id);
+      groupMembers.set(object.groupId, members);
+    }
   const resolver = createConnectorResolver(document.shapes);
   const containedConnectors = new Set<string>();
   for (const connector of document.connectors) {

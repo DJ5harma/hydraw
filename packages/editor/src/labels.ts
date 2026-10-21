@@ -26,6 +26,8 @@ export function labelClipBounds(
       height: 80,
     };
   }
+  if (owner.kind === "frame")
+    return { x: owner.x, y: owner.y - 42, width: owner.width, height: 42 };
   const ratio = owner.kind === "diamond" ? 0.5 : owner.kind === "ellipse" ? 0.7 : 1;
   const width = Math.max(1, owner.width * ratio - 16),
     height = Math.max(1, owner.height * ratio - 16);
@@ -53,7 +55,7 @@ export function labelTextShape(
     fontSize: label.fontSize,
     fontWeight: label.fontWeight,
     color: label.color,
-    textAlign: "center",
+    textAlign: owner.type === "rectangle" && owner.kind === "frame" ? "left" : "center",
   };
   const { height } = layoutText(draft, measure);
   return { ...draft, height, y: box.y + Math.max(0, (box.height - height) / 2) };

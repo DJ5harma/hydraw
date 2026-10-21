@@ -1,5 +1,9 @@
 import {
   decodeDocument,
+  createFrameAroundSelection,
+  frameSelectionContents,
+  isFrame,
+  insertPreset,
   expandGroups,
   groupObjectsTransaction,
   ungroupObjectsTransaction,
@@ -26,6 +30,7 @@ import {
   shapeTransaction,
 } from "@hydraw/document";
 import type {
+  PresetId,
   Alignment,
   DistributionAxis,
   Connector,
@@ -187,6 +192,90 @@ export class Editor {
     return Math.max(-1_000_000_000, Math.min(1_000_000_000, rank + (front ? 1 : -1)));
   }
 
+  frameSelection(): void {
+    this.finishTextEditing();
+    this.cancelGesture();
+    const result = createFrameAroundSelection(
+      this.snapshot.document,
+      this.snapshot.selectedIds,
+      this.makeId,
+    );
+    this.commit(result.transaction);
+    if (result.id) this.publish({ selectedIds: [result.id], tool: "select" });
+  }
+
+  addFrame(screen: Point): void {
+    this.finishTextEditing();
+    this.cancelGesture();
+    if (this.snapshot.document.shapes.length >= MAX_SHAPES)
+      throw new Error("This board has no room for another frame.");
+    const point = screenToWorld(screen, this.snapshot.camera);
+    const frame = this.frameDraft({
+      id: this.makeId(),
+      type: "rectangle",
+      kind: "frame",
+      x: clamp(point.x - 320, -MAX_COORDINATE, MAX_COORDINATE),
+      y: clamp(point.y - 200, -MAX_COORDINATE, MAX_COORDINATE),
+      width: 640,
+      height: 400,
+      fill: "transparent",
+    });
+    this.commitShape("Create frame", null, frame);
+    this.publish({ selectedIds: [frame.id], tool: "select" });
+  }
+
+  private frameDraft(shape: Rectangle): Rectangle {
+    return {
+      ...shape,
+      kind: "frame",
+      fill: "transparent",
+      zIndex: this.creationRank(false),
+      appearance: {
+        stroke: "#3568db",
+        strokeWidth: 1.5,
+        strokeStyle: "solid",
+        opacity: 100,
+        cornerRadius: 4,
+      },
+      label: {
+        text: `Frame ${this.snapshot.document.shapes.filter(isFrame).length + 1}`,
+        fontSize: 20,
+        fontWeight: 700,
+        color: "#202124",
+      },
+    };
+  }
+
+  renameFrame(name: string): void {
+    if (this.selectionLocked()) return;
+    this.finishTextEditing();
+    this.cancelGesture();
+    const shape = this.selectedShape();
+    if (shape && isFrame(shape))
+      this.commitShape("Rename frame", shape, {
+        ...shape,
+        label: {
+          text: name.trim().slice(0, 120) || "Untitled frame",
+          fontSize: 20,
+          fontWeight: 700,
+          color: shape.label?.color ?? "#202124",
+        },
+      });
+  }
+
+  insertPreset(id: PresetId, screen: Point): void {
+    this.finishTextEditing();
+    this.cancelGesture();
+    const result = insertPreset(
+      this.snapshot.document,
+      id,
+      screenToWorld(screen, this.snapshot.camera),
+      this.makeId,
+    );
+    this.commit(result.transaction);
+    if (result.transaction) this.publish({ selectedIds: result.ids, tool: "select" });
+  }
+
   groupSelection(): void {
     this.finishTextEditing();
     this.cancelGesture();
@@ -196,6 +285,7 @@ export class Editor {
     );
     if (
       objects.length < 2 ||
+      objects.some((item) => item.type !== "connector" && isFrame(item)) ||
       this.selectionLocked() ||
       objects.every((item) => item.groupId && item.groupId === objects[0]!.groupId)
     )
@@ -379,7 +469,7 @@ export class Editor {
   }
 
   setShapeKind(shapeKind: ShapeKind): void {
-    if (!["rectangle", "ellipse", "diamond"].includes(shapeKind))
+    if (!["rectangle", "ellipse", "diamond", "frame"].includes(shapeKind))
       throw new Error("Unknown shape kind.");
     this.finishTextEditing();
     this.cancelGesture();
@@ -461,7 +551,11 @@ export class Editor {
     this.assertWritable();
     this.finishTextEditing();
     this.cancelGesture();
-    const result = duplicateObjects(this.snapshot.document, this.snapshot.selectedIds, this.makeId);
+    const result = duplicateObjects(
+      this.snapshot.document,
+      frameSelectionContents(this.snapshot.document, this.snapshot.selectedIds),
+      this.makeId,
+    );
     this.commit(result.transaction);
     if (result.transaction) this.publish({ selectedIds: result.ids, tool: "select" });
   }
@@ -470,7 +564,9 @@ export class Editor {
     if (
       this.selectionLocked() ||
       [...this.snapshot.document.shapes, ...this.snapshot.document.connectors].some(
-        (item) => this.snapshot.selectedIds.includes(item.id) && item.groupId,
+        (item) =>
+          this.snapshot.selectedIds.includes(item.id) &&
+          (item.groupId || (item.type !== "connector" && isFrame(item))),
       )
     )
       return;
@@ -486,7 +582,9 @@ export class Editor {
     if (
       this.selectionLocked() ||
       [...this.snapshot.document.shapes, ...this.snapshot.document.connectors].some(
-        (item) => this.snapshot.selectedIds.includes(item.id) && item.groupId,
+        (item) =>
+          this.snapshot.selectedIds.includes(item.id) &&
+          (item.groupId || (item.type !== "connector" && isFrame(item))),
       )
     )
       return;
@@ -543,6 +641,10 @@ export class Editor {
   }
 
   addRectangle(screen: Point): void {
+    if (this.snapshot.shapeKind === "frame") {
+      this.addFrame(screen);
+      return;
+    }
     this.finishTextEditing();
     this.cancelGesture();
     const { document, camera, fill } = this.snapshot;
@@ -609,6 +711,7 @@ export class Editor {
       this.snapshot.document,
       screenToWorld(screen, this.snapshot.camera),
       7 / this.snapshot.camera.zoom,
+      true,
     );
     if (object) this.editText(object.id);
   }
@@ -724,7 +827,9 @@ export class Editor {
     const connector = this.selectedConnector();
     if (connector && (connector.start.type === "binding" || connector.end.type === "binding"))
       return;
-    const updates = translateObjects(this.snapshot.document, this.snapshot.selectedIds, {
+    const ids = frameSelectionContents(this.snapshot.document, this.snapshot.selectedIds);
+    if (this.selectionLocked(ids)) return;
+    const updates = translateObjects(this.snapshot.document, ids, {
       x: dx,
       y: dy,
     });
@@ -759,8 +864,14 @@ export class Editor {
   }
 
   private rankCreationPreview(patch: Partial<EditorSnapshot>): Partial<EditorSnapshot> {
-    if (this.gesture?.kind === "draw" && patch.preview)
-      return { ...patch, preview: { ...patch.preview, zIndex: this.creationRank(true) } };
+    if (this.gesture?.kind === "draw" && patch.preview?.type === "rectangle")
+      return {
+        ...patch,
+        preview:
+          patch.preview.kind === "frame"
+            ? this.frameDraft(patch.preview)
+            : { ...patch.preview, zIndex: this.creationRank(true) },
+      };
     if (this.gesture?.kind === "connect" && patch.connectorPreview)
       return {
         ...patch,
@@ -828,7 +939,13 @@ export class Editor {
         preview.width * camera.zoom >= 3 &&
         preview.height * camera.zoom >= 3
       ) {
-        this.commitShape("Create rectangle", null, { ...preview, zIndex: this.creationRank(true) });
+        this.commitShape(
+          preview.type === "rectangle" && isFrame(preview) ? "Create frame" : "Create rectangle",
+          null,
+          preview.type === "rectangle" && isFrame(preview)
+            ? preview
+            : { ...preview, zIndex: this.creationRank(true) },
+        );
         this.publish({ selectedIds: [preview.id], tool: "select" });
       } else if (gesture?.kind === "resize" && preview) {
         this.commitShape("Resize object", gesture.shape, preview);

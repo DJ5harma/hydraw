@@ -16,7 +16,11 @@ const tools = [
 export function EditorToolbar({
   editor,
   selectTool,
+  onInsert,
+  insertOpen,
 }: {
+  onInsert: () => void;
+  insertOpen: boolean;
   editor: Editor;
   selectTool: (tool: Tool) => void;
 }) {
@@ -47,6 +51,17 @@ export function EditorToolbar({
           </button>
         );
       })}
+      <button
+        className="tool-button"
+        aria-label="Insert"
+        title="Insert frames and presets"
+        data-overlay-trigger="insert"
+        aria-expanded={insertOpen}
+        aria-haspopup="dialog"
+        onClick={onInsert}
+      >
+        <Icon name="plus" />
+      </button>
     </div>
   );
 }

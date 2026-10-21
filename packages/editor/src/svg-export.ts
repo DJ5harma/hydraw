@@ -1,4 +1,9 @@
-import { rectangleAppearance, resolveConnector, sceneObjects } from "@hydraw/document";
+import {
+  frameSelectionContents,
+  rectangleAppearance,
+  resolveConnector,
+  sceneObjects,
+} from "@hydraw/document";
 import type {
   BoardDocument,
   Bounds,
@@ -71,7 +76,7 @@ function unions(bounds: Bounds[]): Bounds {
 function selectedContent(document: BoardDocument, ids?: readonly string[]) {
   if (ids === undefined)
     return { shapes: [...document.shapes], connectors: [...document.connectors] };
-  const selected = new Set(ids);
+  const selected = new Set(frameSelectionContents(document, ids));
   return {
     shapes: document.shapes.filter((shape) => selected.has(shape.id)),
     connectors: document.connectors.filter((connector) => selected.has(connector.id)),

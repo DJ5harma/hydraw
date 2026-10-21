@@ -55,7 +55,7 @@ it("protects locked groups while allowing explicit selection and undoable unlock
   e.begin({ x: 350, y: 240 });
   e.move({ x: 370, y: 260 });
   e.finish();
-  expect(e.getSnapshot().selectedIds).toEqual([]);
+  expect(e.getSnapshot().selectedIds).toEqual(["a", "b"]);
   expect(e.getSnapshot().document).toBe(locked);
   e.selectAll();
   expect(e.getSnapshot().selectedIds).toEqual(["c"]);

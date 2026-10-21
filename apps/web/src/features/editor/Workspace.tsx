@@ -7,6 +7,7 @@ import { downloadBoard } from "../board/files.ts";
 import { BoardMenu } from "../board/BoardMenu.tsx";
 import type { BoardSession } from "../board/session.ts";
 import { useBoardPersistence } from "../board/useBoardPersistence.ts";
+import { InsertPanel } from "./InsertPanel.tsx";
 import { SelectionActions } from "./SelectionActions.tsx";
 import { ObjectNavigator } from "./ObjectNavigator.tsx";
 import { CanvasControls } from "./CanvasControls.tsx";
@@ -92,7 +93,7 @@ export function Workspace({ session }: { session: BoardSession }) {
         width: Math.max(1, canvas.clientWidth - 48),
         height: Math.max(1, canvas.clientHeight - (narrow ? 300 : 190)),
       },
-      snapshot.selectedIds.length > 0,
+      editor.getSnapshot().selectedIds.length > 0,
     );
   }
   return (
@@ -132,6 +133,8 @@ export function Workspace({ session }: { session: BoardSession }) {
         />
         <EditorToolbar
           editor={editor}
+          insertOpen={overlay.active === "insert"}
+          onInsert={() => overlay.open(overlay.active === "insert" ? null : "insert")}
           selectTool={(tool) => {
             overlay.close(false);
             selectTool(tool);
@@ -151,8 +154,20 @@ export function Workspace({ session }: { session: BoardSession }) {
           onFit={fit}
           fitLabel={snapshot.selectedIds.length ? "Fit selection" : "Fit board"}
         />
+        {overlay.active === "insert" && (
+          <InsertPanel
+            editor={editor}
+            center={center}
+            onInserted={fit}
+            onClose={() => overlay.close()}
+          />
+        )}
         <SelectionActions
           editor={editor}
+          onFitFrame={fit}
+          onExportFrame={() => {
+            void exportImage("svg", true);
+          }}
           onDuplicate={duplicate}
           onAlign={align}
           onDistribute={distribute}
@@ -160,7 +175,15 @@ export function Workspace({ session }: { session: BoardSession }) {
           onOverlay={overlay.open}
         />
         {overlay.active === "objects" && (
-          <ObjectNavigator editor={editor} onClose={() => overlay.close()} />
+          <ObjectNavigator
+            editor={editor}
+            onClose={() => overlay.close()}
+            onFrame={(id) => {
+              editor.select(id);
+              fit();
+              overlay.close();
+            }}
+          />
         )}
         <div className="workspace-notices">
           {actionError && (

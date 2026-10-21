@@ -48,7 +48,8 @@ The next release should complete one useful architecture-diagram workflow rather
 than expand the entire tool catalog at once. [The current next-step plan](docs/NEXT.md)
 records the completed canvas-first workspace, fit navigation, direct shape tools,
 attached labels, SVG/PNG export, clipboard reuse, smart placement, flat grouping,
-locking and object ordering. Named frames and reusable technical presets follow;
+locking, object ordering, named frames and three editable technical presets.
+Connector routing and larger-board interaction quality follow;
 a measured local-alpha gate remains. [The workspace UX record](docs/UX_PLAN.md)
 specifies the replacement for the previous header/sidebar shell.
 Cloud saving and collaboration follow their own correctness prototype; they do not

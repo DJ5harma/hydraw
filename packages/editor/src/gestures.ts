@@ -1,5 +1,6 @@
 import {
   expandGroups,
+  frameSelectionContents,
   MAX_CONNECTORS,
   MAX_COORDINATE,
   MAX_ENDPOINT_COORDINATE,
@@ -142,15 +143,17 @@ export function startGesture(
       },
     };
   }
-  const object = hitSceneObject(document, raw, 7 / camera.zoom);
+  const object = hitSceneObject(document, raw, 7 / camera.zoom, true);
   const shape = object?.type === "connector" ? undefined : object;
   const edge = object?.type === "connector" ? object : undefined;
   const hitId = shape?.id ?? edge?.id;
   const hitIds = hitId ? expandGroups(document, [hitId]) : [];
-  const groupLocked = (ids: readonly string[]) =>
-    [...document.shapes, ...document.connectors].some(
-      (item) => ids.includes(item.id) && item.locked,
+  const groupLocked = (ids: readonly string[]) => {
+    const selected = new Set(ids);
+    return [...document.shapes, ...document.connectors].some(
+      (item) => selected.has(item.id) && item.locked,
     );
+  };
   if (additive && hitId)
     return {
       gesture: null,
@@ -160,7 +163,10 @@ export function startGesture(
           : [...new Set([...selectedIds, ...hitIds])],
       },
     };
+  if (hitId && groupLocked(hitIds)) return { gesture: null, patch: { selectedIds: hitIds } };
+  const movementIds = frameSelectionContents(document, selectedIds);
   const lockedSelection = groupLocked(selectedIds);
+  const movementLocked = groupLocked(movementIds);
   const selectedShape = lockedSelection
     ? undefined
     : document.shapes.find((shape) => shape.id === selectedId);
@@ -180,8 +186,8 @@ export function startGesture(
     };
   if (hitId && selectedIds.length > 1 && selectedIds.includes(hitId))
     return {
-      gesture: lockedSelection ? null : { kind: "move-selection", start: raw, ids: selectedIds },
-      patch: { interacting: !lockedSelection },
+      gesture: movementLocked ? null : { kind: "move-selection", start: raw, ids: movementIds },
+      patch: { interacting: !movementLocked },
     };
   if (endpoint && connector)
     return {
@@ -195,11 +201,13 @@ export function startGesture(
     };
   const movable = Boolean(
     (shape || hitIds.length > 1 || (edge?.start.type === "point" && edge.end.type === "point")) &&
-    !groupLocked(hitIds),
+    !groupLocked(frameSelectionContents(document, hitIds)),
   );
   const ids = hitIds;
   return {
-    gesture: movable ? { kind: "move-selection", start: raw, ids } : null,
+    gesture: movable
+      ? { kind: "move-selection", start: raw, ids: frameSelectionContents(document, ids) }
+      : null,
     patch: { selectedIds: ids, interacting: !!movable },
   };
 }

@@ -340,6 +340,8 @@ cover the fixes; no new test suite was added.
 
 ## Unlock discovery follow-up
 
+Superseded by the direct canvas workflow below.
+
 Implemented on 21 October 2026. Objects now has a Locked only filter and a direct
 Unlock button on locked rows. Unlock selects the object/group, unlocks it in one
 transaction and closes the navigator so editing can resume. The immediate locked
@@ -349,3 +351,29 @@ select a locked row, dismiss the navigator and discover Unlock in properties.
 The existing focused browser journey now reloads a locked board, filters locked
 objects, unlocks a whole group from its row and verifies undo/redo. It passes;
 formatting, lint, types and module boundaries pass.
+
+## Milestone 15 — direct canvas unlock, named frames and architecture presets
+
+Implemented on 21 October 2026 with Luna agents handling pure frame/preset modules
+and the Insert surface. Locked objects are now directly clickable on the canvas
+for Unlock after deselection/reload. They remain protected from movement, resize
+and editing. Removed the lock filter and row unlock buttons from Objects.
+
+Native v6 adds named transparent frames. Create from selection, insert an empty
+frame or draw with F. Move the title/border to carry wholly enclosed objects; resize
+only the boundary. Crossing groups are excluded, locked contents prevent movement,
+and frame deletion leaves contents. Frame names participate in native label editing,
+copy/paste, duplication, save and export. Frames cannot be bound connector targets.
+Objects uses its existing search and pagination for Frames only navigation.
+
+Insert (+) offers three editable grouped architecture flows with fresh identities,
+bound connections and atomic history. Preset geometry leaves enough room for its
+labels. Insertions fit into view; basic shape tools remain direct. Frame selection
+image export includes enclosed contents and the frame name. See ADR 0011.
+
+Verification: all 138 unit checks and lint/types/format/boundary checks pass. Two
+focused Chromium journeys verify direct locked-object unlock after reload, grouped
+unlock undo/redo, preset insertion, frame naming/movement/history/navigation/SVG
+export/persistence, F creation and the 320 px Insert surface. Desktop and mobile
+layouts were visually inspected. Full browser matrix and performance benchmarks
+were not rerun.

@@ -1,3 +1,4 @@
+import { isFrame } from "@hydraw/document";
 import type { Editor } from "@hydraw/editor";
 import { useMemo, useState } from "react";
 import { Icon } from "../../components/icons.tsx";
@@ -6,15 +7,24 @@ import "./selection-actions.css";
 
 const RESULT_LIMIT = 100;
 
-export function ObjectNavigator({ editor, onClose }: { editor: Editor; onClose: () => void }) {
+export function ObjectNavigator({
+  editor,
+  onClose,
+  onFrame,
+}: {
+  editor: Editor;
+  onClose: () => void;
+  onFrame: (id: string) => void;
+}) {
   const snapshot = useEditorSnapshot(editor);
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
-  const [lockedOnly, setLockedOnly] = useState(false);
+  const [framesOnly, setFramesOnly] = useState(false);
   const selected = new Set(snapshot.selectedIds);
   const entries = useMemo(() => {
     const shapes = snapshot.document.shapes.map((shape, index) => ({
       id: shape.id,
+      frameName: isFrame(shape) ? (shape.label?.text ?? "Untitled frame") : undefined,
       label:
         shape.type === "text"
           ? `Text ${index + 1} · ${shape.text.slice(0, 32)}`
@@ -25,6 +35,7 @@ export function ObjectNavigator({ editor, onClose }: { editor: Editor; onClose: 
     }));
     const connectors = snapshot.document.connectors.map((connector, index) => ({
       id: connector.id,
+      frameName: undefined,
       label: `Connector ${index + 1}${connector.label ? ` · ${connector.label.text.slice(0, 32)}` : ""}`,
       kind: "↗",
       locked: connector.locked === true,
@@ -32,10 +43,9 @@ export function ObjectNavigator({ editor, onClose }: { editor: Editor; onClose: 
     }));
     return [...shapes, ...connectors];
   }, [snapshot.document]);
-  const lockedCount = entries.filter((entry) => entry.locked).length;
   const filtered = entries.filter(
     (entry) =>
-      (!lockedOnly || entry.locked) &&
+      (!framesOnly || entry.frameName !== undefined) &&
       entry.label.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()),
   );
   const pageCount = Math.max(1, Math.ceil(filtered.length / RESULT_LIMIT));
@@ -67,23 +77,18 @@ export function ObjectNavigator({ editor, onClose }: { editor: Editor; onClose: 
             placeholder="Search objects"
           />
         </label>
-        {(lockedCount > 0 || lockedOnly) && (
-          <label className="object-lock-filter">
+        {snapshot.document.shapes.some(isFrame) && (
+          <label className="object-frame-filter">
             <input
               type="checkbox"
-              checked={lockedOnly}
+              checked={framesOnly}
               onChange={(event) => {
-                setLockedOnly(event.target.checked);
+                setFramesOnly(event.target.checked);
                 setPage(0);
               }}
             />
-            Locked only <span aria-hidden="true">({lockedCount})</span>
+            Frames only
           </label>
-        )}
-        {lockedCount > 0 && (
-          <p className="object-lock-help">
-            Unlock an object here to edit it again. Group members unlock together.
-          </p>
         )}
         <div className="object-navigator-results">
           {entries.length === 0 ? (
@@ -97,7 +102,13 @@ export function ObjectNavigator({ editor, onClose }: { editor: Editor; onClose: 
                   <button
                     className={selected.has(entry.id) ? "selected-object" : ""}
                     aria-pressed={selected.has(entry.id)}
-                    onClick={(event) => editor.select(entry.id, event.shiftKey)}
+                    aria-label={
+                      entry.frameName === undefined ? undefined : `Go to frame ${entry.frameName}`
+                    }
+                    onClick={(event) => {
+                      if (entry.frameName !== undefined && !event.shiftKey) onFrame(entry.id);
+                      else editor.select(entry.id, event.shiftKey);
+                    }}
                   >
                     <span className="object-navigator-kind" aria-hidden="true">
                       {entry.kind === "↗" ? <Icon name="connector" /> : entry.kind}
@@ -108,19 +119,6 @@ export function ObjectNavigator({ editor, onClose }: { editor: Editor; onClose: 
                       {entry.locked && <span>Locked</span>}
                     </span>
                   </button>
-                  {entry.locked && (
-                    <button
-                      className="object-unlock"
-                      aria-label={`Unlock ${entry.label}`}
-                      onClick={() => {
-                        editor.select(entry.id);
-                        editor.setSelectionLocked(false);
-                        onClose();
-                      }}
-                    >
-                      Unlock
-                    </button>
-                  )}
                 </li>
               ))}
             </ul>

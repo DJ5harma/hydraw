@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { KeyboardEvent, RefObject } from "react";
 
-export type WorkspaceOverlay = "board" | "objects" | "geometry" | "help" | null;
+export type WorkspaceOverlay = "insert" | "board" | "objects" | "geometry" | "help" | null;
 
 /** One transient surface owns dismissal and focus; document/session state stays elsewhere. */
 export function useWorkspaceOverlay(canvasRef: RefObject<HTMLCanvasElement | null>) {

@@ -25,7 +25,7 @@ describe("document presets", () => {
           shape.type === "rectangle" ? shape.label?.text : undefined,
         ),
       ).toEqual(preset.description.split(" → "));
-      expect(document.shapes.map((shape) => shape.x + shape.width / 2)).toEqual([280, 500, 720]);
+      expect(document.shapes.map((shape) => shape.x + shape.width / 2)).toEqual([220, 500, 780]);
       expect(
         document.shapes.every((shape) => shape.groupId === document.connectors[0]?.groupId),
       ).toBe(true);

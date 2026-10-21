@@ -12,8 +12,9 @@ ungrouping removes membership. Group resizing, nested groups and arranging membe
 are deferred. Duplication and clipboard paste create fresh, unlocked groups and
 preserve their internal stack order above existing objects.
 
-Locks protect direct edits, canvas selection, marquee selection and Select All.
-The object navigator can select locked records to unlock them. Bindings still
+Locks protect direct edits, marquee selection and Select All. A later UX revision
+allows clicking locked records on the canvas to expose Unlock, while blocking
+dragging, resizing and editing. The object navigator also permits selection. Bindings still
 follow their nodes; deleting a node retains the existing dependent-edge deletion
 rule. Locks are editing conveniences, not access control.
 
