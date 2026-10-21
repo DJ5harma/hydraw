@@ -9,4 +9,6 @@ export * from "./arrangement.ts";
 export * from "./appearance.ts";
 
 export * from "./organization.ts";
+export * from "./presets.ts";
 export { clonedMetadata } from "./object-scene.ts";
+export * from "./frames.ts";

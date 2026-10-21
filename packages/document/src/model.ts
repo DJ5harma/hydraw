@@ -16,7 +16,7 @@ export type Bounds = Readonly<{
   width: number;
   height: number;
 }>;
-export type ShapeKind = "rectangle" | "ellipse" | "diamond";
+export type ShapeKind = "rectangle" | "ellipse" | "diamond" | "frame";
 export type ShapeLabel = Readonly<{
   text: string;
   fontSize: number;
@@ -68,7 +68,7 @@ export const MAX_FONT_SIZE = 96;
 
 export type BoardDocument = Readonly<{
   format: "hydraw";
-  version: 5;
+  version: 6;
   name: string;
   shapes: readonly Shape[];
   connectors: readonly Connector[];
@@ -84,5 +84,5 @@ export const MAX_ENDPOINT_COORDINATE = MAX_COORDINATE * 2;
 export const MAX_SIZE = 100_000;
 
 export function createDocument(): BoardDocument {
-  return { format: "hydraw", version: 5, name: "Untitled board", shapes: [], connectors: [] };
+  return { format: "hydraw", version: 6, name: "Untitled board", shapes: [], connectors: [] };
 }

@@ -47,7 +47,8 @@ export function decodeDocument(value: unknown): BoardDocument {
       value.version !== 2 &&
       value.version !== 3 &&
       value.version !== 4 &&
-      value.version !== 5)
+      value.version !== 5 &&
+      value.version !== 6)
   ) {
     throw new Error("This board uses an unsupported Hydraw format.");
   }
@@ -72,6 +73,8 @@ export function decodeDocument(value: unknown): BoardDocument {
       throw new Error("Shape kinds and labels require Hydraw version 4.");
     if (valueVersion < 5 && record(value) && hasMetadata(value))
       throw new Error("Object organization requires Hydraw version 5.");
+    if (valueVersion < 6 && record(value) && value.kind === "frame")
+      throw new Error("Frames require Hydraw version 6.");
     const shape = valueVersion === 0 ? decodeRectangle(value) : decodeShape(value);
     if (ids.has(shape.id)) throw new Error("This board contains invalid duplicate shape IDs.");
     ids.add(shape.id);
@@ -99,7 +102,7 @@ export function decodeDocument(value: unknown): BoardDocument {
   assertConnectorGraph(shapes, connectors);
   return Object.freeze({
     format: "hydraw",
-    version: 5,
+    version: 6,
     name,
     shapes: Object.freeze(shapes),
     connectors: Object.freeze(connectors),
@@ -143,7 +146,8 @@ export function decodeRectangle(shape: unknown): Rectangle {
     (shape.kind !== undefined &&
       shape.kind !== "rectangle" &&
       shape.kind !== "ellipse" &&
-      shape.kind !== "diamond")
+      shape.kind !== "diamond" &&
+      shape.kind !== "frame")
   ) {
     throw new Error("This board contains an invalid or unsupported shape.");
   }
@@ -279,6 +283,7 @@ export function assertConnectorGraph(
   connectors: readonly Connector[],
 ): void {
   const shapeIds = new Set(shapes.map((shape) => shape.id));
+  const shapesById = new Map(shapes.map((shape) => [shape.id, shape]));
   const ids = new Set(shapeIds);
   for (const connector of connectors) {
     if (ids.has(connector.id)) throw new Error("This board contains invalid duplicate object IDs.");
@@ -286,6 +291,12 @@ export function assertConnectorGraph(
     for (const endpoint of [connector.start, connector.end])
       if (endpoint.type === "binding" && !shapeIds.has(endpoint.shapeId))
         throw new Error("A connector refers to a missing object.");
+      else if (
+        endpoint.type === "binding" &&
+        shapesById.get(endpoint.shapeId)?.type === "rectangle" &&
+        (shapesById.get(endpoint.shapeId) as Rectangle).kind === "frame"
+      )
+        throw new Error("Connectors cannot bind to frames.");
   }
 }
 

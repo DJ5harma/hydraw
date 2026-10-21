@@ -20,7 +20,7 @@ it("migrates plain v2 rectangles and round-trips undoable appearance without los
     ],
   };
   const migrated = decodeDocument(legacy);
-  expect(migrated.version).toBe(5);
+  expect(migrated.version).toBe(6);
   expect(migrated.shapes).toEqual(legacy.shapes);
   const editor = new Editor(migrated);
   editor.select("r");
