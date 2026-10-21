@@ -212,3 +212,14 @@ integration and an independent Luna review covered interaction and focus rules.
 [The UX record](UX_PLAN.md) documents visibility and scaling rules. The next
 product increments are attached rectangle labels, SVG/PNG export and clipboard
 reuse, in that order; see [NEXT.md](NEXT.md).
+
+## Milestone 10a — rectangle appearance
+
+Implemented on 21 October 2026. Rectangle records now support stroke color,
+width, dash style, opacity, corner radius and transparent fill. Native format v3
+preserves these properties; v0–v2 migrate without altering their plain rectangles.
+Style commands use normal transactions, history and serialization. Rendering
+isolates dash/opacity state per object. See [ADR 0008](adr/0008-rectangle-appearance.md).
+
+Focused verification passed four tests covering migration, styling round-trip,
+bindings, undo/redo, invalid opacity and existing text migration; editor types pass.

@@ -1,4 +1,4 @@
-import { createConnectorResolver } from "@hydraw/document";
+import { rectangleAppearance, createConnectorResolver } from "@hydraw/document";
 import type { Rectangle, Shape, TextShape } from "@hydraw/document";
 import { drawConnector, drawConnectorHandles } from "./render-connectors.ts";
 import { selectionScene } from "../selection.ts";
@@ -28,13 +28,34 @@ function drawRectangle(
   const height = shape.height * camera.zoom;
   if (x + width < -10 || y + height < -10 || x > viewport.width + 10 || y > viewport.height + 10)
     return;
+  const style = rectangleAppearance(shape);
+  ctx.save();
+  ctx.globalAlpha = style.opacity / 100;
   ctx.beginPath();
-  ctx.roundRect(x, y, width, height, Math.min(8 * camera.zoom, width / 2, height / 2));
-  ctx.fillStyle = shape.fill;
-  ctx.fill();
-  ctx.lineWidth = 1.5;
-  ctx.strokeStyle = "#364152";
+  ctx.roundRect(
+    x,
+    y,
+    width,
+    height,
+    Math.min(style.cornerRadius * camera.zoom, width / 2, height / 2),
+  );
+  if (shape.fill !== "transparent") {
+    ctx.fillStyle = shape.fill;
+    ctx.fill();
+  }
+  const lineWidth = style.strokeWidth * camera.zoom;
+  ctx.lineWidth = lineWidth;
+  ctx.strokeStyle = style.stroke;
+  ctx.lineCap = style.strokeStyle === "dotted" ? "round" : "butt";
+  ctx.setLineDash(
+    style.strokeStyle === "dashed"
+      ? [lineWidth * 5, lineWidth * 3]
+      : style.strokeStyle === "dotted"
+        ? [lineWidth, lineWidth * 3]
+        : [],
+  );
   ctx.stroke();
+  ctx.restore();
 }
 
 function drawText(

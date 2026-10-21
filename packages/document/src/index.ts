@@ -5,3 +5,5 @@ export * from "./transactions.ts";
 export * from "./connectors.ts";
 export * from "./selection-operations.ts";
 export * from "./arrangement.ts";
+
+export * from "./appearance.ts";

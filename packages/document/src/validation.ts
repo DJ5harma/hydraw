@@ -1,3 +1,4 @@
+import type { RectangleAppearance } from "./appearance.ts";
 import {
   MAX_SHAPES,
   MAX_CONNECTORS,
@@ -39,7 +40,7 @@ export function decodeDocument(value: unknown): BoardDocument {
   if (
     !record(value) ||
     value.format !== "hydraw" ||
-    (value.version !== 0 && value.version !== 1 && value.version !== 2)
+    (value.version !== 0 && value.version !== 1 && value.version !== 2 && value.version !== 3)
   ) {
     throw new Error("This board uses an unsupported Hydraw format.");
   }
@@ -50,22 +51,28 @@ export function decodeDocument(value: unknown): BoardDocument {
   const ids = new Set<string>();
   const valueVersion = value.version;
   const shapes = value.shapes.map((value: unknown): Shape => {
+    if (
+      valueVersion < 3 &&
+      record(value) &&
+      (value.appearance !== undefined || value.fill === "transparent")
+    )
+      throw new Error("Rectangle appearance requires Hydraw version 3.");
     const shape = valueVersion === 0 ? decodeRectangle(value) : decodeShape(value);
     if (ids.has(shape.id)) throw new Error("This board contains invalid duplicate shape IDs.");
     ids.add(shape.id);
     return shape;
   });
   if (
-    valueVersion !== 2 &&
+    valueVersion < 2 &&
     value.connectors !== undefined &&
     (!Array.isArray(value.connectors) || value.connectors.length !== 0)
   )
     throw new Error("Connectors require Hydraw version 2.");
-  const connectors = decodeConnectors(valueVersion === 2 ? value.connectors : []);
+  const connectors = decodeConnectors(valueVersion >= 2 ? value.connectors : []);
   assertConnectorGraph(shapes, connectors);
   return Object.freeze({
     format: "hydraw",
-    version: 2,
+    version: 3,
     name,
     shapes: Object.freeze(shapes),
     connectors: Object.freeze(connectors),
@@ -117,6 +124,7 @@ export function decodeRectangle(shape: unknown): Rectangle {
     width: shape.width,
     height: shape.height,
     fill: shape.fill,
+    ...(shape.appearance === undefined ? {} : { appearance: decodeAppearance(shape.appearance) }),
   });
 }
 
@@ -242,4 +250,27 @@ export function assertConnectorGraph(
       if (endpoint.type === "binding" && !shapeIds.has(endpoint.shapeId))
         throw new Error("A connector refers to a missing object.");
   }
+}
+
+function decodeAppearance(value: unknown): RectangleAppearance {
+  if (
+    !record(value) ||
+    typeof value.stroke !== "string" ||
+    !/^#[0-9a-f]{6}$/iu.test(value.stroke) ||
+    !finite(value.strokeWidth, 0.5, 12) ||
+    !finite(value.opacity, 0, 100) ||
+    !finite(value.cornerRadius, 0, 50) ||
+    (value.strokeStyle !== "solid" &&
+      value.strokeStyle !== "dashed" &&
+      value.strokeStyle !== "dotted")
+  ) {
+    throw new Error("This board contains invalid rectangle styling.");
+  }
+  return Object.freeze({
+    stroke: value.stroke.toLowerCase(),
+    strokeWidth: value.strokeWidth,
+    strokeStyle: value.strokeStyle,
+    opacity: value.opacity,
+    cornerRadius: value.cornerRadius,
+  });
 }

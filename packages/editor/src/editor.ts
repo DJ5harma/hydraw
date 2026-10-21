@@ -1,5 +1,6 @@
 import {
   decodeDocument,
+  rectangleAppearance,
   alignShapesTransaction,
   distributeShapesTransaction,
   deleteObjectsTransaction,
@@ -29,6 +30,7 @@ import type {
   Fill,
   Point,
   Rectangle,
+  RectangleAppearance,
   Shape,
   TextShape,
 } from "@hydraw/document";
@@ -365,6 +367,17 @@ export class Editor {
     const shape = this.selectedShape();
     if (shape?.type === "rectangle") this.commitShape("Change fill", shape, { ...shape, fill });
     this.publish({ fill });
+  }
+
+  setRectangleStyle(style: Partial<RectangleAppearance>): void {
+    this.finishTextEditing();
+    this.cancelGesture();
+    const shape = this.selectedShape();
+    if (shape?.type === "rectangle")
+      this.commitShape("Style rectangle", shape, {
+        ...shape,
+        appearance: { ...rectangleAppearance(shape), ...style },
+      });
   }
 
   rename(name: string): void {

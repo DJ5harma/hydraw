@@ -1,3 +1,4 @@
+import { rectangleAppearance } from "./appearance.ts";
 import { MAX_SHAPES, MAX_CONNECTORS } from "./model.ts";
 import type { BoardDocument, Shape, Connector, Endpoint } from "./model.ts";
 import { decodeName, decodeShape, decodeConnector, assertConnectorGraph } from "./validation.ts";
@@ -28,7 +29,18 @@ export function sameShape(a: Shape, b: Shape): boolean {
     a.height !== b.height
   )
     return false;
-  if (a.type === "rectangle" && b.type === "rectangle") return a.fill === b.fill;
+  if (a.type === "rectangle" && b.type === "rectangle") {
+    const left = rectangleAppearance(a),
+      right = rectangleAppearance(b);
+    return (
+      a.fill === b.fill &&
+      left.stroke === right.stroke &&
+      left.strokeWidth === right.strokeWidth &&
+      left.strokeStyle === right.strokeStyle &&
+      left.opacity === right.opacity &&
+      left.cornerRadius === right.cornerRadius
+    );
+  }
   return (
     a.type === "text" &&
     b.type === "text" &&
