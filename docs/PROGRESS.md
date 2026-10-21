@@ -337,3 +337,15 @@ Panel avoidance now includes grouped/connector bounds and nearby shapes, and
 recalculates after overlay dismissal. All six failed checks pass on focused reruns.
 All 128 unit tests and formatting/lint/types/boundary checks pass. Existing tests
 cover the fixes; no new test suite was added.
+
+## Unlock discovery follow-up
+
+Implemented on 21 October 2026. Objects now has a Locked only filter and a direct
+Unlock button on locked rows. Unlock selects the object/group, unlocks it in one
+transaction and closes the navigator so editing can resume. The immediate locked
+selection hint explains how to find it later. This removes the previous need to
+select a locked row, dismiss the navigator and discover Unlock in properties.
+
+The existing focused browser journey now reloads a locked board, filters locked
+objects, unlocks a whole group from its row and verifies undo/redo. It passes;
+formatting, lint, types and module boundaries pass.

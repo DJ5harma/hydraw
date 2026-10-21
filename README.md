@@ -42,7 +42,7 @@ The Dockerfile builds React and Hono together. The runtime image contains the bu
 - Duplicate selection with Ctrl/⌘ D or the selection shelf button. Copies get fresh identities and a 24-unit offset. Connections between copied nodes are included automatically; copied connections to unselected nodes become free endpoints.
 - Smart guides align selection edges/centers and neighboring gaps while dragging. Hold Alt to bypass snapping; arrow-key nudges stay exact.
 - Group/ungroup with Ctrl/⌘ G / Ctrl/⌘ Shift G. Selecting one member selects the whole flat group; moves preserve relative positions. Copies form independent groups.
-- Lock/unlock with Ctrl/⌘ Shift L. Locked objects skip canvas selection; use Board menu → Objects to select and unlock them.
+- Lock/unlock with Ctrl/⌘ Shift L. Locked objects skip canvas selection; open Board menu → Objects and click the object’s Unlock button. The Locked only filter finds them after deselection or reload; group members unlock together.
 - Change stacking in the floating selection properties: Front/Forward/Backward/Back. Ctrl/⌘ ] or [ moves one step; add Shift for front/back. Shapes and connectors share one stack.
 - Arrange ungrouped rectangles and text directly in the multiple-selection properties: align edges or centers with two or more shapes, or distribute centers horizontally/vertically with three or more. Outer centers stay fixed during distribution; attached arrows follow their shapes. Selected arrows do not affect the layout targets.
 - Copy/cut/paste selections with Ctrl/⌘ C/X/V. Internal connections and labels travel with the selection; external references detach safely. Pasted objects get fresh identities at the viewport center. Native text clipboard shortcuts retain their normal behavior.

@@ -175,7 +175,8 @@ bypasses snapping; a click never snaps. Flat groups select and move as a unit.
 The existing floating selection properties expose Group/Ungroup, Lock and four
 stacking commands. Grouped selections hide individual-member arrangement controls;
 locked selections expose only Unlock. The object navigator marks groups/locks and
-can select locked objects to unlock them. Organization commands share the style
+offers a Locked only filter and direct Unlock buttons, including after reload.
+Unlocking a group selects and unlocks all members in one undoable action. Organization commands share the style
 panel's scroll area on small screens. No permanent panel or shape picker is added.
 
 Keyboard help includes grouping, locks, ordering and Alt. Direct tool shortcuts

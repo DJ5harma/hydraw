@@ -140,7 +140,7 @@ export function SelectionActions({
             </p>
           )}
           {anyLocked ? (
-            <p className="locked-selection-message">Locked selection</p>
+            <p className="locked-selection-message">To unlock later, open Board menu → Objects.</p>
           ) : multi && anyGrouped ? (
             <p className="locked-selection-message">Ungroup to arrange individual objects.</p>
           ) : multi ? (

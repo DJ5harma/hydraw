@@ -10,6 +10,7 @@ export function ObjectNavigator({ editor, onClose }: { editor: Editor; onClose: 
   const snapshot = useEditorSnapshot(editor);
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
+  const [lockedOnly, setLockedOnly] = useState(false);
   const selected = new Set(snapshot.selectedIds);
   const entries = useMemo(() => {
     const shapes = snapshot.document.shapes.map((shape, index) => ({
@@ -31,8 +32,11 @@ export function ObjectNavigator({ editor, onClose }: { editor: Editor; onClose: 
     }));
     return [...shapes, ...connectors];
   }, [snapshot.document]);
-  const filtered = entries.filter((entry) =>
-    entry.label.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()),
+  const lockedCount = entries.filter((entry) => entry.locked).length;
+  const filtered = entries.filter(
+    (entry) =>
+      (!lockedOnly || entry.locked) &&
+      entry.label.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()),
   );
   const pageCount = Math.max(1, Math.ceil(filtered.length / RESULT_LIMIT));
   const currentPage = Math.min(page, pageCount - 1);
@@ -63,6 +67,24 @@ export function ObjectNavigator({ editor, onClose }: { editor: Editor; onClose: 
             placeholder="Search objects"
           />
         </label>
+        {(lockedCount > 0 || lockedOnly) && (
+          <label className="object-lock-filter">
+            <input
+              type="checkbox"
+              checked={lockedOnly}
+              onChange={(event) => {
+                setLockedOnly(event.target.checked);
+                setPage(0);
+              }}
+            />
+            Locked only <span aria-hidden="true">({lockedCount})</span>
+          </label>
+        )}
+        {lockedCount > 0 && (
+          <p className="object-lock-help">
+            Unlock an object here to edit it again. Group members unlock together.
+          </p>
+        )}
         <div className="object-navigator-results">
           {entries.length === 0 ? (
             <p>No objects yet</p>
@@ -86,6 +108,19 @@ export function ObjectNavigator({ editor, onClose }: { editor: Editor; onClose: 
                       {entry.locked && <span>Locked</span>}
                     </span>
                   </button>
+                  {entry.locked && (
+                    <button
+                      className="object-unlock"
+                      aria-label={`Unlock ${entry.label}`}
+                      onClick={() => {
+                        editor.select(entry.id);
+                        editor.setSelectionLocked(false);
+                        onClose();
+                      }}
+                    >
+                      Unlock
+                    </button>
+                  )}
                 </li>
               ))}
             </ul>

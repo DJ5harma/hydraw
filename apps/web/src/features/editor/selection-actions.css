@@ -499,3 +499,33 @@
 .selection-properties .selection-shelf .selection-action:not(.geometry-trigger) > span {
   display: none;
 }
+
+.object-navigator-results li {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.object-navigator-results li > button:first-child {
+  min-width: 0;
+  flex: 1;
+}
+.object-navigator-results li .object-unlock {
+  width: auto;
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: var(--accent, #176b52);
+  border: 1px solid var(--line, #e0e5eb);
+}
+.object-lock-filter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 10px 0 4px;
+  font-size: 12px;
+}
+.object-lock-help {
+  color: var(--text-muted, #647182);
+  font-size: 12px;
+  line-height: 1.4;
+  margin: 6px 0;
+}
