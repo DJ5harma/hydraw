@@ -1,12 +1,23 @@
 import { resolveConnector } from "@hydraw/document";
-import type { Bounds, Connector, Rectangle, Shape, TextShape } from "@hydraw/document";
+import type {
+  Bounds,
+  Connector,
+  ConnectorGeometry,
+  Rectangle,
+  Shape,
+  TextShape,
+} from "@hydraw/document";
 import { layoutText } from "./text-layout.ts";
 import type { TextMeasurer } from "./text-layout.ts";
 
 /** Inscribed content area: labels never resize their owners or change connection geometry. */
-export function labelClipBounds(owner: Rectangle | Connector, shapes: readonly Shape[]): Bounds {
+export function labelClipBounds(
+  owner: Rectangle | Connector,
+  shapes: readonly Shape[],
+  resolved?: ConnectorGeometry,
+): Bounds {
   if (owner.type === "connector") {
-    const { start, end } = resolveConnector(owner, shapes);
+    const { start, end } = resolved ?? resolveConnector(owner, shapes);
     const width = Math.min(220, Math.max(80, Math.hypot(end.x - start.x, end.y - start.y) * 0.8));
     return {
       x: (start.x + end.x) / 2 - width / 2,

@@ -299,3 +299,26 @@ rerun. The journey dispatches ClipboardEvents to verify browser event integratio
 This completes the first everyday-drawing release from the cross-platform
 feature sequence. Smart guides, groups/locking/order, frames and reusable presets
 remain subsequent milestones in NEXT.md, not completed features.
+
+## Milestone 14 — placement and object organization
+
+Implemented on 21 October 2026. Native v5 adds flat group identities, locks and
+stack ranks with earlier-file migration and reversible domain transactions.
+Canvas, hit testing and SVG/PNG export use a shared shape/connector stack.
+Groups select/move together; duplicate/paste remaps membership and unlocks copies.
+Locks protect direct edits and ordinary canvas selection; the object navigator
+provides explicit selection for unlocking. Bound-edge following/deletion retains
+its existing graph rules. See ADR 0010 for scope and limitations.
+
+Translation guides snap edges, centers and neighboring gaps within six screen
+pixels. Alt bypasses snapping; three screen pixels of movement distinguish a drag
+from a click. Guides never enter history or exports. Floating selection properties
+contain organization commands and scroll on small screens; shortcut help documents
+new commands. Group resize, nested groups and resize/drawing snapping are deferred.
+
+Focused verification covers organization transactions, snapping, clipboard and
+editor history/lock/stack integration. One Chromium browser journey covers normal
+and Alt drags, grouped movement, front ordering, lock protection, navigator unlock,
+mobile command access and reload persistence. Its mobile layout was inspected.
+Formatting, lint, workspace types and module-boundary checks pass. The full browser
+matrix and performance benchmarks were not rerun.

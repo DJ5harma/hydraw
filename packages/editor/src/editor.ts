@@ -1,5 +1,10 @@
 import {
   decodeDocument,
+  expandGroups,
+  groupObjectsTransaction,
+  ungroupObjectsTransaction,
+  setObjectsLockedTransaction,
+  reorderObjectsTransaction,
   decodeLabel,
   rectangleAppearance,
   alignShapesTransaction,
@@ -15,7 +20,6 @@ import {
   resolveConnector,
   decodeText,
   MAX_TEXT_LENGTH,
-  hitTest,
   MAX_COORDINATE,
   MAX_SHAPES,
   nameTransaction,
@@ -33,11 +37,12 @@ import type {
   Rectangle,
   RectangleAppearance,
   ShapeKind,
+  OrderDirection,
   Shape,
   TextShape,
 } from "@hydraw/document";
 import { labelTextShape } from "./labels.ts";
-import { hitConnector, hitConnectorEnd } from "./connector-interactions.ts";
+import { hitSceneObject, hitConnectorEnd } from "./connector-interactions.ts";
 import type { ConnectorEnd } from "./connector-interactions.ts";
 import { clamp, hitResizeHandle, screenToWorld } from "./geometry.ts";
 import type { ResizeHandle } from "./geometry.ts";
@@ -113,6 +118,7 @@ export class Editor {
       selectionPreview: null,
       marquee: null,
       textEditing: null,
+      guides: [],
       interacting: false,
       activeHandle: null,
       canUndo: false,
@@ -132,6 +138,8 @@ export class Editor {
 
   private publish(patch: Partial<Omit<EditorSnapshot, "selectedId">>): void {
     let selectedIds = patch.selectedIds ?? this.snapshot.selectedIds;
+    if (patch.selectedIds || patch.document)
+      selectedIds = expandGroups(patch.document ?? this.snapshot.document, selectedIds);
     if (patch.document) {
       const valid = new Set(objectIds(patch.document));
       selectedIds = selectedIds.filter((id) => valid.has(id));
@@ -158,6 +166,63 @@ export class Editor {
     )
       this.chrome = next;
     this.listeners.forEach((listener) => listener());
+  }
+
+  private selectionLocked(ids = this.snapshot.selectedIds): boolean {
+    const selected = new Set(expandGroups(this.snapshot.document, ids));
+    return [...this.snapshot.document.shapes, ...this.snapshot.document.connectors].some(
+      (item) => selected.has(item.id) && item.locked,
+    );
+  }
+
+  private creationRank(front: boolean): number {
+    let rank = 0;
+    for (const object of [...this.snapshot.document.shapes, ...this.snapshot.document.connectors])
+      rank = front ? Math.max(rank, object.zIndex ?? 0) : Math.min(rank, object.zIndex ?? 0);
+    return Math.max(-1_000_000_000, Math.min(1_000_000_000, rank + (front ? 1 : -1)));
+  }
+
+  groupSelection(): void {
+    this.finishTextEditing();
+    this.cancelGesture();
+    const { document, selectedIds } = this.snapshot;
+    const objects = [...document.shapes, ...document.connectors].filter((item) =>
+      selectedIds.includes(item.id),
+    );
+    if (
+      objects.length < 2 ||
+      this.selectionLocked() ||
+      objects.every((item) => item.groupId && item.groupId === objects[0]!.groupId)
+    )
+      return;
+    const groupId = this.makeId();
+    if (
+      objects.some((item) => item.id === groupId) ||
+      [...document.shapes, ...document.connectors].some(
+        (item) => item.groupId === groupId || item.id === groupId,
+      )
+    )
+      throw new Error("Could not create a unique group identity.");
+    this.commit(groupObjectsTransaction(document, selectedIds, groupId));
+  }
+  ungroupSelection(): void {
+    this.finishTextEditing();
+    this.cancelGesture();
+    this.commit(ungroupObjectsTransaction(this.snapshot.document, this.snapshot.selectedIds));
+  }
+  setSelectionLocked(locked: boolean): void {
+    this.finishTextEditing();
+    this.cancelGesture();
+    this.commit(
+      setObjectsLockedTransaction(this.snapshot.document, this.snapshot.selectedIds, locked),
+    );
+  }
+  orderSelection(direction: OrderDirection): void {
+    this.finishTextEditing();
+    this.cancelGesture();
+    this.commit(
+      reorderObjectsTransaction(this.snapshot.document, this.snapshot.selectedIds, direction),
+    );
   }
 
   private assertWritable(): void {
@@ -212,6 +277,7 @@ export class Editor {
       selectionPreview: null,
       marquee: null,
       textEditing: null,
+      guides: [],
       interacting: false,
       activeHandle: null,
     });
@@ -258,6 +324,7 @@ export class Editor {
     const connector: Connector = {
       id: this.makeId(),
       type: "connector",
+      zIndex: this.creationRank(false),
       start: { type: "point", x: x - 80, y },
       end: { type: "point", x: x + 80, y },
       color: "#243e33",
@@ -268,12 +335,14 @@ export class Editor {
   }
 
   setConnectorStyle(style: Partial<Pick<Connector, "color" | "arrowhead">>): void {
+    if (this.selectionLocked()) return;
     this.cancelGesture();
     const connector = this.selectedConnector();
     if (connector) this.commitConnector("Style connector", connector, { ...connector, ...style });
   }
 
   reverseConnector(): void {
+    if (this.selectionLocked()) return;
     this.cancelGesture();
     const connector = this.selectedConnector();
     if (connector)
@@ -285,6 +354,7 @@ export class Editor {
   }
 
   detachConnector(): void {
+    if (this.selectionLocked()) return;
     this.cancelGesture();
     const connector = this.selectedConnector();
     if (!connector) return;
@@ -297,7 +367,7 @@ export class Editor {
   }
 
   getConnectorEndpointAt(screen: Point): ConnectorEnd | null {
-    const connector = this.selectedConnector();
+    const connector = this.selectionLocked() ? undefined : this.selectedConnector();
     return connector && this.snapshot.tool === "select"
       ? hitConnectorEnd(connector, this.snapshot.document.shapes, screen, this.snapshot.camera)
       : null;
@@ -322,16 +392,12 @@ export class Editor {
     this.cancelGesture();
     const valid = id !== null && objectIds(this.snapshot.document).includes(id);
     const current = this.snapshot.selectedIds;
+    const group = valid ? expandGroups(this.snapshot.document, [id!]) : [];
+    const toggled = current.includes(id!)
+      ? current.filter((item) => !group.includes(item))
+      : [...new Set([...current, ...group])];
     this.publish({
-      selectedIds: !valid
-        ? additive
-          ? current
-          : []
-        : additive
-          ? current.includes(id!)
-            ? current.filter((selected) => selected !== id)
-            : [...current, id!]
-          : [id!],
+      selectedIds: !valid ? (additive ? current : []) : additive ? toggled : group,
       tool: "select",
     });
   }
@@ -346,7 +412,16 @@ export class Editor {
   selectAll(): void {
     this.finishTextEditing();
     this.cancelGesture();
-    this.publish({ selectedIds: objectIds(this.snapshot.document), tool: "select" });
+    const objects = [...this.snapshot.document.shapes, ...this.snapshot.document.connectors];
+    const lockedGroups = new Set(
+      objects.filter((item) => item.locked && item.groupId).map((item) => item.groupId),
+    );
+    this.publish({
+      selectedIds: objects
+        .filter((item) => !item.locked && (!item.groupId || !lockedGroups.has(item.groupId)))
+        .map((item) => item.id),
+      tool: "select",
+    });
   }
 
   copySelection(): string | null {
@@ -377,6 +452,7 @@ export class Editor {
   }
 
   duplicateSelection(): void {
+    if (this.selectionLocked()) return;
     this.assertWritable();
     this.finishTextEditing();
     this.cancelGesture();
@@ -386,6 +462,13 @@ export class Editor {
   }
 
   alignSelection(alignment: Alignment): void {
+    if (
+      this.selectionLocked() ||
+      [...this.snapshot.document.shapes, ...this.snapshot.document.connectors].some(
+        (item) => this.snapshot.selectedIds.includes(item.id) && item.groupId,
+      )
+    )
+      return;
     this.assertWritable();
     this.finishTextEditing();
     this.cancelGesture();
@@ -395,6 +478,13 @@ export class Editor {
   }
 
   distributeSelection(axis: DistributionAxis): void {
+    if (
+      this.selectionLocked() ||
+      [...this.snapshot.document.shapes, ...this.snapshot.document.connectors].some(
+        (item) => this.snapshot.selectedIds.includes(item.id) && item.groupId,
+      )
+    )
+      return;
     this.assertWritable();
     this.finishTextEditing();
     this.cancelGesture();
@@ -404,6 +494,7 @@ export class Editor {
   }
 
   setFill(fill: Fill): void {
+    if (this.selectionLocked()) return;
     this.finishTextEditing();
     this.cancelGesture();
     const shape = this.selectedShape();
@@ -412,6 +503,7 @@ export class Editor {
   }
 
   setRectangleStyle(style: Partial<RectangleAppearance>): void {
+    if (this.selectionLocked()) return;
     this.finishTextEditing();
     this.cancelGesture();
     const shape = this.selectedShape();
@@ -435,6 +527,7 @@ export class Editor {
   }
 
   setGeometry(geometry: Partial<Bounds>): void {
+    if (this.selectionLocked()) return;
     this.finishTextEditing();
     this.cancelGesture();
     const shape = this.selectedShape();
@@ -453,6 +546,7 @@ export class Editor {
     const shape: Rectangle = {
       id: this.makeId(),
       type: "rectangle",
+      zIndex: this.creationRank(true),
       x: clamp(point.x - 90, -MAX_COORDINATE, MAX_COORDINATE),
       y: clamp(point.y - 60, -MAX_COORDINATE, MAX_COORDINATE),
       width: 180,
@@ -479,6 +573,7 @@ export class Editor {
     const draft = this.fitText({
       id: this.makeId(),
       type: "text",
+      zIndex: this.creationRank(true),
       text: "",
       x: clamp(point.x, -MAX_COORDINATE, MAX_COORDINATE),
       y: clamp(point.y, -MAX_COORDINATE, MAX_COORDINATE),
@@ -505,21 +600,16 @@ export class Editor {
   }
 
   editTextAt(screen: Point): void {
-    const shape = hitTest(
-      this.snapshot.document.shapes,
+    const object = hitSceneObject(
+      this.snapshot.document,
       screenToWorld(screen, this.snapshot.camera),
+      7 / this.snapshot.camera.zoom,
     );
-    const edge = shape
-      ? undefined
-      : hitConnector(
-          this.snapshot.document,
-          screenToWorld(screen, this.snapshot.camera),
-          7 / this.snapshot.camera.zoom,
-        );
-    if (shape || edge) this.editText(shape?.id ?? edge!.id);
+    if (object) this.editText(object.id);
   }
 
   editText(id = this.snapshot.selectedId): void {
+    if (id && this.selectionLocked([id])) return;
     this.assertWritable();
     this.finishTextEditing();
     this.cancelGesture();
@@ -614,6 +704,7 @@ export class Editor {
   setTextStyle(
     style: Partial<Pick<TextShape, "fontSize" | "fontWeight" | "textAlign" | "color">>,
   ): void {
+    if (this.selectionLocked()) return;
     this.finishTextEditing();
     this.cancelGesture();
     const shape = this.selectedShape();
@@ -622,6 +713,7 @@ export class Editor {
   }
 
   nudgeSelection(dx: number, dy: number): void {
+    if (this.selectionLocked()) return;
     this.finishTextEditing();
     this.cancelGesture();
     const connector = this.selectedConnector();
@@ -635,7 +727,7 @@ export class Editor {
   }
 
   getResizeHandleAt(screen: Point): ResizeHandle | null {
-    const shape = this.selectedShape();
+    const shape = this.selectionLocked() ? undefined : this.selectedShape();
     return shape && this.snapshot.tool === "select"
       ? hitResizeHandle(shape, screen, this.snapshot.camera)
       : null;
@@ -646,35 +738,43 @@ export class Editor {
     this.finishTextEditing();
     this.cancelGesture();
     if (!pan && this.snapshot.tool === "text") {
-      const shape = hitTest(
-        this.snapshot.document.shapes,
+      const object = hitSceneObject(
+        this.snapshot.document,
         screenToWorld(screen, this.snapshot.camera),
+        7 / this.snapshot.camera.zoom,
       );
-      const edge = shape
-        ? undefined
-        : hitConnector(
-            this.snapshot.document,
-            screenToWorld(screen, this.snapshot.camera),
-            7 / this.snapshot.camera.zoom,
-          );
-      if (shape || edge) this.editText(shape?.id ?? edge!.id);
+      if (object) this.editText(object.id);
       else this.addText(screen);
       return;
     }
     const start = startGesture(this.snapshot, screen, this.makeId, pan, additive);
     if (!start) return;
     this.gesture = start.gesture;
-    this.publish(start.patch);
+    this.publish(this.rankCreationPreview(start.patch));
   }
 
-  move(screen: Point): void {
+  private rankCreationPreview(patch: Partial<EditorSnapshot>): Partial<EditorSnapshot> {
+    if (this.gesture?.kind === "draw" && patch.preview)
+      return { ...patch, preview: { ...patch.preview, zIndex: this.creationRank(true) } };
+    if (this.gesture?.kind === "connect" && patch.connectorPreview)
+      return {
+        ...patch,
+        connectorPreview: { ...patch.connectorPreview, zIndex: this.creationRank(false) },
+      };
+    return patch;
+  }
+
+  move(screen: Point, snapping = true): void {
     if (!this.gesture) return;
-    const patch = previewGesture(
-      this.gesture,
-      screen,
-      this.snapshot.camera,
-      this.snapshot.fill,
-      this.snapshot.document,
+    const patch = this.rankCreationPreview(
+      previewGesture(
+        this.gesture,
+        screen,
+        this.snapshot.camera,
+        this.snapshot.fill,
+        this.snapshot.document,
+        snapping,
+      ),
     );
     this.publish(
       this.gesture.kind === "resize" && patch.preview?.type === "text"
@@ -709,7 +809,9 @@ export class Editor {
           this.commitConnector(
             gesture.kind === "connect" ? "Create connector" : "Reconnect endpoint",
             gesture.kind === "connect" ? null : gesture.connector,
-            connectorPreview,
+            gesture.kind === "connect"
+              ? { ...connectorPreview, zIndex: this.creationRank(false) }
+              : connectorPreview,
           );
           this.publish({ selectedIds: [connectorPreview.id], tool: "select" });
         }
@@ -721,7 +823,7 @@ export class Editor {
         preview.width * camera.zoom >= 3 &&
         preview.height * camera.zoom >= 3
       ) {
-        this.commitShape("Create rectangle", null, preview);
+        this.commitShape("Create rectangle", null, { ...preview, zIndex: this.creationRank(true) });
         this.publish({ selectedIds: [preview.id], tool: "select" });
       } else if (gesture?.kind === "resize" && preview) {
         this.commitShape("Resize object", gesture.shape, preview);
@@ -781,6 +883,7 @@ export class Editor {
   }
 
   removeSelection(): void {
+    if (this.selectionLocked()) return;
     this.finishTextEditing();
     this.cancelGesture();
     this.commit(deleteObjectsTransaction(this.snapshot.document, this.snapshot.selectedIds));

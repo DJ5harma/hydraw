@@ -164,6 +164,19 @@ Rectangle background/transparent fill, stroke color/width/style, opacity and
 square/rounded corners are implemented and persist in native format v3. Text and
 connector selections immediately expose their existing controls. These are the
 first useful gaps against Excalidraw's [element defaults](https://github.com/excalidraw/excalidraw/blob/master/packages/common/src/constants.ts),
-not a claim of full parity. Patterned fills, sketch roughness, rotation, groups and layer ordering still need
+not a claim of full parity. Patterned fills, sketch roughness, rotation and nested groups still need
 owned engine support. Do not show
 inactive controls for those features. Attached node/connector labels, visual export and clipboard reuse are now implemented; see NEXT.md.
+
+## Placement and organization
+
+Translation shows transient edge/center and neighboring equal-gap guides. Alt
+bypasses snapping; a click never snaps. Flat groups select and move as a unit.
+The existing floating selection properties expose Group/Ungroup, Lock and four
+stacking commands. Grouped selections hide individual-member arrangement controls;
+locked selections expose only Unlock. The object navigator marks groups/locks and
+can select locked objects to unlock them. Organization commands share the style
+panel's scroll area on small screens. No permanent panel or shape picker is added.
+
+Keyboard help includes grouping, locks, ordering and Alt. Direct tool shortcuts
+remain visible. Group resize/rotation and nested groups remain future engine work.

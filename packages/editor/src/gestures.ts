@@ -1,5 +1,5 @@
 import {
-  hitTest,
+  expandGroups,
   MAX_CONNECTORS,
   MAX_COORDINATE,
   MAX_ENDPOINT_COORDINATE,
@@ -17,7 +17,7 @@ import type { SelectionGesture } from "./selection.ts";
 import type { ConnectorGesture } from "./connector-interactions.ts";
 import {
   endpointAt,
-  hitConnector,
+  hitSceneObject,
   hitConnectorEnd,
   previewConnectorGesture,
 } from "./connector-interactions.ts";
@@ -35,9 +35,10 @@ export function previewGesture(
   camera: Camera,
   fill: Fill,
   document: EditorSnapshot["document"],
+  snapping = true,
 ): Partial<EditorSnapshot> {
   if (gesture.kind === "marquee" || gesture.kind === "move-selection")
-    return previewSelectionGesture(gesture, screen, camera, document);
+    return previewSelectionGesture(gesture, screen, camera, document, snapping);
   if (gesture.kind === "connect" || gesture.kind === "reconnect")
     return previewConnectorGesture(gesture, screen, camera, document.shapes);
   if (gesture.kind === "pan")
@@ -70,6 +71,7 @@ export function previewGesture(
 }
 
 export const IDLE_GESTURE = Object.freeze({
+  guides: [],
   preview: null,
   selectionPreview: null,
   marquee: null,
@@ -140,20 +142,31 @@ export function startGesture(
       },
     };
   }
-  const shape = hitTest(document.shapes, raw);
-  const edge = shape ? undefined : hitConnector(document, raw, 7 / camera.zoom);
+  const object = hitSceneObject(document, raw, 7 / camera.zoom);
+  const shape = object?.type === "connector" ? undefined : object;
+  const edge = object?.type === "connector" ? object : undefined;
   const hitId = shape?.id ?? edge?.id;
+  const hitIds = hitId ? expandGroups(document, [hitId]) : [];
+  const groupLocked = (ids: readonly string[]) =>
+    [...document.shapes, ...document.connectors].some(
+      (item) => ids.includes(item.id) && item.locked,
+    );
   if (additive && hitId)
     return {
       gesture: null,
       patch: {
         selectedIds: selectedIds.includes(hitId)
-          ? selectedIds.filter((id) => id !== hitId)
-          : [...selectedIds, hitId],
+          ? selectedIds.filter((id) => !hitIds.includes(id))
+          : [...new Set([...selectedIds, ...hitIds])],
       },
     };
-  const selectedShape = document.shapes.find((shape) => shape.id === selectedId);
-  const connector = document.connectors.find((edge) => edge.id === selectedId);
+  const lockedSelection = groupLocked(selectedIds);
+  const selectedShape = lockedSelection
+    ? undefined
+    : document.shapes.find((shape) => shape.id === selectedId);
+  const connector = lockedSelection
+    ? undefined
+    : document.connectors.find((edge) => edge.id === selectedId);
   const endpoint = connector ? hitConnectorEnd(connector, document.shapes, screen, camera) : null;
   const handle = selectedShape ? hitResizeHandle(selectedShape, screen, camera) : null;
   if (!hitId && (additive || !endpoint) && !handle)
@@ -167,8 +180,8 @@ export function startGesture(
     };
   if (hitId && selectedIds.length > 1 && selectedIds.includes(hitId))
     return {
-      gesture: { kind: "move-selection", start: raw, ids: selectedIds },
-      patch: { interacting: true },
+      gesture: lockedSelection ? null : { kind: "move-selection", start: raw, ids: selectedIds },
+      patch: { interacting: !lockedSelection },
     };
   if (endpoint && connector)
     return {
@@ -180,8 +193,11 @@ export function startGesture(
       gesture: { kind: "resize", start: raw, shape: selectedShape, handle },
       patch: { interacting: true, activeHandle: handle },
     };
-  const movable = shape || (edge?.start.type === "point" && edge.end.type === "point");
-  const ids = hitId ? [hitId] : [];
+  const movable = Boolean(
+    (shape || hitIds.length > 1 || (edge?.start.type === "point" && edge.end.type === "point")) &&
+    !groupLocked(hitIds),
+  );
+  const ids = hitIds;
   return {
     gesture: movable ? { kind: "move-selection", start: raw, ids } : null,
     patch: { selectedIds: ids, interacting: !!movable },

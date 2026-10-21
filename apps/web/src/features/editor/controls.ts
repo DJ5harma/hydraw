@@ -29,12 +29,36 @@ function createKeyboardHandler(
     const target = event.target;
     if (
       target instanceof HTMLElement &&
-      target.closest('input, textarea, select, [contenteditable="true"]')
+      target.closest('input, textarea, select, dialog, [contenteditable="true"], [role="dialog"]')
     )
       return;
     const mod = event.metaKey || event.ctrlKey;
     const key = event.key.toLowerCase();
-    if (mod && key === "a") {
+    if (mod && key === "g") {
+      event.preventDefault();
+      if (editor.getSnapshot().selectedIds.length) {
+        if (event.shiftKey) editor.ungroupSelection();
+        else editor.groupSelection();
+      }
+    } else if (mod && event.shiftKey && key === "l") {
+      event.preventDefault();
+      const snapshot = editor.getSnapshot();
+      const selected = new Set(snapshot.selectedIds);
+      if (selected.size) {
+        const locked = [...snapshot.document.shapes, ...snapshot.document.connectors].some(
+          (item) => selected.has(item.id) && item.locked,
+        );
+        editor.setSelectionLocked(!locked);
+      }
+    } else if (mod && (event.code === "BracketRight" || event.code === "BracketLeft")) {
+      event.preventDefault();
+      if (editor.getSnapshot().selectedIds.length) {
+        const forward = event.code === "BracketRight";
+        editor.orderSelection(
+          event.shiftKey ? (forward ? "front" : "back") : forward ? "forward" : "backward",
+        );
+      }
+    } else if (mod && key === "a") {
       event.preventDefault();
       editor.selectAll();
     } else if (mod && key === "d") {

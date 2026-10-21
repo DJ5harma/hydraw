@@ -1,4 +1,4 @@
-import { createConnectorResolver, translateObjects } from "@hydraw/document";
+import { createConnectorResolver, translateObjects, expandGroups } from "@hydraw/document";
 import type {
   BoardDocument,
   Bounds,
@@ -7,6 +7,7 @@ import type {
   Point,
   Shape,
 } from "@hydraw/document";
+import { snapTranslation } from "./snapping.ts";
 import { screenToWorld } from "./geometry.ts";
 import type { Camera, EditorSnapshot } from "./types.ts";
 
@@ -32,10 +33,18 @@ function contains(bounds: Bounds, point: Point): boolean {
 
 export function enclosedObjects(document: BoardDocument, bounds: Bounds): readonly string[] {
   const resolveConnector = createConnectorResolver(document.shapes);
-  return [
+  const lockedGroups = new Set(
+    [...document.shapes, ...document.connectors]
+      .filter((item) => item.locked && item.groupId)
+      .map((item) => item.groupId),
+  );
+  const editable = (item: Shape | Connector) =>
+    !item.locked && (!item.groupId || !lockedGroups.has(item.groupId));
+  return expandGroups(document, [
     ...document.shapes
       .filter(
         (shape) =>
+          editable(shape) &&
           contains(bounds, shape) &&
           contains(bounds, { x: shape.x + shape.width, y: shape.y + shape.height }),
       )
@@ -43,10 +52,10 @@ export function enclosedObjects(document: BoardDocument, bounds: Bounds): readon
     ...document.connectors
       .filter((connector) => {
         const ends = resolveConnector(connector);
-        return contains(bounds, ends.start) && contains(bounds, ends.end);
+        return editable(connector) && contains(bounds, ends.start) && contains(bounds, ends.end);
       })
       .map((connector) => connector.id),
-  ];
+  ]);
 }
 
 export function previewSelectionGesture(
@@ -54,15 +63,42 @@ export function previewSelectionGesture(
   screen: Point,
   camera: Camera,
   document: BoardDocument,
+  snapping = true,
 ): Partial<EditorSnapshot> {
   const point = screenToWorld(screen, camera);
-  if (gesture.kind === "move-selection")
-    return {
-      selectionPreview: translateObjects(document, gesture.ids, {
-        x: point.x - gesture.start.x,
-        y: point.y - gesture.start.y,
-      }),
-    };
+  if (gesture.kind === "move-selection") {
+    const requested = { x: point.x - gesture.start.x, y: point.y - gesture.start.y };
+    const dragging = Math.hypot(requested.x, requested.y) * camera.zoom >= 3;
+    const snapped =
+      snapping && dragging
+        ? snapTranslation(document, gesture.ids, requested, camera.zoom)
+        : { delta: requested, guides: [] };
+    const updates = translateObjects(document, gesture.ids, snapped.delta);
+    const originals = new Map(
+      [...document.shapes, ...document.connectors].map((item) => [item.id, item]),
+    );
+    const near = (value: number, expected: number) => Math.abs(value - expected) < 0.000001;
+    const clamped =
+      updates.shapes.some((shape) => {
+        const before = originals.get(shape.id) as Shape;
+        return (
+          !near(shape.x, before.x + snapped.delta.x) || !near(shape.y, before.y + snapped.delta.y)
+        );
+      }) ||
+      updates.connectors.some((edge) => {
+        const before = originals.get(edge.id) as Connector;
+        return (["start", "end"] as const).some((key) => {
+          const start = before[key],
+            end = edge[key];
+          return (
+            start.type === "point" &&
+            end.type === "point" &&
+            (!near(end.x, start.x + snapped.delta.x) || !near(end.y, start.y + snapped.delta.y))
+          );
+        });
+      });
+    return { selectionPreview: updates, guides: clamped ? [] : snapped.guides };
+  }
   const marquee = {
     x: Math.min(point.x, gesture.start.x),
     y: Math.min(point.y, gesture.start.y),
@@ -102,32 +138,4 @@ export function selectionScene(snapshot: EditorSnapshot): ObjectUpdates {
   return { shapes, connectors };
 }
 
-export function selectionBounds(
-  shapes: readonly Shape[],
-  connectors: readonly Connector[],
-  ids: readonly string[],
-): Bounds | null {
-  const selected = new Set(ids);
-  const resolveConnector = createConnectorResolver(shapes);
-  const points: Point[] = [];
-  for (const shape of shapes)
-    if (selected.has(shape.id))
-      points.push(shape, { x: shape.x + shape.width, y: shape.y + shape.height });
-  for (const connector of connectors)
-    if (selected.has(connector.id)) {
-      const ends = resolveConnector(connector);
-      points.push(ends.start, ends.end);
-    }
-  if (!points.length) return null;
-  let left = Infinity,
-    top = Infinity,
-    right = -Infinity,
-    bottom = -Infinity;
-  for (const point of points) {
-    left = Math.min(left, point.x);
-    top = Math.min(top, point.y);
-    right = Math.max(right, point.x);
-    bottom = Math.max(bottom, point.y);
-  }
-  return { x: left, y: top, width: right - left, height: bottom - top };
-}
+export { selectionBounds } from "./selection-bounds.ts";

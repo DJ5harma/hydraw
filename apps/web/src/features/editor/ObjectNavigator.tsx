@@ -19,11 +19,15 @@ export function ObjectNavigator({ editor, onClose }: { editor: Editor; onClose: 
           ? `Text ${index + 1} · ${shape.text.slice(0, 32)}`
           : `${shape.kind ? shape.kind[0]!.toUpperCase() + shape.kind.slice(1) : "Rectangle"} ${index + 1}${shape.label ? ` · ${shape.label.text.slice(0, 32)}` : ""}`,
       kind: shape.type === "text" ? "T" : "▭",
+      locked: shape.locked === true,
+      grouped: shape.groupId !== undefined,
     }));
     const connectors = snapshot.document.connectors.map((connector, index) => ({
       id: connector.id,
       label: `Connector ${index + 1}${connector.label ? ` · ${connector.label.text.slice(0, 32)}` : ""}`,
       kind: "↗",
+      locked: connector.locked === true,
+      grouped: connector.groupId !== undefined,
     }));
     return [...shapes, ...connectors];
   }, [snapshot.document]);
@@ -76,7 +80,11 @@ export function ObjectNavigator({ editor, onClose }: { editor: Editor; onClose: 
                     <span className="object-navigator-kind" aria-hidden="true">
                       {entry.kind === "↗" ? <Icon name="connector" /> : entry.kind}
                     </span>
-                    <span>{entry.label}</span>
+                    <span className="object-navigator-label">{entry.label}</span>
+                    <span className="object-navigator-state">
+                      {entry.grouped && <span>Group</span>}
+                      {entry.locked && <span>Locked</span>}
+                    </span>
                   </button>
                 </li>
               ))}

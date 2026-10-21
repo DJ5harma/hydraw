@@ -37,6 +37,7 @@ export function bindCanvasInput(canvas: HTMLCanvasElement, editor: Editor, sched
       event.preventDefault();
       canvas.focus({ preventScroll: true });
       activePointer = event.pointerId;
+      lastPoint = point(event);
       try {
         canvas.setPointerCapture(event.pointerId);
         editor.begin(point(event), spacePressed || event.button === 1, event.shiftKey);
@@ -51,7 +52,7 @@ export function bindCanvasInput(canvas: HTMLCanvasElement, editor: Editor, sched
     "pointermove",
     (event) => {
       lastPoint = point(event);
-      if (activePointer === event.pointerId) editor.move(lastPoint);
+      if (activePointer === event.pointerId) editor.move(lastPoint, !event.altKey);
       schedule();
     },
     options,
@@ -61,7 +62,7 @@ export function bindCanvasInput(canvas: HTMLCanvasElement, editor: Editor, sched
     (event) => {
       if (activePointer !== event.pointerId) return;
       try {
-        editor.move(point(event));
+        editor.move(point(event), !event.altKey);
         editor.finish();
       } finally {
         cancel();
@@ -93,6 +94,7 @@ export function bindCanvasInput(canvas: HTMLCanvasElement, editor: Editor, sched
   canvas.addEventListener(
     "keydown",
     (event) => {
+      if (event.key === "Alt" && activePointer !== null && lastPoint) editor.move(lastPoint, false);
       if (event.code === "Space") {
         event.preventDefault();
         spacePressed = true;
@@ -108,6 +110,7 @@ export function bindCanvasInput(canvas: HTMLCanvasElement, editor: Editor, sched
   canvas.addEventListener(
     "keyup",
     (event) => {
+      if (event.key === "Alt" && activePointer !== null && lastPoint) editor.move(lastPoint, true);
       if (event.code === "Space") {
         spacePressed = false;
         schedule();

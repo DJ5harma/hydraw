@@ -11,7 +11,8 @@ general whiteboard, workshop platform or design suite.
 
 Today rectangles/ellipses/diamonds, attached node and connector labels, standalone
 text, bound straight connectors, multiselection, alignment, duplication, native
-clipboard, SVG/PNG export, history, JSON and local recovery work. The local
+clipboard, SVG/PNG export, smart translation guides, flat groups, locks, stacking,
+history, JSON and local recovery work. The local
 named-diagram workflow is implemented; interaction quality and larger-board
 organization are the next focus.
 
@@ -23,7 +24,8 @@ organization are the next focus.
 | Done  | Labels attached to shapes/connectors      | Type directly; label follows movement, resize, duplication, save and undo. Existing files migrate without losing standalone text or bindings.                                                                         |
 | Done  | SVG and PNG export                        | Board/selection exports faithfully include geometry and text, use predictable bounds/padding, and open in ordinary viewers. Editable native files remain available.                                                   |
 | Done  | Selection clipboard                       | Copy/cut/paste connected selections with fresh identities and one undo step. Internal bindings survive; external references detach safely. Native input clipboard remains untouched.                                  |
-| Next  | Placement and connector clarity           | Predictable snapping and equal-spacing guides with feedback. Add elbow routing only when real diagrams demonstrate the need and its behavior can be specified.                                                        |
+| Done  | Smart placement and organization          | Edge/center and neighboring-gap guides during translation, Alt bypass, flat groups, direct-edit locks and cross-type ordering with atomic history.                                                                    |
+| Next  | Named frames and reusable presets         | Name and navigate logical diagram regions; reuse useful technical arrangements without expanding the permanent toolbar.                                                                                               |
 | Gate  | Local alpha evaluation                    | Fresh users finish the workflow; latency, text input, persistence, keyboard and browser evidence support the release claim.                                                                                           |
 
 Fit moves into the workspace increment because a canvas without a permanent object
@@ -68,8 +70,9 @@ limit-sized fixtures. Record hardware/browser and measure interaction latency,
 text editing, export and memory; record-count validation is not a speed guarantee.
 Include keyboard, 200% browser zoom, high DPI, IME and another browser engine.
 
-Groups, locking and front/back ordering follow smart placement. Named frames and
-reusable technical presets follow those manipulation basics. Defer broad shape
+Smart placement, flat groups, locking and front/back ordering are implemented in
+ADR 0010 (native format v5). Named frames and reusable technical presets follow
+those manipulation basics. Elbow routing needs a concrete routing contract first. Defer broad shape
 catalog expansion, templates, sketch styles, AI, presentation,
 cloud dashboards and realtime presence until observed use supports them. Cloud
 saving needs its own correctness prototype: authorized durable admission,

@@ -8,6 +8,7 @@ import type {
   Bounds,
   ObjectUpdates,
 } from "@hydraw/document";
+import type { SnapGuide } from "./snapping.ts";
 import type { ConnectorEnd } from "./connector-interactions.ts";
 import type { ResizeHandle } from "./geometry.ts";
 
@@ -30,6 +31,7 @@ export type EditorSnapshot = Readonly<{
   bindingTargetId: string | null;
   activeEndpoint: ConnectorEnd | null;
   textEditing: Readonly<{ before: TextShape | null; draft: TextShape; ownerId?: string }> | null;
+  guides: readonly SnapGuide[];
   interacting: boolean;
   activeHandle: ResizeHandle | null;
   canUndo: boolean;
@@ -37,6 +39,7 @@ export type EditorSnapshot = Readonly<{
 }>;
 export type EditorChromeSnapshot = Omit<
   EditorSnapshot,
+  | "guides"
   | "preview"
   | "selectionPreview"
   | "marquee"

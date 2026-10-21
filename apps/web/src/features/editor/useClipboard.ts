@@ -48,6 +48,14 @@ export function useClipboard({ editor, center, onError }: ClipboardOptions): voi
     }
 
     function cut(event: ClipboardEvent) {
+      const snapshot = editor.getSnapshot();
+      const selected = new Set(snapshot.selectedIds);
+      if (
+        [...snapshot.document.shapes, ...snapshot.document.connectors].some(
+          (item) => selected.has(item.id) && item.locked,
+        )
+      )
+        return;
       if (!clipboardFocusIsInWorkspace() || !event.clipboardData) return;
       try {
         const text = editor.copySelection();

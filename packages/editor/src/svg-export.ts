@@ -1,4 +1,4 @@
-import { rectangleAppearance, resolveConnector } from "@hydraw/document";
+import { rectangleAppearance, resolveConnector, sceneObjects } from "@hydraw/document";
 import type {
   BoardDocument,
   Bounds,
@@ -219,34 +219,21 @@ export function exportSvg(document: BoardDocument, options: SvgExportOptions): s
     );
   const labelDefs: string[] = [];
   let labelIndex = 0;
-  for (const connector of content.connectors) {
-    scene.push(connectorElement(connector, document.shapes));
-    const label = labelElements(
-      connector,
-      document.shapes,
-      options.measureText,
-      String(labelIndex++),
-    );
+  for (const object of sceneObjects({
+    ...document,
+    shapes: content.shapes,
+    connectors: content.connectors,
+  })) {
+    if (object.type === "connector") scene.push(connectorElement(object, document.shapes));
+    else if (object.type === "rectangle") scene.push(rectangleElement(object));
+    else {
+      scene.push(textElements(object, options.measureText));
+      continue;
+    }
+    const label = labelElements(object, document.shapes, options.measureText, String(labelIndex++));
     if (label.svg) {
       if (label.defs) labelDefs.push(label.defs);
       scene.push(label.svg);
-    }
-  }
-  for (const shape of content.shapes) {
-    if (shape.type === "rectangle") {
-      scene.push(rectangleElement(shape));
-      const label = labelElements(
-        shape,
-        document.shapes,
-        options.measureText,
-        String(labelIndex++),
-      );
-      if (label.svg) {
-        if (label.defs) labelDefs.push(label.defs);
-        scene.push(label.svg);
-      }
-    } else {
-      scene.push(textElements(shape, options.measureText));
     }
   }
   const defs = labelDefs.length ? `<defs>${labelDefs.join("")}</defs>` : "";

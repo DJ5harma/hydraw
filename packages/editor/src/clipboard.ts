@@ -1,5 +1,7 @@
 import {
   MAX_CONNECTORS,
+  expandGroups,
+  clonedMetadata,
   MAX_SHAPES,
   applyTransaction,
   createConnectorResolver,
@@ -45,7 +47,7 @@ export function createClipboardFragment(
   document: BoardDocument,
   selectedIds: readonly string[],
 ): string | null {
-  const selected = new Set(selectedIds);
+  const selected = new Set(expandGroups(document, selectedIds));
   const shapes = document.shapes.filter((shape) => selected.has(shape.id));
   const nodes = new Set(shapes.map((shape) => shape.id));
   const connectors = document.connectors.filter(
@@ -129,7 +131,16 @@ export function pastedSelection(
     x: point.x - (bounds.x + bounds.width / 2),
     y: point.y - (bounds.y + bounds.height / 2),
   };
-  const occupied = new Set([...allIds(document), ...ids]);
+  const occupied = new Set([
+    ...allIds(document),
+    ...ids,
+    ...[
+      ...document.shapes,
+      ...document.connectors,
+      ...fragment.shapes,
+      ...fragment.connectors,
+    ].flatMap((item) => (item.groupId ? [item.groupId] : [])),
+  ]);
   const uniqueId = () => {
     const id = makeId();
     if (!id || id.length > 100 || occupied.has(id))
@@ -139,11 +150,13 @@ export function pastedSelection(
   };
   const translated = translateObjects(fragment, ids, offset);
   const identity = new Map(ids.map((id) => [id, uniqueId()]));
+  const metadata = clonedMetadata(fragment, document, ids, uniqueId, [...identity.values()]);
   const changes: DocumentChange[] = [];
   translated.shapes.forEach((shape, position) => {
     changes.push(
       ...shapeTransaction("Paste selection", document.shapes.length + position, null, {
         ...shape,
+        ...metadata.get(shape.id),
         id: identity.get(shape.id)!,
       })!.changes,
     );

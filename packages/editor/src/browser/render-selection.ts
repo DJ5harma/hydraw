@@ -37,7 +37,7 @@ export function drawSelection(
     }
   } else if (selected) {
     box(ctx, selected, camera);
-    if (snapshot.tool === "select" && !snapshot.textEditing)
+    if (snapshot.tool === "select" && !snapshot.textEditing && !selected.locked)
       for (const handle of resizeHandles(selected)) {
         const point = handlePoint(selected, handle);
         const x = point.x * camera.zoom + camera.x;

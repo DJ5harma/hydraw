@@ -3,6 +3,7 @@ import {
   distanceToSegment,
   hitTest,
   containsShape,
+  sceneObjects,
   MAX_ENDPOINT_COORDINATE,
   resolveConnector,
 } from "@hydraw/document";
@@ -28,18 +29,20 @@ export function hitConnector(
   tolerance: number,
 ): Connector | undefined {
   const resolve = createConnectorResolver(document.shapes);
-  return document.connectors.findLast((connector) => {
-    const { start, end } = resolve(connector);
-    if (distanceToSegment(point, start, end) <= tolerance) return true;
-    if (!connector.label?.text.trim()) return false;
-    const bounds = labelClipBounds(connector, document.shapes);
-    return (
-      point.x >= bounds.x &&
-      point.x <= bounds.x + bounds.width &&
-      point.y >= bounds.y &&
-      point.y <= bounds.y + bounds.height
-    );
-  });
+  return document.connectors
+    .toSorted((a, b) => (a.zIndex ?? 0) - (b.zIndex ?? 0))
+    .findLast((connector) => {
+      const { start, end } = resolve(connector);
+      if (distanceToSegment(point, start, end) <= tolerance) return true;
+      if (!connector.label?.text.trim()) return false;
+      const bounds = labelClipBounds(connector, document.shapes);
+      return (
+        point.x >= bounds.x &&
+        point.x <= bounds.x + bounds.width &&
+        point.y >= bounds.y &&
+        point.y <= bounds.y + bounds.height
+      );
+    });
 }
 
 export function hitConnectorEnd(
@@ -91,4 +94,32 @@ export function previewConnectorGesture(
         : { ...gesture.connector, [gesture.endpoint]: endpoint },
     bindingTargetId: endpoint.type === "binding" ? endpoint.shapeId : null,
   };
+}
+
+/** Hit the same global stack that the renderer paints; locked objects are transparent to selection. */
+export function hitSceneObject(
+  document: BoardDocument,
+  point: Point,
+  tolerance: number,
+): Shape | Connector | undefined {
+  const resolve = createConnectorResolver(document.shapes);
+  const lockedGroups = new Set(
+    [...document.shapes, ...document.connectors]
+      .filter((item) => item.locked && item.groupId)
+      .map((item) => item.groupId),
+  );
+  return sceneObjects(document).findLast((object) => {
+    if (object.locked || (object.groupId && lockedGroups.has(object.groupId))) return false;
+    if (object.type !== "connector") return containsShape(object, point);
+    const ends = resolve(object);
+    if (distanceToSegment(point, ends.start, ends.end) <= tolerance) return true;
+    if (!object.label?.text.trim()) return false;
+    const box = labelClipBounds(object, document.shapes, ends);
+    return (
+      point.x >= box.x &&
+      point.x <= box.x + box.width &&
+      point.y >= box.y &&
+      point.y <= box.y + box.height
+    );
+  });
 }

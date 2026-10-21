@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Alignment, DistributionAxis } from "@hydraw/document";
 import type { Editor } from "@hydraw/editor";
 import { Icon } from "../../components/icons.tsx";
@@ -30,6 +30,7 @@ export function SelectionActions({
   const snapshot = useEditorSnapshot(editor);
   const panelRef = useRef<HTMLDivElement>(null);
   const [right, setRight] = useState(false);
+  const [commandError, setCommandError] = useState<string | null>(null);
   useLayoutEffect(() => {
     const panel = panelRef.current;
     const shape = snapshot.document.shapes.find((item) => item.id === snapshot.selectedId);
@@ -52,6 +53,7 @@ export function SelectionActions({
   const selectedConnector = snapshot.document.connectors.find(
     (item) => item.id === snapshot.selectedId,
   );
+  useEffect(() => setCommandError(null), [ids.join("\u0000")]);
   if (
     !ids.length ||
     snapshot.interacting ||
@@ -64,14 +66,44 @@ export function SelectionActions({
   const multi = ids.length > 1;
   const selectedSet = new Set(ids);
   const shapeCount = snapshot.document.shapes.filter((shape) => selectedSet.has(shape.id)).length;
+  const selectedObjects = [
+    ...snapshot.document.shapes.filter((shape) => selectedSet.has(shape.id)),
+    ...snapshot.document.connectors.filter((connector) => selectedSet.has(connector.id)),
+  ];
+  const anyLocked = selectedObjects.some((item) => item.locked);
+  const anyGrouped = selectedObjects.some((item) => item.groupId !== undefined);
+  const groupIds = new Set(selectedObjects.flatMap((item) => (item.groupId ? [item.groupId] : [])));
+  const oneGroup =
+    groupIds.size === 1 && selectedObjects.every((item) => item.groupId === [...groupIds][0]);
   const title = multi
     ? `${ids.length} objects`
-    : selectedConnector
-      ? "Connector style"
-      : selectedShape?.type === "text"
-        ? "Text style"
-        : `${selectedShape?.type === "rectangle" && selectedShape.kind ? selectedShape.kind[0]!.toUpperCase() + selectedShape.kind.slice(1) : "Rectangle"} style`;
-  const geometryOpen = overlay === "geometry" && selectedShape !== undefined && !multi;
+    : anyLocked
+      ? "Locked selection"
+      : selectedConnector
+        ? "Connector style"
+        : selectedShape?.type === "text"
+          ? "Text style"
+          : `${selectedShape?.type === "rectangle" && selectedShape.kind ? selectedShape.kind[0]!.toUpperCase() + selectedShape.kind.slice(1) : "Rectangle"} style`;
+  const geometryOpen =
+    overlay === "geometry" && selectedShape !== undefined && !multi && !anyLocked;
+
+  function runCommand(action: () => void) {
+    try {
+      action();
+      setCommandError(null);
+    } catch (cause) {
+      setCommandError(
+        cause instanceof Error ? cause.message : "The selection could not be changed.",
+      );
+    }
+  }
+
+  const orderActions = [
+    { label: "Front", direction: "front" },
+    { label: "Forward", direction: "forward" },
+    { label: "Backward", direction: "backward" },
+    { label: "Back", direction: "back" },
+  ] as const;
 
   return (
     <div
@@ -82,9 +114,19 @@ export function SelectionActions({
       <section className="selection-properties" role="region" aria-label="Selection properties">
         <header className="selection-properties-heading">
           <h2>{title}</h2>
+          {oneGroup && <span className="selection-group-badge">Group</span>}
         </header>
         <div className="selection-properties-content">
-          {multi ? (
+          {commandError && (
+            <p className="selection-command-error" role="alert">
+              {commandError}
+            </p>
+          )}
+          {anyLocked ? (
+            <p className="locked-selection-message">Locked selection</p>
+          ) : multi && anyGrouped ? (
+            <p className="locked-selection-message">Ungroup to arrange individual objects.</p>
+          ) : multi ? (
             <ArrangementControls
               shapeCount={shapeCount}
               onAlign={onAlign}
@@ -101,44 +143,79 @@ export function SelectionActions({
           ) : selectedShape?.type === "rectangle" ? (
             <RectangleStyleControls shape={selectedShape} editor={editor} />
           ) : null}
+          <section className="selection-organize" aria-label="Organize selection">
+            <h3>Organize</h3>
+            <div className="organization-actions">
+              {multi && !oneGroup && !anyLocked && (
+                <button onClick={() => runCommand(() => editor.groupSelection())}>Group</button>
+              )}
+              {anyGrouped && !anyLocked && (
+                <button onClick={() => runCommand(() => editor.ungroupSelection())}>Ungroup</button>
+              )}
+              <button onClick={() => runCommand(() => editor.setSelectionLocked(!anyLocked))}>
+                {anyLocked ? "Unlock selection" : "Lock selection"}
+              </button>
+            </div>
+            {!anyLocked && (
+              <>
+                <h4>Order</h4>
+                <div
+                  className="selection-order-actions"
+                  role="group"
+                  aria-label="Change selection order"
+                >
+                  {orderActions.map(({ label, direction }) => (
+                    <button
+                      key={direction}
+                      onClick={() => runCommand(() => editor.orderSelection(direction))}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </section>
         </div>
-        <nav className="selection-shelf" aria-label="Selection actions">
-          <button
-            className="selection-action"
-            aria-label="Duplicate selection"
-            title="Duplicate selection"
-            onClick={onDuplicate}
-          >
-            <Icon name="duplicate" />
-            <span>Duplicate</span>
-          </button>
-          <button
-            className="selection-action is-danger"
-            aria-label={
-              multi
-                ? "Delete selection"
-                : selectedConnector
-                  ? "Delete connector"
-                  : `Delete ${selectedShape?.type === "text" ? "text" : (selectedShape?.kind ?? "rectangle")}`
-            }
-            onClick={() => editor.removeSelection()}
-          >
-            <Icon name="trash" />
-            <span>Delete</span>
-          </button>
-          {!multi && selectedShape && (
+        {!anyLocked && (
+          <nav className="selection-shelf" aria-label="Selection actions">
             <button
-              className="selection-action geometry-trigger"
-              data-overlay-trigger="geometry"
-              aria-label="More properties"
-              aria-expanded={geometryOpen}
-              onClick={() => onOverlay(geometryOpen ? null : "geometry")}
+              className="selection-action"
+              aria-label="Duplicate selection"
+              title="Duplicate selection"
+              onClick={onDuplicate}
             >
-              <Icon name="settings" />
-              <span>Geometry</span>
+              <Icon name="duplicate" />
+              <span>Duplicate</span>
             </button>
-          )}
-        </nav>
+            <button
+              className="selection-action is-danger"
+              aria-label={
+                multi
+                  ? "Delete selection"
+                  : selectedConnector
+                    ? "Delete connector"
+                    : `Delete ${selectedShape?.type === "text" ? "text" : (selectedShape?.kind ?? "rectangle")}`
+              }
+              onClick={() => editor.removeSelection()}
+            >
+              <Icon name="trash" />
+              <span>Delete</span>
+            </button>
+            {!multi && selectedShape && (
+              <button
+                className="selection-action geometry-trigger"
+                data-overlay-trigger="geometry"
+                aria-label="More properties"
+                aria-expanded={geometryOpen}
+                onClick={() => onOverlay(geometryOpen ? null : "geometry")}
+              >
+                <Icon name="settings" />
+                <span>Geometry</span>
+              </button>
+            )}
+          </nav>
+        )}
       </section>
       {geometryOpen && selectedShape && (
         <section className="selection-popover" role="dialog" aria-label="Precise geometry">

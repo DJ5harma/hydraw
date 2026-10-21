@@ -1,5 +1,6 @@
-import { rectangleAppearance, createConnectorResolver } from "@hydraw/document";
+import { rectangleAppearance, createConnectorResolver, sceneObjects } from "@hydraw/document";
 import type { Rectangle, Shape, TextShape, Connector } from "@hydraw/document";
+import { renderGuides } from "./render-guides.ts";
 import { drawConnector, drawConnectorHandles } from "./render-connectors.ts";
 import { labelBackdropBounds, labelClipBounds, labelTextShape } from "../labels.ts";
 import type { TextMeasurer } from "../text-layout.ts";
@@ -172,26 +173,35 @@ function renderScene(
   const { shapes: sceneShapes, connectors: sceneConnectors } = selectionScene(snapshot);
   const resolveConnector = createConnectorResolver(sceneShapes);
   const selectedIds = new Set(snapshot.selectedIds);
-  for (const connector of sceneConnectors) {
-    drawConnector(
-      ctx,
-      connector,
-      resolveConnector,
-      camera,
-      selectedIds.has(connector.id) || connector.id === snapshot.connectorPreview?.id,
-    );
-    if (snapshot.textEditing?.ownerId !== connector.id)
-      drawLabel(ctx, connector, sceneShapes, camera, textLayout, measure);
-  }
-  for (const shape of sceneShapes) {
-    if (snapshot.textEditing?.ownerId || snapshot.textEditing?.draft.id !== shape.id)
-      drawShape(ctx, shape, camera, viewport, textLayout);
-    if (shape.type === "rectangle" && snapshot.textEditing?.ownerId !== shape.id)
-      drawLabel(ctx, shape, sceneShapes, camera, textLayout, measure);
+  for (const object of sceneObjects({
+    ...snapshot.document,
+    shapes: sceneShapes,
+    connectors: sceneConnectors,
+  })) {
+    if (object.type === "connector") {
+      drawConnector(
+        ctx,
+        object,
+        resolveConnector,
+        camera,
+        selectedIds.has(object.id) || object.id === snapshot.connectorPreview?.id,
+      );
+      if (snapshot.textEditing?.ownerId !== object.id)
+        drawLabel(ctx, object, sceneShapes, camera, textLayout, measure);
+    } else {
+      if (snapshot.textEditing?.ownerId || snapshot.textEditing?.draft.id !== object.id)
+        drawShape(ctx, object, camera, viewport, textLayout);
+      if (object.type === "rectangle" && snapshot.textEditing?.ownerId !== object.id)
+        drawLabel(ctx, object, sceneShapes, camera, textLayout, measure);
+    }
   }
   const selectedConnector =
     snapshot.connectorPreview ?? sceneConnectors.find((connector) => connector.id === selectedId);
-  if (selectedConnector && (snapshot.tool === "select" || snapshot.connectorPreview))
+  if (
+    selectedConnector &&
+    !selectedConnector.locked &&
+    (snapshot.tool === "select" || snapshot.connectorPreview)
+  )
     drawConnectorHandles(ctx, selectedConnector, resolveConnector, camera);
   const bindingTarget = sceneShapes.find((shape) => shape.id === snapshot.bindingTargetId);
   if (bindingTarget) {
@@ -206,6 +216,7 @@ function renderScene(
     );
     ctx.setLineDash([]);
   }
+  renderGuides(ctx, snapshot.guides, camera);
   drawSelection(ctx, snapshot, sceneShapes, sceneConnectors);
 }
 

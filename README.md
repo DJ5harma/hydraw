@@ -37,10 +37,14 @@ The Dockerfile builds React and Hono together. The runtime image contains the bu
 
 - Draw rectangles, ellipses and diamonds using direct toolbar buttons; select and move them, change background/stroke colors, border width/style, opacity and square/rounded corners, and delete them. Transparent backgrounds are supported.
 - Resize with eight edge/corner handles or edit X, Y, width and height through More properties. Dragging across the opposite edge keeps dimensions positive. Invalid numeric edits stay out of saved documents.
-- Shift-click objects on the canvas or in the object list to toggle selection. Drag empty canvas to select fully enclosed nodes and arrows; Shift + drag adds enclosed objects. Ctrl/⌘ A or Select all objects selects the whole board.
+- Shift-click objects on the canvas or in the object list to toggle selection. Drag empty canvas to select fully enclosed nodes and arrows; Shift + drag adds enclosed objects. Ctrl/⌘ A or Select all objects selects unlocked objects.
 - Drag a selected object or use arrow keys to move a selection together. Bindings stay attached, and one common movement delta preserves spacing at coordinate limits.
 - Duplicate selection with Ctrl/⌘ D or the selection shelf button. Copies get fresh identities and a 24-unit offset. Connections between copied nodes are included automatically; copied connections to unselected nodes become free endpoints.
-- Arrange selected rectangles and text directly in the multiple-selection properties: align edges or centers with two or more shapes, or distribute centers horizontally/vertically with three or more. Outer centers stay fixed during distribution; attached arrows follow their shapes. Selected arrows do not affect the layout targets.
+- Smart guides align selection edges/centers and neighboring gaps while dragging. Hold Alt to bypass snapping; arrow-key nudges stay exact.
+- Group/ungroup with Ctrl/⌘ G / Ctrl/⌘ Shift G. Selecting one member selects the whole flat group; moves preserve relative positions. Copies form independent groups.
+- Lock/unlock with Ctrl/⌘ Shift L. Locked objects skip canvas selection; use Board menu → Objects to select and unlock them.
+- Change stacking in the floating selection properties: Front/Forward/Backward/Back. Ctrl/⌘ ] or [ moves one step; add Shift for front/back. Shapes and connectors share one stack.
+- Arrange ungrouped rectangles and text directly in the multiple-selection properties: align edges or centers with two or more shapes, or distribute centers horizontally/vertically with three or more. Outer centers stay fixed during distribution; attached arrows follow their shapes. Selected arrows do not affect the layout targets.
 - Copy/cut/paste selections with Ctrl/⌘ C/X/V. Internal connections and labels travel with the selection; external references detach safely. Pasted objects get fresh identities at the viewport center. Native text clipboard shortcuts retain their normal behavior.
 - Export whole boards or explicit selections as SVG or 2× PNG from Board menu → Export image. Editable JSON export remains available.
 - Undo/redo committed local actions. Group movement, duplication, deletion, alignment and distribution each create one undo step. Escape cancels a gesture; cancelling a marquee restores the prior selection, while Escape outside a gesture clears selection.
@@ -51,22 +55,22 @@ The Dockerfile builds React and Hono together. The runtime image contains the bu
 - Draw straight connectors with C + drag between objects or canvas points. Bound endpoints follow rectangle movement/resizing and text reflow. Select the line or its object-list entry, then drag endpoint handles to reconnect.
 - Change connector ink, toggle arrowheads, reverse direction or detach endpoints in the selected connector’s properties. Free arrows move by dragging or arrow keys; bound arrows move through their endpoints or attached objects. C + Enter creates a centered free arrow.
 - Deleting a shape removes its attached connectors in one undoable action. Clearing an existing text object follows the same rule.
-- Rename the board and export version 4 semantic JSON as `.hydraw.json`. Existing version 0–3 boards migrate when opened.
+- Rename the board and export version 5 semantic JSON as `.hydraw.json`. Existing version 0–4 boards migrate when opened.
 - Recover the current board from IndexedDB after reload. Save status changes only after the storage transaction commits.
-- Import version 0, 1 or 2 `.hydraw.json` files up to 80 MB, with validation and a name/object-count preview before opening. Export the current board directly from the review dialog.
+- Import version 0–5 `.hydraw.json` files up to 80 MB, with validation and a name/object-count preview before opening. Export the current board directly from the review dialog.
 - Keep one previous board when importing or restoring. The current board and recovery copy change in one storage transaction; failed imports preserve both. Restore is reversible by restoring again.
 
 One tab owns the local writer lock. Additional tabs enter an explicitly unsaved session instead of overwriting that board. If storage fails or saved data cannot be decoded, the app preserves existing storage and offers in-memory editing/export. Browser storage can still be cleared or evicted; export valuable work.
 
 ## Workspace
 
-| Package                 | Responsibility                                                                                                                                |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@hydraw/document`      | Version 4 shape/connector/label records, earlier-version migration, validation, geometry and reversible transactions; no runtime dependencies |
-| `@hydraw/editor`        | Local editor state, gestures, hit testing, transaction history and camera; depends only on the document package                               |
-| `@hydraw/editor/canvas` | Explicit browser adapter for Canvas rendering and pointer input                                                                               |
-| `@hydraw/web`           | React controls, contextual properties and object navigation, keyboard shortcuts, inline text input, IndexedDB and file transfer               |
-| `@hydraw/server`        | Hono API, static assets and SPA navigation fallback                                                                                           |
+| Package                 | Responsibility                                                                                                                                                 |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@hydraw/document`      | Version 5 shape/connector/label/group/lock/order records, earlier-version migration, validation, geometry and reversible transactions; no runtime dependencies |
+| `@hydraw/editor`        | Local editor state, gestures, hit testing, transaction history and camera; depends only on the document package                                                |
+| `@hydraw/editor/canvas` | Explicit browser adapter for Canvas rendering and pointer input                                                                                                |
+| `@hydraw/web`           | React controls, contextual properties and object navigation, keyboard shortcuts, inline text input, IndexedDB and file transfer                                |
+| `@hydraw/server`        | Hono API, static assets and SPA navigation fallback                                                                                                            |
 
 Internal packages expose TypeScript source to the toolchain. They are private workspace packages, not published libraries. The web build bundles them; Vite+ `pack` bundles Hono and its adapter into the backend output.
 
@@ -97,4 +101,4 @@ Connector routing is straight, with automatic perimeter attachments. Elbow routi
 
 Selection currently supports translation, duplication, deletion, alignment and center distribution. Group resizing/rotation and bulk styling are future work. Distribution uses equal center spacing rather than equal edge gaps; it does not prevent overlaps. Selection itself is transient and is not persisted or recorded in document history.
 
-Next product milestone: smart placement guides, followed by groups, locking and object ordering. Attached labels, direct ellipse/diamond tools, SVG/PNG export and clipboard reuse are implemented. See [the current product sequence](docs/NEXT.md) and [the workspace UX plan](docs/UX_PLAN.md). See [ADR 0002](docs/adr/0002-container-and-transactions.md) for packaging and editor transactions, and [ADR 0003](docs/adr/0003-local-import-and-recovery.md) for import and persistence boundaries. [ADR 0004](docs/adr/0004-text-and-document-versioning.md) covers text layout and editing; [ADR 0005](docs/adr/0005-bound-connectors.md) defines connector bindings, graph transactions and deletion. [ADR 0006](docs/adr/0006-selection-and-duplication.md) defines selection and graph duplication. [ADR 0007](docs/adr/0007-alignment-and-distribution.md) covers alignment and center distribution.
+Next product milestone: named frames and reusable technical presets. Smart placement guides, flat groups, locking and object ordering are implemented. Attached labels, direct ellipse/diamond tools, SVG/PNG export and clipboard reuse are implemented. See [the current product sequence](docs/NEXT.md) and [the workspace UX plan](docs/UX_PLAN.md). See [ADR 0002](docs/adr/0002-container-and-transactions.md) for packaging and editor transactions, and [ADR 0003](docs/adr/0003-local-import-and-recovery.md) for import and persistence boundaries. [ADR 0004](docs/adr/0004-text-and-document-versioning.md) covers text layout and editing; [ADR 0005](docs/adr/0005-bound-connectors.md) defines connector bindings, graph transactions and deletion. [ADR 0006](docs/adr/0006-selection-and-duplication.md) defines selection and graph duplication. [ADR 0007](docs/adr/0007-alignment-and-distribution.md) covers alignment and center distribution.
