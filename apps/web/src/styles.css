@@ -69,23 +69,10 @@ kbd {
   flex-direction: column;
   overflow: hidden;
 }
-.workspace-header {
-  flex: 0 0 56px;
-  display: flex;
-}
-.workspace-header > .topbar {
-  flex: 1;
-}
-.workspace-body {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  position: relative;
-  overflow: hidden;
-}
 .stage {
   position: relative;
   flex: 1;
+  min-height: 0;
   min-width: 0;
   background: var(--bg);
   overflow: hidden;
@@ -100,23 +87,6 @@ kbd {
 .drawing-canvas:focus-visible {
   outline: 2px solid #69a492;
   outline-offset: -3px;
-}
-.inspector-shell {
-  flex: 0 0 280px;
-  width: 280px;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  background: var(--surface);
-}
-.inspector-shell > .inspector {
-  flex: 1;
-  min-height: 0;
-  width: 100%;
-}
-.inspector-drawer-header,
-.inspector-scrim {
-  display: none;
 }
 .file-button,
 .export-button,
@@ -358,38 +328,6 @@ kbd {
   margin-top: 20px;
   border-top: 1px solid var(--line);
 }
-@media (max-width: 900px) {
-  .inspector-shell {
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 20;
-    width: min(300px, calc(100% - 32px));
-    box-shadow: -12px 0 32px #1424381f;
-  }
-  .inspector-drawer-header {
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 44px;
-    padding: 0 12px 0 16px;
-    border-bottom: 1px solid var(--line);
-    font-size: 12px;
-    font-weight: 600;
-  }
-  .inspector-scrim {
-    display: block;
-    position: absolute;
-    inset: 0;
-    z-index: 10;
-    padding: 0;
-    border: 0;
-    background: #14243826;
-    cursor: default;
-  }
-}
 @media (max-width: 480px) {
   .board-transfer-dialog {
     padding: 20px;
@@ -401,5 +339,34 @@ kbd {
   .text-editing-help {
     font-size: 10px;
     padding: 8px;
+  }
+}
+
+.workspace-notices {
+  position: absolute;
+  top: 80px;
+  left: 16px;
+  right: 16px;
+  z-index: 30;
+  pointer-events: none;
+  display: grid;
+  gap: 6px;
+}
+.workspace-notices .storage-warning {
+  pointer-events: auto;
+  max-width: 640px;
+  margin: auto;
+  border: 1px solid #ecd6b7;
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+@media (max-width: 660px) {
+  .workspace-notices {
+    top: 112px;
+    left: 8px;
+    right: 8px;
+  }
+  .text-editing-help {
+    bottom: 80px;
   }
 }

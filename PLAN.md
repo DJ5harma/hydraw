@@ -43,13 +43,13 @@ Desktop editing comes first. Tablet drawing follows input QA; phones initially s
 
 ### Current execution sequence
 
-The local engine now has eight working increments and a verified code cleanup.
+The local engine and canvas-first workspace are implemented, with verified code cleanup.
 The next release should complete one useful architecture-diagram workflow rather
 than expand the entire tool catalog at once. [The current next-step plan](docs/NEXT.md)
-sets the order: canvas-first workspace and fit navigation, attached rectangle
-labels, SVG/PNG export, selection clipboard, then snapping and connector clarity,
-followed by a measured local-alpha gate. [The workspace UX proposal](docs/UX_PLAN.md)
-specifies the replacement for the current header/sidebar shell; it is not yet implemented.
+records the completed canvas-first workspace and fit navigation, followed by
+attached rectangle labels, SVG/PNG export, selection clipboard, then snapping and
+connector clarity, before a measured local-alpha gate. [The workspace UX record](docs/UX_PLAN.md)
+specifies the replacement for the previous header/sidebar shell.
 Cloud saving and collaboration follow their own correctness prototype; they do not
 block improving the local drawing experience.
 
@@ -262,7 +262,7 @@ Pointer / keyboard / menu / import
   -> document transaction
   -> changed-record subscriptions
   -> geometry and binding invalidation
-  -> renderer + inspector + local persistence
+  -> renderer + contextual controls + local persistence
   -> independent cloud sync queue
 ```
 
@@ -270,7 +270,7 @@ Commands include `CreateShapes`, `TransformSelection`, `BindConnector`, `SetStyl
 
 Own the history stack and inverse-command construction. Keep remote actions out of the local undo stack. Collaborative undo submits a conditional inverse against current revisions; it must not overwrite another user’s later changes. See the synchronization protocol for conflict handling.
 
-Keep pointer handling and scene updates out of React-wide rerenders. Subscribe the inspector to selected records; update the renderer from document deltas. Use world coordinates, a consistent transform matrix, a spatial index, viewport culling, dirty-layer rendering, cached geometry, and device-pixel-ratio handling. Move heavy layout/import computation to workers when profiling warrants it.
+Keep pointer handling and scene updates out of React-wide rerenders. Subscribe contextual controls to selected records; update the renderer from document deltas. Use world coordinates, a consistent transform matrix, a spatial index, viewport culling, dirty-layer rendering, cached geometry, and device-pixel-ratio handling. Move heavy layout/import computation to workers when profiling warrants it.
 
 The shape registry defines validation, defaults, geometry, ports, rendering, export, and migration for built-in shape types. This is an internal extension mechanism initially; arbitrary third-party code is deferred.
 

@@ -1,9 +1,11 @@
 # Canvas-first Hydraw
 
-20 October 2026. **Design proposal, not implemented production UI.** Supersedes
-[the first workspace pass](design/WORKSPACE_V1.md). The production baseline remains
-`c1b927a`: a 56 px header and a 280 px inspector, open by default on desktop.
-The [interactive concept](design/canvas-concepts.html) explores the replacement.
+Updated 21 October 2026. **Quiet canvas is now implemented in the production app.**
+The reserved header and default inspector have been removed; board actions,
+selection properties and object navigation are transient canvas overlays.
+[The first workspace pass](design/WORKSPACE_V1.md) is historical. The
+[interactive concept](design/canvas-concepts.html) remains a design study: its
+attached labels and simplified gestures are not production features.
 
 ## The problem is hierarchy
 
@@ -14,12 +16,12 @@ receive space even when the user is simply drawing. The header similarly makes
 file administration compete with the tools. Collapsing these regions leaves users
 responsible for managing the interface before managing their diagram.
 
-At 1440 × 900, the current reserved header/sidebar leave about 75.5% of the window
+At 1440 × 900, the previous reserved header/sidebar left about 75.5% of the window
 for the canvas; at 1024 × 768, about 67.4%. These are illustrative calculations from
 the CSS dimensions, not usability measurements. Floating controls still cover
 pixels: the objective is useful, unobstructed work, not a misleading 100% claim.
 
-## Recommended direction: quiet canvas
+## Implemented direction: quiet canvas
 
 The canvas fills the viewport. Remove the layout header, default inspector,
 permanent object inventory and persistent instruction strip. Preserve a small
@@ -79,8 +81,7 @@ gesture ends rather than following every pointer movement. Long board names
 truncate with an accessible full name. No horizontal scrolling to reach tools.
 
 All icon actions need accessible names, visible focus and hover/focus shortcut
-hints. Object navigation remains available through the menu and a documented
-shortcut, with a searchable list when scale justifies search. It is essential for
+hints. Object navigation remains available through the board menu, with search and pagination. It is essential for
 finding offscreen items and keyboard access; it does not need permanent space.
 
 Escape belongs to the innermost active interaction: native edit/gesture, then the
@@ -90,17 +91,18 @@ popovers from blocking dialogs; only blocking dialogs trap focus. Outside dismis
 must not also initiate a canvas edit. Respect IME composition and native input
 shortcuts. Never interpret an input's Delete as deleting its selected shape.
 
-## Implementation in complete increments
+## Component ownership and delivery
 
-1. Replace the layout shell with `CanvasWorkspace`, `BoardMenu` and `ToolDock`.
+1. The layout shell uses `Workspace`, `BoardMenu` and `EditorToolbar`.
    Preserve import, recovery, local save feedback and keyboard shortcuts. Add fit
    board/selection through editor viewport geometry, independent of React.
-2. Replace `BoardInspector` with capability-driven `SelectionActions`, focused
+2. `BoardInspector` is replaced by capability-driven `SelectionActions`, focused
    styling/arrangement/precision surfaces and an on-demand `ObjectNavigator`.
-   A small `OverlayHost` owns the active surface, dismissal, placement and focus.
+   The `useWorkspaceOverlay` hook owns the active surface, dismissal, placement and focus.
    Avoid a generic plugin framework or a component that owns board storage.
-3. Complete narrow-window behavior and text/gesture integration. Remove obsolete
-   inspector state/styles and migrate browser journeys to the new visible paths.
+3. Narrow-window behavior covers the bottom tool dock and explicit popovers.
+   Text/gesture integration, obsolete inspector removal and migrated browser
+   journeys are included in the same verified increment.
 
 Keep board/session lifecycles in feature modules. Derive action availability from
 typed selection data, not duplicated React document state. Geometry, transactions,
@@ -123,6 +125,34 @@ same task. A cleaner screenshot is useful evidence of hierarchy, not proof of
 world-class usability.
 
 The concept simulates interactions rather than using the production engine.
-Attached labels and fit navigation illustrate planned capabilities. Its simple
+Attached labels illustrate a planned capability; fit navigation is now implemented independently. Its simple
 geometry, selection adornments and local history do not establish production
 correctness. See [prototype notes](design/README.md) for review and verification.
+
+## Scaling rules
+
+The number of shapes never determines the number of permanent controls. The
+navigator mounts only on request, searches records and renders pages of at most
+100 rows. All matching objects remain reachable through pagination; selecting all
+includes the whole document, not only the visible page. Close it to return to the
+selection shelf, or use Fit selection to reveal a selected offscreen record.
+
+The dock currently contains five tools. When additional shape families become
+useful, introduce one shape picker with a small common set and a searchable full
+catalog, rather than another always-visible button per shape kind. Keep tool
+configuration separate from record navigation. Do not build that picker before
+there is a second shape family to choose.
+
+Single selection shows type-specific style, duplicate/delete and geometry only
+for records that have editable geometry. Multiple selection shows count,
+duplicate/delete and arrangement; alignment is available for at least two shapes,
+distribution for at least three. Connectors do not inflate those shape counts.
+Selection controls disappear during gestures/text editing and while board,
+objects or help surfaces are open. One overlay owns dismissal at a time. Clicking
+the canvas to dismiss an overlay consumes that pointerdown; the next gesture is
+an intentional edit. Native input Escape cancels a draft before panel dismissal.
+
+Fit navigation takes a safe screen rectangle from the web adapter; semantic
+bounds and camera calculations live in the editor package. It preserves selection,
+revision and history, includes resolved connector endpoints and supports overview
+zoom for documents spanning the coordinate limits.

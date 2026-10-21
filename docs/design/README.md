@@ -1,7 +1,7 @@
 # Workspace design studies
 
 `canvas-concepts.html` is the interactive source for the canvas-first proposal.
-Production React components have not been replaced by this study. See
+The Quiet canvas direction is now implemented in React; this study remains an independent simulation. See
 [the interaction specification](../UX_PLAN.md) and [the release sequence](../NEXT.md).
 `WORKSPACE_V1.md` preserves the previous implemented shell's design/verification.
 

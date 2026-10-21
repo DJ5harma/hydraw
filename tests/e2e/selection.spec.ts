@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 import type { BoardDocument } from "../../packages/document/src/index.ts";
+import { closeOverlay, openBoardMenu, openObjects } from "./ui.ts";
 
 const rectangle = { type: "rectangle", y: 200, width: 140, height: 100, fill: "#e7eefb" };
 const connector = { type: "connector", color: "#243e33", arrowhead: "arrow" };
@@ -48,6 +49,7 @@ const fixture = {
 };
 async function open(page: Page) {
   await page.goto("/");
+  await openBoardMenu(page);
   await page.getByRole("button", { name: "Import board", exact: true }).click();
   await page.getByLabel("Hydraw board file").setInputFiles({
     name: "selection.hydraw.json",
@@ -59,6 +61,7 @@ async function open(page: Page) {
 }
 async function exported(page: Page): Promise<BoardDocument> {
   const pending = page.waitForEvent("download");
+  await openBoardMenu(page);
   await page.getByRole("button", { name: "Export board", exact: true }).click();
   const stream = await (await pending).createReadStream();
   const chunks: Buffer[] = [];
@@ -81,12 +84,16 @@ test("Shift-click selects nodes on canvas and in the list, and group movement is
   const original = await exported(page);
   await page.locator("canvas").click({ position: { x: 170, y: 250 } });
   await page.locator("canvas").click({ position: { x: 470, y: 250 }, modifiers: ["Shift"] });
-  await expect(page.getByRole("heading", { name: "2 objects", exact: true })).toBeVisible();
+  await openObjects(page);
   await expect(object(page, "Rectangle 1")).toHaveAttribute("aria-pressed", "true");
   await expect(object(page, "Rectangle 2")).toHaveAttribute("aria-pressed", "true");
+  await closeOverlay(page);
   await page.locator("canvas").click({ position: { x: 470, y: 250 }, modifiers: ["Shift"] });
+  await openObjects(page);
   await expect(object(page, "Rectangle 2")).toHaveAttribute("aria-pressed", "false");
   await object(page, "Rectangle 2").click({ modifiers: ["Shift"] });
+  await closeOverlay(page);
+  await expect(page.getByRole("heading", { name: "2 objects", exact: true })).toBeVisible();
   await drag(page, [170, 250], [210, 280]);
   const moved = await exported(page);
   expect(moved.shapes.slice(0, 2)).toMatchObject([
@@ -107,23 +114,29 @@ test("reverse and additive marquees include enclosed arrows and Escape restores 
   page,
 }) => {
   await open(page);
+  await openObjects(page);
   await object(page, "Connector 3").click();
+  await closeOverlay(page);
   const box = (await page.locator("canvas").boundingBox())!;
   await page.mouse.move(box.x + 560, box.y + 330);
   await page.mouse.down();
   await page.mouse.move(box.x + 80, box.y + 180, { steps: 6 });
-  await expect(page.getByRole("heading", { name: "3 objects", exact: true })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "Selection actions" })).toHaveCount(0);
   await page.keyboard.press("Escape");
   await page.mouse.up();
+  await openObjects(page);
   await expect(object(page, "Connector 3")).toHaveAttribute("aria-pressed", "true");
   await expect(object(page, "Rectangle 1")).toHaveAttribute("aria-pressed", "false");
+  await closeOverlay(page);
   await page.keyboard.down("Shift");
   await drag(page, [80, 180], [560, 330]);
   await page.keyboard.up("Shift");
   await expect(page.getByRole("heading", { name: "4 objects", exact: true })).toBeVisible();
+  await openObjects(page);
   await expect(object(page, "Connector 1")).toHaveAttribute("aria-pressed", "true");
   await expect(object(page, "Connector 2")).toHaveAttribute("aria-pressed", "false");
   const before = await exported(page);
+  await closeOverlay(page);
   await page.mouse.move(box.x + 170, box.y + 250);
   await page.mouse.down();
   await page.mouse.move(box.x + 230, box.y + 290);
@@ -131,7 +144,8 @@ test("reverse and additive marquees include enclosed arrows and Escape restores 
   await page.mouse.up();
   expect(await exported(page)).toEqual(before);
   await expect(page.getByRole("heading", { name: "4 objects", exact: true })).toBeVisible();
-  await object(page, "Clear selection").click();
+  await page.locator("canvas").click({ position: { x: 700, y: 500 } });
+  await closeOverlay(page);
   await drag(page, [560, 330], [80, 180]);
   await expect(page.getByRole("heading", { name: "3 objects", exact: true })).toBeVisible();
   await object(page, "Delete selection").click();
@@ -149,8 +163,10 @@ test("duplicates a connected graph with new identities in one step and preserves
   page.on("pageerror", (error) => errors.push(error.message));
   await open(page);
   const original = await exported(page);
+  await openObjects(page);
   await object(page, "Rectangle 1").click();
   await object(page, "Rectangle 2").click({ modifiers: ["Shift"] });
+  await closeOverlay(page);
   await object(page, "Duplicate selection").click();
   await expect(page.getByRole("heading", { name: "3 objects", exact: true })).toBeVisible();
   const copied = await exported(page);
@@ -191,8 +207,10 @@ test("copies external edges independently and scopes Select All to the canvas in
   page,
 }) => {
   await open(page);
+  await openObjects(page);
   await object(page, "Rectangle 2").click();
   await object(page, "Connector 2").click({ modifiers: ["Shift"] });
+  await closeOverlay(page);
   await page.locator("canvas").focus();
   await page.keyboard.press("Control+d");
   const copied = await exported(page);
@@ -200,11 +218,12 @@ test("copies external edges independently and scopes Select All to the canvas in
   expect(copied.connectors).toHaveLength(4);
   expect(copied.connectors[3]?.start).toEqual({ type: "binding", shapeId: copied.shapes[3]!.id });
   expect(copied.connectors[3]?.end.type).toBe("point");
-  await object(page, "Clear selection").click();
+  await openBoardMenu(page);
   const name = page.getByRole("textbox", { name: "Board name", exact: true });
   await name.focus();
   await name.press("Control+a");
-  await expect(object(page, "Clear selection")).toHaveCount(0);
+  await expect(object(page, "Delete selection")).toHaveCount(0);
+  await closeOverlay(page);
   await page.locator("canvas").focus();
   await page.keyboard.press("Control+a");
   await expect(page.getByRole("heading", { name: "8 objects", exact: true })).toBeVisible();
@@ -214,11 +233,14 @@ test("copies external edges independently and scopes Select All to the canvas in
   expect(empty.connectors).toHaveLength(0);
   await object(page, "Undo").click();
   expect(await exported(page)).toEqual(copied);
+  await openObjects(page);
   await page.getByRole("button", { name: /^Text 3/ }).click();
+  await closeOverlay(page);
+  await object(page, "Text style").click();
   await object(page, "Edit text").click();
   const text = page.getByRole("textbox", { name: "Edit canvas text", exact: true });
   await text.press("Control+a");
   await text.press("Escape");
-  await expect(page.getByRole("heading", { name: "Text", exact: true })).toBeVisible();
+  await expect(object(page, "Text style")).toBeVisible();
   expect(await exported(page)).toEqual(copied);
 });

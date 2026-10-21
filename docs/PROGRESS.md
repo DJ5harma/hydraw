@@ -178,3 +178,37 @@ coordinate range; ordinary zoom remains anchored to the pointer.
 negative coordinates, offset safe areas, connector bounds, large documents and
 history preservation. Editor type checking passes. The following workspace
 increment exposes this navigation through its floating controls.
+
+## Milestone 9b — canvas-first workspace
+
+Implemented on 21 October 2026, with Luna agents handling the board menu,
+selection controls, canvas controls and browser-journey migration. Primary-agent
+integration and an independent Luna review covered interaction and focus rules.
+
+- Completely removed the reserved topbar, right inspector, drawer lifecycle and
+  permanent object/insertion list. The canvas fills the window at desktop and
+  narrow widths. No production dependencies were added.
+- A compact board menu owns rename, import/export and recovery. Local save status
+  remains available to assistive technology; save failures stay visible on canvas.
+- Five drawing tools remain in one dock. Undo/redo, zoom and fit have stable
+  navigation controls. Narrow windows move tools to the bottom.
+- Selection actions depend on record type/count. Styling, precision and arrangement
+  open on request; unrelated properties stay absent. Contextual controls suspend
+  during gestures and text input. Rectangle labels remain a future feature.
+- Object navigation opens deliberately, searches and pages at most 100 rendered
+  rows while retaining access to every record. Select All applies to the complete
+  board. Growing documents do not grow permanent UI.
+- One transient surface owns dismissal. Escape preserves native draft cancellation;
+  closing restores a meaningful trigger. Outside canvas dismissal consumes the
+  pointerdown, and native fields commit before their surface unmounts. Menu closure
+  no longer steals focus from a subsequent canvas action.
+- `pnpm run ready` passed formatting/lint, strict types, boundaries, builds, 98
+  unit/server tests and 80 development/production Chromium journeys. Following the
+  final short-window menu constraint, all 20 workspace checks passed across both
+  modes, including the new 600 × 280 regression. Desktop, 320 px selection/style
+  and help layouts were inspected. Docker, other engines, 200% browser zoom and
+  complete real-touch editing were not verified in this increment.
+
+[The UX record](UX_PLAN.md) documents visibility and scaling rules. The next
+product increments are attached rectangle labels, SVG/PNG export and clipboard
+reuse, in that order; see [NEXT.md](NEXT.md).

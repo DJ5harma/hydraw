@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 import type { BoardDocument } from "../../packages/document/src/index.ts";
+import { closeOverlay, openBoardMenu, openObjects } from "./ui.ts";
 const rectangle = { type: "rectangle", fill: "#e7eefb" };
 const connector = { type: "connector", color: "#243e33", arrowhead: "arrow" };
 const fixture = {
@@ -43,6 +44,7 @@ const fixture = {
 const button = (page: Page, name: string) => page.getByRole("button", { name, exact: true });
 async function open(page: Page, board: unknown = fixture) {
   await page.goto("/");
+  await openBoardMenu(page);
   await button(page, "Import board").click();
   await page.getByLabel("Hydraw board file").setInputFiles({
     name: "arrangement.json",
@@ -54,6 +56,7 @@ async function open(page: Page, board: unknown = fixture) {
 }
 async function exported(page: Page): Promise<BoardDocument> {
   const pending = page.waitForEvent("download");
+  await openBoardMenu(page);
   await button(page, "Export board").click();
   const stream = await (await pending).createReadStream();
   const chunks: Buffer[] = [];
@@ -61,11 +64,14 @@ async function exported(page: Page): Promise<BoardDocument> {
   return JSON.parse(Buffer.concat(chunks).toString("utf8")) as BoardDocument;
 }
 async function selectLayout(page: Page) {
+  await openObjects(page);
   await button(page, "Rectangle 1").click();
   await button(page, "Rectangle 2").click({ modifiers: ["Shift"] });
   await page.getByRole("button", { name: /^Text 3/ }).click({ modifiers: ["Shift"] });
   await button(page, "Connector 1").click({ modifiers: ["Shift"] });
   await button(page, "Connector 2").click({ modifiers: ["Shift"] });
+  await closeOverlay(page);
+  await button(page, "Arrange selection").click();
 }
 
 test("all alignment controls move selected shapes in one undo step while retaining text and arrows", async ({
@@ -74,6 +80,7 @@ test("all alignment controls move selected shapes in one undo step while retaini
   await open(page);
   await selectLayout(page);
   const before = await exported(page);
+  await button(page, "Arrange selection").click();
   const cases = [
     { label: "Align left", axis: "x", target: 100, anchor: 0 },
     { label: "Align horizontal centers", axis: "x", target: 350, anchor: 0.5 },
@@ -100,6 +107,7 @@ test("all alignment controls move selected shapes in one undo step while retaini
     await expect(page.getByRole("heading", { name: "5 objects", exact: true })).toBeVisible();
     await button(page, "Undo").click();
     expect(await exported(page)).toEqual(before);
+    await button(page, "Arrange selection").click();
   }
 });
 
@@ -109,16 +117,19 @@ test("distribution keeps outer centers fixed, preserves redo on repeated layouts
   await open(page);
   await selectLayout(page);
   const before = await exported(page);
+  await button(page, "Arrange selection").click();
   await button(page, "Distribute centers horizontally").click();
   const horizontal = await exported(page);
   expect(horizontal.shapes[0]).toEqual(before.shapes[0]);
   expect(horizontal.shapes[1]).toEqual(before.shapes[1]);
   expect(horizontal.shapes[2]?.x).toBe(265);
+  await button(page, "Arrange selection").click();
   await button(page, "Distribute centers horizontally").click();
   await button(page, "Undo").click();
   expect(await exported(page)).toEqual(before);
   await button(page, "Redo").click();
   expect(await exported(page)).toEqual(horizontal);
+  await button(page, "Arrange selection").click();
   await button(page, "Distribute centers vertically").click();
   const vertical = await exported(page);
   expect(vertical.shapes[0]).toEqual(horizontal.shapes[0]);
@@ -131,16 +142,28 @@ test("distribution keeps outer centers fixed, preserves redo on repeated layouts
 
 test("eligibility counts shapes rather than selected arrows", async ({ page }) => {
   await open(page);
+  await openObjects(page);
   await button(page, "Connector 1").click();
   await button(page, "Connector 2").click({ modifiers: ["Shift"] });
+  await closeOverlay(page);
+  await button(page, "Arrange selection").click();
   await expect(button(page, "Align left")).toBeDisabled();
   await expect(button(page, "Distribute centers horizontally")).toBeDisabled();
+  await openObjects(page);
   await button(page, "Rectangle 1").click({ modifiers: ["Shift"] });
+  await closeOverlay(page);
+  await button(page, "Arrange selection").click();
   await expect(button(page, "Align left")).toBeDisabled();
+  await openObjects(page);
   await button(page, "Rectangle 2").click({ modifiers: ["Shift"] });
+  await closeOverlay(page);
+  await button(page, "Arrange selection").click();
   await expect(button(page, "Align left")).toBeEnabled();
   await expect(button(page, "Distribute centers vertically")).toBeDisabled();
+  await openObjects(page);
   await page.getByRole("button", { name: /^Text 3/ }).click({ modifiers: ["Shift"] });
+  await closeOverlay(page);
+  await button(page, "Arrange selection").click();
   await expect(button(page, "Distribute centers vertically")).toBeEnabled();
 });
 
@@ -155,14 +178,21 @@ test("an impossible alignment reports an error without partial movement or histo
     ],
     connectors: [],
   });
+  await openObjects(page);
   await button(page, "Select all objects").click();
+  await closeOverlay(page);
+  await button(page, "Arrange selection").click();
   const before = await exported(page);
+  await button(page, "Arrange selection").click();
   await button(page, "Align right").click();
   await expect(page.getByRole("alert")).toContainText("coordinate limit");
   expect(await exported(page)).toEqual(before);
   await expect(button(page, "Undo")).toBeDisabled();
+  await openObjects(page);
   await expect(button(page, "Rectangle 1")).toHaveAttribute("aria-pressed", "true");
   await button(page, "Dismiss selection error").click();
+  await closeOverlay(page);
+  await button(page, "Arrange selection").click();
   await button(page, "Align left").click();
   expect((await exported(page)).shapes.map((shape) => shape.x)).toEqual([900_000, 900_000]);
   await button(page, "Undo").click();

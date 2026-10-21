@@ -1,4 +1,5 @@
 import { Icon } from "../../components/icons.tsx";
+import "./canvas-controls.css";
 
 export function EmptyCanvas({ onStart }: { onStart: () => void }) {
   return (
@@ -8,9 +9,6 @@ export function EmptyCanvas({ onStart }: { onStart: () => void }) {
       <button className="start-button" onClick={onStart}>
         Draw a rectangle <Icon name="arrow" />
       </button>
-      <span className="empty-shortcut">
-        Press <kbd>R</kbd> to choose the rectangle tool
-      </span>
     </div>
   );
 }

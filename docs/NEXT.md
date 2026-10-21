@@ -1,6 +1,6 @@
 # The next useful Hydraw release
 
-Updated 20 October 2026 after feedback on the first workspace pass. This refines
+Updated 21 October 2026 after implementing the canvas-first workspace. This refines
 PLAN.md; the owned-engine boundaries and broader direction remain in force.
 
 ## Product focus
@@ -11,14 +11,14 @@ general whiteboard, workshop platform or design suite.
 
 Today rectangles, standalone text, bound straight connectors, multiselection,
 alignment, duplication, history, native JSON and local recovery work. Attached
-labels, fit navigation, visual export and clipboard reuse are still missing. The
-new workspace is a [reviewable design proposal](UX_PLAN.md), not shipped behavior.
+labels, visual export and clipboard reuse are still missing. The
+new [canvas-first workspace](UX_PLAN.md) and fit navigation are implemented.
 
 ## Ordered increments
 
 | Order | Increment                                 | Exit condition                                                                                                                                                                                                        |
 | ----- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Now   | Canvas-first workspace and fit navigation | No reserved header/default sidebar. Contextual actions preserve every existing workflow; fit board/selection makes offscreen content recoverable. Keyboard, responsive, persistence and interaction regressions pass. |
+| Done  | Canvas-first workspace and fit navigation | No reserved header/default sidebar. Contextual actions preserve every existing workflow; fit board/selection makes offscreen content recoverable. Keyboard, responsive, persistence and interaction regressions pass. |
 | Next  | Labels attached to rectangles             | Type directly; label follows movement, resize, duplication, save and undo. Existing files migrate without losing standalone text or bindings.                                                                         |
 | Then  | SVG, then PNG export                      | Board/selection exports faithfully include geometry and text, use predictable bounds/padding, and open in ordinary viewers. Editable native files remain available.                                                   |
 | Then  | Selection clipboard                       | Copy/cut/paste connected selections with fresh identities and one undo step. Internal bindings survive; external references detach safely. Native input clipboard remains untouched.                                  |

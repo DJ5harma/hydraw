@@ -1,8 +1,18 @@
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 import type { BoardDocument } from "../../packages/document/src/index.ts";
+import {
+  addRectangle,
+  addText,
+  openBoardMenu,
+  openGeometry,
+  openObjects,
+  openStyle,
+  closeOverlay,
+} from "./ui.ts";
 
 async function exportBoard(page: Page): Promise<BoardDocument> {
+  await openBoardMenu(page);
   const pending = page.waitForEvent("download");
   await page.getByRole("button", { name: "Export board", exact: true }).click();
   const stream = await (await pending).createReadStream();
@@ -18,7 +28,8 @@ async function field(page: Page, name: string, value: number) {
 async function nodes(page: Page) {
   await page.goto("/");
   for (const x of [100, 550]) {
-    await page.getByRole("button", { name: "Add rectangle", exact: true }).click();
+    await addRectangle(page);
+    await openGeometry(page);
     await field(page, "Rectangle x", x);
     await field(page, "Rectangle y", 200);
   }
@@ -34,6 +45,7 @@ async function drag(page: Page, start: { x: number; y: number }, end: { x: numbe
 async function connect(page: Page) {
   await page.getByRole("button", { name: "Connector (C)", exact: true }).click();
   await drag(page, { x: 190, y: 260 }, { x: 640, y: 260 });
+  await openObjects(page);
   await expect(page.getByRole("button", { name: "Connector 1", exact: true })).toBeVisible();
   await expect(page.getByRole("status")).toContainText("Saved in this browser");
 }
@@ -52,6 +64,7 @@ test("draws a bound arrow, follows moved/resized nodes, and undoes cascade delet
     end: { type: "binding", shapeId: original.shapes[1]!.id },
   });
   await drag(page, { x: 190, y: 260 }, { x: 230, y: 260 });
+  await openGeometry(page);
   await expect(page.getByRole("spinbutton", { name: "Rectangle x", exact: true })).toHaveValue(
     "140",
   );
@@ -59,15 +72,20 @@ test("draws a bound arrow, follows moved/resized nodes, and undoes cascade delet
   const changed = await exportBoard(page);
   expect(changed.connectors).toEqual(original.connectors);
   expect(changed.shapes[0]).toMatchObject({ x: 140, width: 240 });
+  await openObjects(page);
+  await page.getByRole("button", { name: "Rectangle 1", exact: true }).click();
+  await closeOverlay(page);
   await page.getByRole("button", { name: "Delete rectangle", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Connector 1", exact: true })).toHaveCount(0);
+  expect((await exportBoard(page)).connectors).toHaveLength(0);
   await page.getByRole("button", { name: "Undo", exact: true }).click();
   expect(await exportBoard(page)).toEqual(changed);
   await expect(page.getByRole("status")).toContainText("Saved in this browser");
   await page.reload();
   expect(await exportBoard(page)).toEqual(changed);
-  await page.locator("canvas").click({ position: { x: 460, y: 260 } });
-  await expect(page.getByRole("heading", { name: "Connector", exact: true })).toBeVisible();
+  await openObjects(page);
+  await page.getByRole("button", { name: "Connector 1", exact: true }).click();
+  await openStyle(page);
+  await expect(page.getByRole("dialog", { name: "Connector style" })).toBeVisible();
   await page.getByRole("button", { name: "Delete connector", exact: true }).click();
   expect((await exportBoard(page)).shapes).toEqual(changed.shapes);
   await page.getByRole("button", { name: "Undo", exact: true }).click();
@@ -86,7 +104,9 @@ test("reconnects an endpoint, reverses, styles and detaches without surprising b
   expect(document.connectors[0]?.end).toEqual({ type: "point", x: 850, y: 420 });
   await page.getByRole("button", { name: "Undo", exact: true }).click();
   expect(await exportBoard(page)).toEqual(original);
+  await openObjects(page);
   await page.getByRole("button", { name: "Connector 1", exact: true }).click();
+  await openStyle(page);
   await page.getByRole("button", { name: "Rose connector", exact: true }).click();
   await page.getByRole("checkbox", { name: "Arrowhead", exact: true }).uncheck();
   await page.getByRole("button", { name: "Reverse direction", exact: true }).click();
@@ -100,6 +120,7 @@ test("reconnects an endpoint, reverses, styles and detaches without surprising b
   await page.locator("canvas").focus();
   await page.keyboard.press("Shift+ArrowRight");
   expect(await exportBoard(page)).toEqual(document);
+  await openStyle(page);
   await page.getByRole("button", { name: "Detach endpoints", exact: true }).click();
   await expect(page.getByRole("button", { name: "Detach endpoints", exact: true })).toBeDisabled();
   await page.locator("canvas").focus();
@@ -115,26 +136,41 @@ test("keeps text bindings through reflow, import and recovery, and restores edge
   page,
 }) => {
   await nodes(page);
-  await page.getByRole("button", { name: "Text (T)", exact: true }).click();
-  await page.locator("canvas").click({ position: { x: 750, y: 450 } });
+  await addText(page);
   const input = page.getByRole("textbox", { name: "Edit canvas text" });
   await input.fill("API contract\nShared document state");
   await input.press("Control+Enter");
   await connect(page);
-  await drag(page, { x: 550, y: 260 }, { x: 790, y: 465 });
+  const beforeTextBinding = await exportBoard(page);
+  const textShape = beforeTextBinding.shapes.find((shape) => shape.type === "text")!;
+  await drag(
+    page,
+    { x: 550, y: 260 },
+    {
+      x: textShape.x + textShape.width / 2,
+      y: textShape.y + textShape.height / 2,
+    },
+  );
   const withText = await exportBoard(page);
   expect(withText.connectors[0]?.end).toEqual({ type: "binding", shapeId: withText.shapes[2]!.id });
+  await openObjects(page);
   await page.getByRole("button", { name: /^Text 3/ }).click();
+  await openGeometry(page);
   await field(page, "Text width", 150);
+  await openStyle(page);
   await field(page, "Font size", 32);
   const before = await exportBoard(page);
   expect(before.connectors).toEqual(withText.connectors);
+  await openStyle(page);
   await page.getByRole("button", { name: "Edit text", exact: true }).click();
   await input.fill("");
   await input.press("Control+Enter");
+  await openObjects(page);
   await expect(page.getByRole("button", { name: "Connector 1", exact: true })).toHaveCount(0);
+  await closeOverlay(page);
   await page.getByRole("button", { name: "Undo", exact: true }).click();
   expect(await exportBoard(page)).toEqual(before);
+  await openBoardMenu(page);
   await page.getByRole("button", { name: "Import board", exact: true }).click();
   await page.getByLabel("Hydraw board file").setInputFiles({
     name: "graph.hydraw.json",
@@ -146,6 +182,7 @@ test("keeps text bindings through reflow, import and recovery, and restores edge
   await expect(page.getByRole("dialog")).toHaveCount(0);
   expect(await exportBoard(page)).toEqual({ ...before, name: "Imported graph" });
   await page.reload();
+  await openBoardMenu(page);
   await page.getByRole("button", { name: "Restore previous board", exact: true }).click();
   await page.getByRole("button", { name: "Restore board", exact: true }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
@@ -176,7 +213,10 @@ test("cancels drawing and endpoint changes, supports keyboard arrows, and reject
   await page.locator("canvas").focus();
   await page.keyboard.press("c");
   await page.keyboard.press("Enter");
+  await openObjects(page);
   await expect(page.getByRole("button", { name: "Connector 2", exact: true })).toBeVisible();
+  await closeOverlay(page);
+  await page.locator("canvas").focus();
   await page.keyboard.press("Delete");
   expect(await exportBoard(page)).toEqual(before);
   for (const invalid of [
@@ -186,6 +226,7 @@ test("cancels drawing and endpoint changes, supports keyboard arrows, and reject
       connectors: [{ ...before.connectors[0], end: { type: "binding", shapeId: "missing" } }],
     },
   ]) {
+    await openBoardMenu(page);
     await page.getByRole("button", { name: "Import board", exact: true }).click();
     await page.getByLabel("Hydraw board file").setInputFiles({
       name: "broken.json",

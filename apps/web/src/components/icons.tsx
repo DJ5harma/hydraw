@@ -1,4 +1,6 @@
 type IconName =
+  | "menu"
+  | "settings"
   | "select"
   | "align-left"
   | "align-center-x"
@@ -25,6 +27,13 @@ type IconName =
   | "arrow"
   | "check";
 const paths: Record<IconName, React.ReactNode> = {
+  menu: <path d="M4 6h16M4 12h16M4 18h16" />,
+  settings: (
+    <>
+      <path d="M4 6h5m4 0h7M4 12h9m4 0h3M4 18h2m4 0h10" />
+      <path d="M9 3v6m4 0v6m-7 0v6" />
+    </>
+  ),
   upload: <path d="M12 15V3m-5 5 5-5 5 5M4 16v4h16v-4" />,
   recover: (
     <>

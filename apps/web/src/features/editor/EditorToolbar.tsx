@@ -1,7 +1,7 @@
 import type { Editor, Tool } from "@hydraw/editor";
 import { Icon } from "../../components/icons.tsx";
 import { useEditorSnapshot } from "./useEditorSnapshot.ts";
-import "./canvas-chrome.css";
+import "./canvas-controls.css";
 const tools: { id: Tool; label: string; key: string }[] = [
   { id: "select", label: "Select", key: "V" },
   { id: "rectangle", label: "Rectangle", key: "R" },
@@ -29,28 +29,8 @@ export function EditorToolbar({
           onClick={() => selectTool(tool.id)}
         >
           <Icon name={tool.id} />
-          <kbd>{tool.key}</kbd>
         </button>
       ))}
-      <span className="toolbar-divider" />
-      <button
-        className="tool-button history-button"
-        aria-label="Undo"
-        title="Undo · Ctrl/⌘ Z"
-        disabled={!snapshot.canUndo}
-        onClick={() => editor.undo()}
-      >
-        <Icon name="undo" />
-      </button>
-      <button
-        className="tool-button history-button"
-        aria-label="Redo"
-        title="Redo · Ctrl/⌘ Shift Z"
-        disabled={!snapshot.canRedo}
-        onClick={() => editor.redo()}
-      >
-        <Icon name="redo" />
-      </button>
     </div>
   );
 }

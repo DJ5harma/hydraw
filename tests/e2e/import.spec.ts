@@ -1,6 +1,7 @@
 import { MAX_DOCUMENT_BYTES } from "../../packages/document/src/index.ts";
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
+import { addRectangle, openBoardMenu, openObjects } from "./ui.ts";
 
 const imported = {
   format: "hydraw",
@@ -22,9 +23,10 @@ const imported = {
 
 async function seed(page: Page) {
   await page.goto("/");
+  await openBoardMenu(page);
   await page.getByRole("textbox", { name: "Board name" }).fill("Original board");
   await page.getByRole("textbox", { name: "Board name" }).press("Enter");
-  await page.getByRole("button", { name: "Add rectangle", exact: true }).click();
+  await addRectangle(page);
   await expect(page.getByRole("status")).toContainText("Saved in this browser");
 }
 
@@ -53,6 +55,7 @@ async function stored(page: Page) {
 }
 
 async function choose(page: Page, json: string = JSON.stringify(imported)) {
+  await openBoardMenu(page);
   await page.getByRole("button", { name: "Import board", exact: true }).click();
   await page.getByLabel("Hydraw board file").setInputFiles({
     name: "board.hydraw.json",
@@ -76,9 +79,9 @@ test("previews an import, persists it, and swaps recovery boards across reloads"
   await choose(page);
   await expect(page.getByRole("dialog")).toContainText("Imported architecture");
   await expect(page.getByRole("dialog")).toContainText("2 rectangles");
-  await expect(page.locator('[aria-label="Board name"]')).toHaveValue("Original board");
   await page.getByRole("button", { name: "Open imported board" }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
+  await openBoardMenu(page);
   await expect(page.getByRole("textbox", { name: "Board name" })).toHaveValue(imported.name);
   await expect(page.getByRole("button", { name: "Undo", exact: true })).toBeDisabled();
   expect(await stored(page)).toEqual({
@@ -86,17 +89,21 @@ test("previews an import, persists it, and swaps recovery boards across reloads"
     recovery: original.primary,
   });
   await page.reload();
-  await page.getByRole("button", { name: "Restore previous board" }).click();
+  await openBoardMenu(page);
+  await page.getByRole("button", { name: "Restore previous board", exact: true }).click();
   await expect(page.getByRole("dialog")).toContainText("Original board");
   await page.getByRole("button", { name: "Restore board", exact: true }).click();
+  await openBoardMenu(page);
   await expect(page.getByRole("textbox", { name: "Board name" })).toHaveValue("Original board");
   expect(await stored(page)).toEqual({
     primary: original.primary,
     recovery: { ...imported, version: 2, connectors: [] },
   });
   await page.reload();
-  await page.getByRole("button", { name: "Restore previous board" }).click();
+  await openBoardMenu(page);
+  await page.getByRole("button", { name: "Restore previous board", exact: true }).click();
   await page.getByRole("button", { name: "Restore board", exact: true }).click();
+  await openBoardMenu(page);
   await expect(page.getByRole("textbox", { name: "Board name" })).toHaveValue(imported.name);
   expect(await stored(page)).toEqual({
     primary: { ...imported, version: 2, connectors: [] },
@@ -132,6 +139,7 @@ test("invalid, unsupported and oversized imports leave the saved board untouched
     expect(await stored(page)).toEqual(original);
   }
   await page.reload();
+  await openBoardMenu(page);
   await expect(page.getByRole("textbox", { name: "Board name" })).toHaveValue("Original board");
 });
 
@@ -163,6 +171,7 @@ for (const failure of ["abort", "throw"] as const) {
     );
     expect(await stored(page)).toEqual(before);
     await page.getByRole("button", { name: "Cancel", exact: true }).click();
+    await openBoardMenu(page);
     await expect(page.getByRole("textbox", { name: "Board name" })).toHaveValue(imported.name);
     await page.reload();
     expect(await stored(page)).toEqual(before);
@@ -179,7 +188,11 @@ test("cancelling a reviewed import does not replace the board or create a recove
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toHaveCount(0);
   expect(await stored(page)).toEqual(before);
-  await expect(page.getByRole("button", { name: "Restore previous board" })).toBeDisabled();
+  await openBoardMenu(page);
+  await expect(
+    page.getByRole("button", { name: "Restore previous board", exact: true }),
+  ).toBeDisabled();
+  await openObjects(page);
   await expect(page.getByRole("button", { name: "Rectangle 1", exact: true })).toHaveAttribute(
     "aria-pressed",
     "true",
@@ -190,6 +203,7 @@ test("an export can be imported again without changing its semantic content", as
   await seed(page);
   const original = (await stored(page)) as { primary: unknown };
   const download = page.waitForEvent("download");
+  await openBoardMenu(page);
   await page.getByRole("button", { name: "Export board", exact: true }).click();
   const stream = await (await download).createReadStream();
   const chunks: Buffer[] = [];
@@ -229,9 +243,10 @@ test("an unreadable recovery copy does not strand or overwrite a valid current b
       }),
   );
   await page.reload();
+  await openBoardMenu(page);
   await expect(page.getByRole("textbox", { name: "Board name" })).toHaveValue("Original board");
   await expect(page.getByRole("alert")).toContainText("recovery copy could not be read");
-  await page.getByRole("button", { name: "Add rectangle", exact: true }).click();
+  await addRectangle(page);
   await expect(page.getByRole("status")).toContainText("Saved in this browser");
   const before = await stored(page);
   expect(before).toMatchObject({

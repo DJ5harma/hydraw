@@ -45,42 +45,13 @@
 }
 
 .tool-button:focus-visible,
+.canvas-history button:focus-visible,
 .zoom-controls button:focus-visible,
 .help-button:focus-visible,
 .shortcuts-close:focus-visible,
 .start-button:focus-visible {
   outline: 2px solid var(--accent, #176b52);
   outline-offset: 2px;
-}
-
-.tool-button kbd {
-  position: absolute;
-  right: 3px;
-  bottom: 2px;
-  color: var(--text-muted, #647182);
-  font-size: 8px;
-  line-height: 1;
-}
-
-.tool-button.is-active kbd {
-  color: var(--accent, #176b52);
-}
-
-.toolbar-divider {
-  width: 1px;
-  height: 24px;
-  margin: 0 3px;
-  background: var(--line, #e0e5eb);
-}
-
-.history-button {
-  flex-basis: 34px;
-  width: 34px;
-}
-
-.history-button svg {
-  width: 16px;
-  height: 16px;
 }
 
 .empty-canvas {
@@ -134,15 +105,6 @@
   height: 14px;
 }
 
-.empty-shortcut {
-  display: block;
-  margin-top: 13px;
-  color: var(--text-muted, #647182);
-  font-size: 11px;
-}
-
-.empty-shortcut kbd,
-.canvas-bottom kbd,
 .shortcuts kbd {
   padding: 2px 5px;
   border: 1px solid var(--line, #e0e5eb);
@@ -158,13 +120,13 @@
   bottom: 16px;
   left: 18px;
   z-index: 3;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 5px;
   pointer-events: none;
 }
 
+.canvas-history,
 .zoom-controls {
   display: flex;
   padding: 3px;
@@ -173,6 +135,39 @@
   background: var(--surface, #fff);
   box-shadow: var(--shadow, 0 8px 24px #1424380a);
   pointer-events: auto;
+}
+
+.canvas-history button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 29px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-muted, #647182);
+}
+
+.canvas-history button:hover:not(:disabled) {
+  background: var(--surface-muted, #f7f9fb);
+  color: var(--text, #202a35);
+}
+.canvas-history button:disabled {
+  opacity: 0.4;
+}
+.canvas-history svg {
+  width: 14px;
+  height: 14px;
+}
+.canvas-controls-spacer {
+  flex: 1;
+}
+.fit-button {
+  width: auto !important;
+  padding: 0 8px !important;
+  font-size: 11px;
 }
 
 .zoom-controls button {
@@ -205,23 +200,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-.canvas-bottom p {
-  overflow: hidden;
-  margin: 0;
-  color: var(--text-muted, #647182);
-  font-size: 11px;
-  line-height: 1.4;
-  text-align: center;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  pointer-events: none;
-}
-
-.canvas-bottom p span {
-  margin: 0 4px;
-  color: var(--line, #e0e5eb);
-}
-
 .help-button {
   display: flex;
   align-items: center;
@@ -239,6 +217,11 @@
   box-shadow: var(--shadow, 0 8px 24px #1424380a);
 }
 
+.help-overlay-root {
+  position: relative;
+  pointer-events: auto;
+}
+
 .help-button:hover,
 .help-button[aria-expanded="true"] {
   border-color: var(--accent, #176b52);
@@ -247,11 +230,11 @@
 
 .shortcuts {
   position: absolute;
-  right: 18px;
-  bottom: 58px;
+  right: 0;
+  bottom: 42px;
   z-index: 5;
-  width: min(350px, calc(100% - 24px));
-  max-height: min(70%, 560px);
+  width: min(350px, calc(100vw - 32px));
+  max-height: min(calc(100dvh - 160px), 560px);
   overflow: auto;
   padding: 15px;
   border: 1px solid var(--line, #e0e5eb);
@@ -327,44 +310,70 @@
   text-align: right;
 }
 
+@media (max-width: 660px) {
+  .toolbar {
+    top: auto;
+    bottom: 16px;
+  }
+  .canvas-bottom {
+    top: 64px;
+    right: 12px;
+    bottom: auto;
+    left: 12px;
+  }
+  .canvas-controls-spacer {
+    flex: 1;
+  }
+  .shortcuts {
+    top: 42px;
+    right: 0;
+    bottom: auto;
+  }
+}
+
 @media (max-width: 520px) {
   .tool-button {
     flex-basis: 36px;
     width: 36px;
   }
-
-  .history-button {
-    flex-basis: 31px;
-    width: 31px;
-  }
-
-  .canvas-bottom {
-    right: 12px;
-    left: 12px;
-    gap: 8px;
-  }
-
-  .canvas-bottom p {
-    font-size: 10px;
-  }
-
-  .canvas-bottom p span,
-  .canvas-bottom p kbd {
-    display: none;
-  }
-
-  .shortcuts {
-    right: 12px;
-    bottom: 54px;
-  }
 }
 
 @media (max-width: 360px) {
-  .canvas-bottom p {
-    display: none;
+  .tool-button {
+    flex-basis: 34px;
+    width: 34px;
   }
+}
 
+@media (max-width: 1000px) and (min-width: 661px) {
+  .board-menu-trigger-name {
+    max-width: 100px;
+  }
+}
+@media (pointer: coarse) {
+  .tool-button {
+    width: 44px;
+    height: 44px;
+    flex-basis: 44px;
+  }
+  .canvas-history button,
+  .zoom-controls button,
+  .help-button {
+    min-width: 36px;
+    height: 40px;
+  }
+}
+@media (max-width: 360px) {
   .canvas-bottom {
-    grid-template-columns: auto 1fr auto;
+    gap: 3px;
+    left: 8px;
+    right: 8px;
+  }
+  .canvas-history button,
+  .zoom-controls button {
+    width: 26px;
+  }
+  .zoom-controls .zoom-value {
+    width: 39px;
   }
 }

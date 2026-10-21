@@ -14,12 +14,6 @@ export function CanvasSurface({
     if (canvasRef.current) return attachCanvas(canvasRef.current, editor);
   }, [editor, canvasRef]);
   return (
-    <canvas
-      ref={canvasRef}
-      className="drawing-canvas"
-      tabIndex={0}
-      aria-label="Drawing canvas"
-      aria-describedby="canvas-instructions"
-    />
+    <canvas ref={canvasRef} className="drawing-canvas" tabIndex={0} aria-label="Drawing canvas" />
   );
 }

@@ -33,21 +33,21 @@ The Dockerfile builds React and Hono together. The runtime image contains the bu
 
 ## Current slice
 
-- Compact canvas workspace with a collapsible inspector. On narrow screens, the inspector opens as a drawer so properties and object navigation stay reachable. Keyboard shortcuts have a dismissible reference panel.
+- Full-window canvas with a compact tool dock and board menu. Selection actions appear only when relevant; precise properties, styling, objects and help open on request. Object navigation searches and pages large boards without a permanent sidebar. Fit board/selection brings offscreen content into view.
 
 - Draw rectangles, select and move them, change their fill, and delete them.
-- Resize with eight edge/corner handles or edit X, Y, width and height in the inspector. Dragging across the opposite edge keeps dimensions positive. Invalid numeric edits stay out of saved documents.
+- Resize with eight edge/corner handles or edit X, Y, width and height through More properties. Dragging across the opposite edge keeps dimensions positive. Invalid numeric edits stay out of saved documents.
 - Shift-click objects on the canvas or in the object list to toggle selection. Drag empty canvas to select fully enclosed nodes and arrows; Shift + drag adds enclosed objects. Ctrl/⌘ A or Select all objects selects the whole board.
 - Drag a selected object or use arrow keys to move a selection together. Bindings stay attached, and one common movement delta preserves spacing at coordinate limits.
-- Duplicate selection with Ctrl/⌘ D or the inspector button. Copies get fresh identities and a 24-unit offset. Connections between copied nodes are included automatically; copied connections to unselected nodes become free endpoints.
-- Arrange selected rectangles and text from the inspector: align edges or centers with two or more shapes, or distribute centers horizontally/vertically with three or more. Outer centers stay fixed during distribution; attached arrows follow their shapes. Selected arrows do not affect the layout targets.
+- Duplicate selection with Ctrl/⌘ D or the selection shelf button. Copies get fresh identities and a 24-unit offset. Connections between copied nodes are included automatically; copied connections to unselected nodes become free endpoints.
+- Arrange selected rectangles and text from Arrange on the selection shelf: align edges or centers with two or more shapes, or distribute centers horizontally/vertically with three or more. Outer centers stay fixed during distribution; attached arrows follow their shapes. Selected arrows do not affect the layout targets.
 - Undo/redo committed local actions. Group movement, duplication, deletion, alignment and distribution each create one undo step. Escape cancels a gesture; cancelling a marquee restores the prior selection, while Escape outside a gesture clears selection.
 - Pan using the hand tool, wheel, middle mouse button, or Space + drag. Zoom using the controls or Ctrl/⌘ + wheel.
-- Create a centered rectangle with Enter on the canvas or Add rectangle in the inspector. Move a selection with arrow keys; Shift moves by 10. V/R/C/T/H switch tools.
-- Create wrapped multiline text with T + click or Add text. Double-click text, press Enter with it selected, or use Edit text in the inspector to edit. Enter inserts a new line; Ctrl/⌘ Enter or clicking away commits one undoable edit; Escape cancels it.
-- Style text with 12–96 px font sizes, regular/bold weight, three alignments and five ink colors. Resize its width using side handles or the inspector; height grows with content. Each text object supports up to 2,000 characters.
+- Create a centered rectangle with Enter on the canvas. Move a selection with arrow keys; Shift moves by 10. V/R/C/T/H switch tools.
+- Create wrapped multiline text with T + click or T then Enter on the canvas. Double-click text, press Enter with it selected, or use Edit text under Text style to edit. Enter inserts a new line; Ctrl/⌘ Enter or clicking away commits one undoable edit; Escape cancels it.
+- Style text with 12–96 px font sizes, regular/bold weight, three alignments and five ink colors. Resize its width using side handles or More properties; height grows with content. Each text object supports up to 2,000 characters.
 - Draw straight connectors with C + drag between objects or canvas points. Bound endpoints follow rectangle movement/resizing and text reflow. Select the line or its object-list entry, then drag endpoint handles to reconnect.
-- Change connector ink, toggle arrowheads, reverse direction or detach endpoints in the inspector. Free arrows move by dragging or arrow keys; bound arrows move through their endpoints or attached objects. C + Enter or Add connector creates a centered free arrow.
+- Change connector ink, toggle arrowheads, reverse direction or detach endpoints under the selected connector’s Style action. Free arrows move by dragging or arrow keys; bound arrows move through their endpoints or attached objects. C + Enter creates a centered free arrow.
 - Deleting a shape removes its attached connectors in one undoable action. Clearing an existing text object follows the same rule.
 - Rename the board and export version 2 semantic JSON as `.hydraw.json`. Existing version 0 rectangle and version 1 text boards migrate when opened.
 - Recover the current board from IndexedDB after reload. Save status changes only after the storage transaction commits.
@@ -63,7 +63,7 @@ One tab owns the local writer lock. Additional tabs enter an explicitly unsaved 
 | `@hydraw/document`      | Version 2 shape/connector records, earlier-version migration, validation, geometry and reversible transactions; no runtime dependencies |
 | `@hydraw/editor`        | Local editor state, gestures, hit testing, transaction history and camera; depends only on the document package                         |
 | `@hydraw/editor/canvas` | Explicit browser adapter for Canvas rendering and pointer input                                                                         |
-| `@hydraw/web`           | React controls, object inspector, keyboard shortcuts, inline text input, IndexedDB and file transfer                                    |
+| `@hydraw/web`           | React controls, contextual properties and object navigation, keyboard shortcuts, inline text input, IndexedDB and file transfer         |
 | `@hydraw/server`        | Hono API, static assets and SPA navigation fallback                                                                                     |
 
 Internal packages expose TypeScript source to the toolchain. They are private workspace packages, not published libraries. The web build bundles them; Vite+ `pack` bundles Hono and its adapter into the backend output.
@@ -95,4 +95,4 @@ Connector routing is straight, with automatic perimeter attachments. Elbow routi
 
 Selection currently supports translation, duplication, deletion, alignment and center distribution. Group resizing/rotation, clipboard transfer and bulk styling are future work. Distribution uses equal center spacing rather than equal edge gaps; it does not prevent overlaps. Selection itself is transient and is not persisted or recorded in document history.
 
-Next product milestone: replace the header/sidebar shell with the proposed canvas-first workspace and fit navigation, then add attached labels, visual export and clipboard reuse. See [the current product sequence](docs/NEXT.md) and [the workspace UX plan](docs/UX_PLAN.md). See [ADR 0002](docs/adr/0002-container-and-transactions.md) for packaging and editor transactions, and [ADR 0003](docs/adr/0003-local-import-and-recovery.md) for import and persistence boundaries. [ADR 0004](docs/adr/0004-text-and-document-versioning.md) covers text layout and editing; [ADR 0005](docs/adr/0005-bound-connectors.md) defines connector bindings, graph transactions and deletion. [ADR 0006](docs/adr/0006-selection-and-duplication.md) defines selection and graph duplication. [ADR 0007](docs/adr/0007-alignment-and-distribution.md) covers alignment and center distribution.
+Next product milestone: attached rectangle labels, then visual export and clipboard reuse. The canvas-first workspace and fit navigation are implemented. See [the current product sequence](docs/NEXT.md) and [the workspace UX plan](docs/UX_PLAN.md). See [ADR 0002](docs/adr/0002-container-and-transactions.md) for packaging and editor transactions, and [ADR 0003](docs/adr/0003-local-import-and-recovery.md) for import and persistence boundaries. [ADR 0004](docs/adr/0004-text-and-document-versioning.md) covers text layout and editing; [ADR 0005](docs/adr/0005-bound-connectors.md) defines connector bindings, graph transactions and deletion. [ADR 0006](docs/adr/0006-selection-and-duplication.md) defines selection and graph duplication. [ADR 0007](docs/adr/0007-alignment-and-distribution.md) covers alignment and center distribution.

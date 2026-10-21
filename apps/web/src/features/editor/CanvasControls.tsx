@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
 import type { Editor } from "@hydraw/editor";
+import type { WorkspaceOverlay } from "./useWorkspaceOverlay.ts";
 import type { Point } from "@hydraw/document";
 import { Icon } from "../../components/icons.tsx";
 import { useEditorSnapshot } from "./useEditorSnapshot.ts";
@@ -27,60 +27,48 @@ const shortcuts = [
   ["Cancel gesture", "Esc"],
 ];
 
-export function CanvasControls({ editor, center }: { editor: Editor; center: () => Point }) {
+export function CanvasControls({
+  editor,
+  center,
+  overlay,
+  onOverlay,
+  onFit,
+  fitLabel,
+}: {
+  editor: Editor;
+  center: () => Point;
+  overlay: WorkspaceOverlay;
+  onOverlay: (name: WorkspaceOverlay) => void;
+  onFit: () => void;
+  fitLabel: string;
+}) {
   const snapshot = useEditorSnapshot(editor);
-  const [showHelp, setShowHelp] = useState(false);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const closeRef = useRef<HTMLButtonElement>(null);
-  const helpRef = useRef<HTMLElement>(null);
-
-  function closeHelp(restoreFocus = true) {
-    setShowHelp(false);
-    if (restoreFocus) requestAnimationFrame(() => triggerRef.current?.focus());
+  const showHelp = overlay === "help";
+  function closeHelp() {
+    onOverlay(null);
   }
-
-  useEffect(() => {
-    if (!showHelp) return;
-    closeRef.current?.focus();
-
-    function handlePointerDown(event: PointerEvent) {
-      const target = event.target;
-      if (
-        target instanceof Node &&
-        !helpRef.current?.contains(target) &&
-        !triggerRef.current?.contains(target)
-      ) {
-        closeHelp(false);
-      }
-    }
-
-    function handleKeyDown(event: KeyboardEvent) {
-      const target = event.target;
-      const activeElement = document.activeElement;
-      const belongsToHelp =
-        (target instanceof Node && helpRef.current?.contains(target)) ||
-        (target instanceof Node && triggerRef.current?.contains(target)) ||
-        (activeElement instanceof Node && helpRef.current?.contains(activeElement)) ||
-        (activeElement instanceof Node && triggerRef.current?.contains(activeElement));
-
-      if (event.key === "Escape" && belongsToHelp) {
-        event.preventDefault();
-        event.stopPropagation();
-        closeHelp();
-      }
-    }
-
-    document.addEventListener("pointerdown", handlePointerDown);
-    document.addEventListener("keydown", handleKeyDown, true);
-    return () => {
-      document.removeEventListener("pointerdown", handlePointerDown);
-      document.removeEventListener("keydown", handleKeyDown, true);
-    };
-  }, [showHelp]);
 
   return (
     <>
       <div className="canvas-bottom">
+        <div className="canvas-history" role="group" aria-label="History">
+          <button
+            aria-label="Undo"
+            title="Undo · Ctrl/⌘ Z"
+            disabled={!snapshot.canUndo}
+            onClick={() => editor.undo()}
+          >
+            <Icon name="undo" />
+          </button>
+          <button
+            aria-label="Redo"
+            title="Redo · Ctrl/⌘ Shift Z"
+            disabled={!snapshot.canRedo}
+            onClick={() => editor.redo()}
+          >
+            <Icon name="redo" />
+          </button>
+        </div>
         <div className="zoom-controls" role="group" aria-label="Canvas zoom">
           <button
             aria-label="Zoom out"
@@ -95,67 +83,58 @@ export function CanvasControls({ editor, center }: { editor: Editor; center: () 
             title="Reset view"
             onClick={() => editor.resetCamera()}
           >
-            {Math.round(snapshot.zoom * 100)}%
+            {snapshot.zoom < 0.01 ? "<1" : Math.round(snapshot.zoom * 100)}%
           </button>
           <button aria-label="Zoom in" title="Zoom in" onClick={() => editor.zoomAt(center(), 1.2)}>
             <Icon name="plus" />
           </button>
+          <button className="fit-button" aria-label={fitLabel} title={fitLabel} onClick={onFit}>
+            Fit
+          </button>
         </div>
-        <p id="canvas-instructions">
-          {snapshot.tool === "rectangle"
-            ? "Drag to draw a rectangle"
-            : snapshot.tool === "connector"
-              ? "Drag between objects or canvas points"
-              : snapshot.tool === "text"
-                ? "Click to place text"
-                : snapshot.tool === "hand"
-                  ? "Drag to explore your canvas"
-                  : "Drag to move · Shift-click or drag empty space to select"}
-          <span> · </span>Hold <kbd>Space</kbd> to pan
-        </p>
-        <button
-          ref={triggerRef}
-          className="help-button"
-          aria-label="Keyboard shortcuts"
-          aria-expanded={showHelp}
-          aria-haspopup="dialog"
-          onClick={() => setShowHelp((open) => !open)}
-        >
-          ?
-        </button>
-      </div>
-      {showHelp && (
-        <aside
-          ref={helpRef}
-          className="shortcuts"
-          role="dialog"
-          aria-label="Keyboard shortcuts reference"
-          aria-modal="false"
-          onKeyDown={(event) => event.stopPropagation()}
-        >
-          <div className="shortcuts-heading">
-            <h2>Keyboard shortcuts</h2>
-            <button
-              ref={closeRef}
-              className="shortcuts-close"
-              aria-label="Close keyboard shortcuts"
-              onClick={() => closeHelp()}
+        <div className="canvas-controls-spacer" />
+        <div className="help-overlay-root" data-workspace-overlay-root>
+          <button
+            className="help-button"
+            data-overlay-trigger="help"
+            aria-label="Keyboard shortcuts"
+            aria-expanded={showHelp}
+            aria-haspopup="dialog"
+            onClick={() => onOverlay(showHelp ? null : "help")}
+          >
+            ?
+          </button>
+          {showHelp && (
+            <aside
+              className="shortcuts"
+              role="dialog"
+              aria-label="Keyboard shortcuts"
+              aria-modal="false"
             >
-              ×
-            </button>
-          </div>
-          <dl>
-            {shortcuts.map(([label, key]) => (
-              <div key={label}>
-                <dt>{label}</dt>
-                <dd>
-                  <kbd>{key}</kbd>
-                </dd>
+              <div className="shortcuts-heading">
+                <h2>Keyboard shortcuts</h2>
+                <button
+                  className="shortcuts-close"
+                  aria-label="Close keyboard shortcuts"
+                  onClick={closeHelp}
+                >
+                  ×
+                </button>
               </div>
-            ))}
-          </dl>
-        </aside>
-      )}
+              <dl>
+                {shortcuts.map(([label, key]) => (
+                  <div key={label}>
+                    <dt>{label}</dt>
+                    <dd>
+                      <kbd>{key}</kbd>
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </aside>
+          )}
+        </div>
+      </div>
     </>
   );
 }
