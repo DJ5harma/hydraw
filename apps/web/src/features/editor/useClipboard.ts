@@ -1,3 +1,4 @@
+import { canCutSelection } from "./clipboard-actions.ts";
 import { useEffect, useRef } from "react";
 import { decodeClipboardFragment } from "@hydraw/editor";
 import type { Editor } from "@hydraw/editor";
@@ -7,6 +8,7 @@ type ClipboardOptions = {
   editor: Editor;
   center: () => Point;
   onError: (message: string) => void;
+  onHandled?: () => void;
 };
 
 function clipboardFocusIsInWorkspace(): boolean {
@@ -30,9 +32,9 @@ function message(cause: unknown): string {
 }
 
 /** Keep native clipboard behavior in text fields and dialogs; Hydraw handles canvas controls only. */
-export function useClipboard({ editor, center, onError }: ClipboardOptions): void {
-  const current = useRef({ center, onError });
-  current.current = { center, onError };
+export function useClipboard({ editor, center, onError, onHandled }: ClipboardOptions): void {
+  const current = useRef({ center, onError, onHandled });
+  current.current = { center, onError, onHandled };
 
   useEffect(() => {
     function copy(event: ClipboardEvent) {
@@ -42,27 +44,22 @@ export function useClipboard({ editor, center, onError }: ClipboardOptions): voi
         if (!text) return;
         event.clipboardData.setData("text/plain", text);
         event.preventDefault();
+        current.current.onHandled?.();
       } catch (cause) {
         current.current.onError(message(cause));
       }
     }
 
     function cut(event: ClipboardEvent) {
-      const snapshot = editor.getSnapshot();
-      const selected = new Set(snapshot.selectedIds);
-      if (
-        [...snapshot.document.shapes, ...snapshot.document.connectors].some(
-          (item) => selected.has(item.id) && item.locked,
-        )
-      )
-        return;
+      if (!canCutSelection(editor)) return;
       if (!clipboardFocusIsInWorkspace() || !event.clipboardData) return;
       try {
         const text = editor.copySelection();
         if (!text) return;
         event.clipboardData.setData("text/plain", text);
         event.preventDefault();
-        editor.removeSelection();
+        editor.removeSelection(true);
+        current.current.onHandled?.();
       } catch (cause) {
         current.current.onError(message(cause));
       }
@@ -76,6 +73,7 @@ export function useClipboard({ editor, center, onError }: ClipboardOptions): voi
         if (!decodeClipboardFragment(text)) return;
         event.preventDefault();
         editor.pasteSelection(text, current.current.center());
+        current.current.onHandled?.();
       } catch (cause) {
         event.preventDefault();
         current.current.onError(message(cause));

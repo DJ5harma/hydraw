@@ -20,7 +20,8 @@ test("insert, name, move, navigate and export a frame of editable preset nodes",
   await page.getByRole("button", { name: "Insert", exact: true }).click();
   await page.getByRole("button", { name: /Request flow/ }).click();
   await expect(page.getByRole("heading", { name: "5 objects", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Frame selection", exact: true }).click();
+  await page.getByRole("button", { name: "More actions", exact: true }).click();
+  await page.getByRole("menuitem", { name: "Frame selection", exact: true }).click();
   const name = page.getByRole("textbox", { name: "Frame name", exact: true });
   await name.fill("Public API");
   await name.press("Enter");

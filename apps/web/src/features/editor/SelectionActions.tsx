@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { isFrame } from "@hydraw/document";
 import { FrameProperties } from "./FrameProperties.tsx";
-import type { Alignment, DistributionAxis } from "@hydraw/document";
+import type { Alignment, DistributionAxis, Point } from "@hydraw/document";
 import { selectionBounds } from "@hydraw/editor";
 import type { Editor } from "@hydraw/editor";
 import { Icon } from "../../components/icons.tsx";
@@ -24,7 +24,9 @@ export function SelectionActions({
   onOverlay,
   onFitFrame,
   onExportFrame,
+  onMore,
 }: {
+  onMore: (point: Point) => void;
   editor: Editor;
   onFitFrame: () => void;
   onExportFrame: () => void;
@@ -82,7 +84,7 @@ export function SelectionActions({
     snapshot.interacting ||
     snapshot.textEditing ||
     snapshot.tool !== "select" ||
-    ["board", "objects", "help", "insert"].includes(overlay ?? "")
+    ["board", "objects", "help", "insert", "context"].includes(overlay ?? "")
   )
     return null;
 
@@ -124,13 +126,6 @@ export function SelectionActions({
       );
     }
   }
-
-  const orderActions = [
-    { label: "Front", direction: "front" },
-    { label: "Forward", direction: "forward" },
-    { label: "Backward", direction: "backward" },
-    { label: "Back", direction: "back" },
-  ] as const;
 
   return (
     <div
@@ -181,44 +176,14 @@ export function SelectionActions({
           ) : selectedShape?.type === "rectangle" ? (
             <RectangleStyleControls shape={selectedShape} editor={editor} />
           ) : null}
-          <section className="selection-organize" aria-label="Organize selection">
-            <h3>Organize</h3>
-            <div className="organization-actions">
-              {!anyFrames && !anyLocked && (
-                <button onClick={() => runCommand(() => editor.frameSelection())}>
-                  Frame selection
-                </button>
-              )}
-              {multi && !oneGroup && !anyLocked && !anyFrames && (
-                <button onClick={() => runCommand(() => editor.groupSelection())}>Group</button>
-              )}
-              {anyGrouped && !anyLocked && (
-                <button onClick={() => runCommand(() => editor.ungroupSelection())}>Ungroup</button>
-              )}
-              <button onClick={() => runCommand(() => editor.setSelectionLocked(!anyLocked))}>
-                {anyLocked ? "Unlock selection" : "Lock selection"}
-              </button>
-            </div>
-            {!anyLocked && (
-              <>
-                <h4>Order</h4>
-                <div
-                  className="selection-order-actions"
-                  role="group"
-                  aria-label="Change selection order"
-                >
-                  {orderActions.map(({ label, direction }) => (
-                    <button
-                      key={direction}
-                      onClick={() => runCommand(() => editor.orderSelection(direction))}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-          </section>
+          {anyLocked && (
+            <button
+              className="file-button"
+              onClick={() => runCommand(() => editor.setSelectionLocked(false))}
+            >
+              Unlock selection
+            </button>
+          )}
         </div>
         {!anyLocked && (
           <nav className="selection-shelf" aria-label="Selection actions">
@@ -237,7 +202,7 @@ export function SelectionActions({
                 multi
                   ? "Delete selection"
                   : selectedFrame
-                    ? "Frame"
+                    ? "Delete frame"
                     : selectedConnector
                       ? "Delete connector"
                       : `Delete ${selectedShape?.type === "text" ? "text" : (selectedShape?.kind ?? "rectangle")}`
@@ -259,6 +224,18 @@ export function SelectionActions({
                 <span>Geometry</span>
               </button>
             )}
+            <button
+              className="selection-action"
+              aria-label="More actions"
+              title="More actions · right-click"
+              onClick={(event) => {
+                const rect = event.currentTarget.getBoundingClientRect();
+                onMore({ x: rect.right, y: rect.bottom });
+              }}
+            >
+              <Icon name="more" />
+              <span>More</span>
+            </button>
           </nav>
         )}
       </section>

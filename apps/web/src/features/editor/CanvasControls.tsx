@@ -6,6 +6,7 @@ import { useEditorSnapshot } from "./useEditorSnapshot.ts";
 
 const shortcuts = [
   ["Select", "V"],
+  ["Context actions", "Right-click / Shift F10 / long-press"],
   ["Rectangle / ellipse / diamond", "R / O / D"],
   ["Hand", "H"],
   ["Text", "T"],

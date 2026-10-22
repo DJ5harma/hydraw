@@ -172,8 +172,9 @@ inactive controls for those features. Attached node/connector labels, visual exp
 
 Translation shows transient edge/center and neighboring equal-gap guides. Alt
 bypasses snapping; a click never snaps. Flat groups select and move as a unit.
-The existing floating selection properties expose Group/Ungroup, Lock and four
-stacking commands. Grouped selections hide individual-member arrangement controls;
+Context menus expose Group/Ungroup, Frame selection, Lock and stacking commands;
+More actions provides the same surface without a right-click. Floating properties
+keep styling, geometry and quick actions. Grouped selections hide individual-member arrangement controls;
 locked selections expose only Unlock. Click a locked object directly on the canvas
 to reveal that control, including after reload; it cannot be dragged or edited.
 The object navigator still marks groups/locks, but no separate lock filter or
@@ -196,3 +197,19 @@ Objects has a Frames only filter using the existing search and pagination. Click
 a frame entry fits it and closes the navigator. Frame movement carries wholly
 enclosed objects, excludes crossing groups and stops for locked contents. Resize
 changes only the boundary. No nested frames or presentation mode is implied.
+
+## Canvas context actions
+
+Right-click on a selection member preserves the whole selection. A different hit
+becomes the target; empty space clears selection and shows paste/preset/frame/view
+commands. Locked objects offer Unlock and Copy. Single frames add rename, fit and
+SVG/PNG export; deleting a frame still keeps its contents. Irrelevant actions are
+omitted. Clipboard errors appear in the workspace, and failed or stale asynchronous
+cut operations never remove objects. Cutting a frame includes its copied contents.
+
+The menu clamps to the viewport and scrolls if needed. Shift F10 / Menu key opens
+it for the selection; arrows, Home/End and native Enter/Space buttons navigate and
+activate. Escape/Tab dismiss and restore canvas focus. Outside dismissal consumes
+the canvas pointerdown. A 550 ms touch hold in Select mode opens it; movement over
+eight pixels or an additional touch cancels the timer. Native input context menus
+remain unchanged. These commands replace the long organization block in properties.

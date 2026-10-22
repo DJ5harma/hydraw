@@ -60,15 +60,18 @@ test("smart placement, group lock and ordering remain usable in the floating wor
   await page.getByRole("button", { name: "Undo", exact: true }).click();
   await page.locator("canvas").click({ position: { x: 350, y: 240 } });
   await page.locator("canvas").click({ position: { x: 550, y: 320 }, modifiers: ["Shift"] });
-  await page.getByRole("button", { name: "Group", exact: true }).click();
+  await page.getByRole("button", { name: "More actions", exact: true }).click();
+  await page.getByRole("menuitem", { name: "Group", exact: true }).click();
   await page.locator("canvas").click({ position: { x: 900, y: 600 } });
   await page.locator("canvas").click({ position: { x: 350, y: 240 } });
   await expect(page.getByRole("heading", { name: "2 objects", exact: true })).toBeVisible();
   await page.keyboard.down("Alt");
   await drag(page, [350, 240], [370, 250]);
   await page.keyboard.up("Alt");
-  await page.getByRole("button", { name: "Front", exact: true }).click();
-  await page.getByRole("button", { name: "Lock selection", exact: true }).click();
+  await page.getByRole("button", { name: "More actions", exact: true }).click();
+  await page.getByRole("menuitem", { name: "Bring to front", exact: true }).click();
+  await page.getByRole("button", { name: "More actions", exact: true }).click();
+  await page.getByRole("menuitem", { name: "Lock", exact: true }).click();
   const locked = await exported(page);
   expect(locked.version).toBe(6);
   expect(locked.shapes.slice(0, 2)).toMatchObject([
@@ -91,8 +94,10 @@ test("smart placement, group lock and ordering remain usable in the floating wor
   await closeOverlay(page);
   await page.getByRole("button", { name: "Redo", exact: true }).click();
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.getByRole("button", { name: "Ungroup", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Group", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "More actions", exact: true }).click();
+  await page.getByRole("menuitem", { name: "Ungroup", exact: true }).click();
+  await page.getByRole("button", { name: "More actions", exact: true }).click();
+  await expect(page.getByRole("menuitem", { name: "Group", exact: true })).toBeVisible();
   await page.screenshot({ path: "test-results/organization-mobile.png" });
   await expect(page.getByRole("status")).toContainText("Saved in this browser");
   const saved = await exported(page);

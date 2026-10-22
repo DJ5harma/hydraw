@@ -482,6 +482,20 @@ export class Editor {
     this.publish({ tool });
   }
 
+  /** Context actions target the hit object without collapsing an existing selection. */
+  selectContextTarget(screen: Point): void {
+    this.finishTextEditing();
+    this.cancelGesture();
+    const object = hitSceneObject(
+      this.snapshot.document,
+      screenToWorld(screen, this.snapshot.camera),
+      7 / this.snapshot.camera.zoom,
+      true,
+    );
+    if (object && this.snapshot.selectedIds.includes(object.id)) this.publish({ tool: "select" });
+    else this.select(object?.id ?? null);
+  }
+
   select(id: string | null, additive = false): void {
     this.finishTextEditing();
     this.cancelGesture();
@@ -1004,11 +1018,14 @@ export class Editor {
     this.publish({ camera: { x: 0, y: 0, zoom: 1 } });
   }
 
-  removeSelection(): void {
-    if (this.selectionLocked()) return;
+  removeSelection(includeFrameContents = false): void {
+    const ids = includeFrameContents
+      ? frameSelectionContents(this.snapshot.document, this.snapshot.selectedIds)
+      : this.snapshot.selectedIds;
+    if (this.selectionLocked(ids)) return;
     this.finishTextEditing();
     this.cancelGesture();
-    this.commit(deleteObjectsTransaction(this.snapshot.document, this.snapshot.selectedIds));
+    this.commit(deleteObjectsTransaction(this.snapshot.document, ids));
     this.publish({ selectedIds: [] });
   }
 

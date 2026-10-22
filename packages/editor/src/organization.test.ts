@@ -138,3 +138,18 @@ it("uses the same cross-type stack for selection and SVG export", () => {
   e.undo();
   expect(e.getSnapshot().document).toEqual(document);
 });
+
+it("context targeting preserves an existing multiselection, targets locks and clears blank space", () => {
+  const e = editor();
+  e.selectMany(["a", "b"]);
+  e.selectContextTarget({ x: 550, y: 320 });
+  expect(e.getSnapshot().selectedIds).toEqual(["a", "b"]);
+  e.setSelectionLocked(true);
+  e.select("c");
+  e.selectContextTarget({ x: 350, y: 240 });
+  expect(e.getSnapshot().selectedIds).toEqual(["a"]);
+  expect(e.getSnapshot().document.shapes[0]!.locked).toBe(true);
+  e.selectContextTarget({ x: 900, y: 600 });
+  expect(e.getSnapshot().selectedIds).toEqual([]);
+  expect(e.getSnapshot().interacting).toBe(false);
+});

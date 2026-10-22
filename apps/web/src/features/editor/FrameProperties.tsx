@@ -41,7 +41,7 @@ export function FrameProperties({
       <p>
         Drag the border or title to move enclosed objects. Resize the boundary without scaling them.
       </p>
-      <div className="organization-actions">
+      <div className="frame-actions">
         <button className="file-button" onClick={onFit}>
           Fit frame
         </button>

@@ -7,6 +7,9 @@ import { downloadBoard } from "../board/files.ts";
 import { BoardMenu } from "../board/BoardMenu.tsx";
 import type { BoardSession } from "../board/session.ts";
 import { useBoardPersistence } from "../board/useBoardPersistence.ts";
+import { CanvasContextMenu } from "./CanvasContextMenu.tsx";
+import { contextMenuActions } from "./context-menu-actions.ts";
+import { useCanvasContextMenu } from "./useCanvasContextMenu.ts";
 import { InsertPanel } from "./InsertPanel.tsx";
 import { SelectionActions } from "./SelectionActions.tsx";
 import { ObjectNavigator } from "./ObjectNavigator.tsx";
@@ -25,6 +28,7 @@ export function Workspace({ session }: { session: BoardSession }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const snapshot = useEditorSnapshot(editor);
   const overlay = useWorkspaceOverlay(canvasRef);
+  const context = useCanvasContextMenu(editor, canvasRef, () => overlay.open("context"));
   const selectionKey = snapshot.selectedIds.join(",");
   const { close, dismissSelection } = overlay;
   const editing = snapshot.textEditing !== null;
@@ -51,7 +55,15 @@ export function Workspace({ session }: { session: BoardSession }) {
   const distribute = (axis: DistributionAxis) =>
     runSelectionAction(() => editor.distributeSelection(axis));
   const { center, selectTool, keyboard } = createEditorControls(editor, canvasRef, duplicate);
-  useClipboard({ editor, center, onError: setActionError });
+  useClipboard({
+    editor,
+    center: () =>
+      overlay.active === "context" && context.anchor ? context.anchor.screen : center(),
+    onError: setActionError,
+    onHandled: () => {
+      if (overlay.active === "context") overlay.close();
+    },
+  });
   const { saveState, saveError, recovery, recoveryWarning, persistence } = useBoardPersistence(
     editor,
     storage,
@@ -164,6 +176,7 @@ export function Workspace({ session }: { session: BoardSession }) {
         )}
         <SelectionActions
           editor={editor}
+          onMore={context.showSelection}
           onFitFrame={fit}
           onExportFrame={() => {
             void exportImage("svg", true);
@@ -174,6 +187,20 @@ export function Workspace({ session }: { session: BoardSession }) {
           overlay={overlay.active}
           onOverlay={overlay.open}
         />
+        {overlay.active === "context" && context.anchor && (
+          <CanvasContextMenu
+            key={`${context.anchor.client.x}:${context.anchor.client.y}:${selectionKey}`}
+            position={context.anchor.client}
+            groups={contextMenuActions({
+              editor,
+              point: context.anchor.screen,
+              fit,
+              exportImage: (format) => exportImage(format, true),
+            })}
+            onClose={() => overlay.close()}
+            onError={setActionError}
+          />
+        )}
         {overlay.active === "objects" && (
           <ObjectNavigator
             editor={editor}

@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { KeyboardEvent, RefObject } from "react";
 
-export type WorkspaceOverlay = "insert" | "board" | "objects" | "geometry" | "help" | null;
+export type WorkspaceOverlay =
+  | "context"
+  | "insert"
+  | "board"
+  | "objects"
+  | "geometry"
+  | "help"
+  | null;
 
 /** One transient surface owns dismissal and focus; document/session state stays elsewhere. */
 export function useWorkspaceOverlay(canvasRef: RefObject<HTMLCanvasElement | null>) {
@@ -25,8 +32,10 @@ export function useWorkspaceOverlay(canvasRef: RefObject<HTMLCanvasElement | nul
     }
     restoreFocus.current = false;
     origin.current =
-      document.querySelector<HTMLElement>(`[data-overlay-trigger="${next}"]`) ??
-      document.querySelector<HTMLElement>('[data-overlay-trigger="board"]');
+      next === "context"
+        ? canvasRef.current
+        : (document.querySelector<HTMLElement>(`[data-overlay-trigger="${next}"]`) ??
+          document.querySelector<HTMLElement>('[data-overlay-trigger="board"]'));
     setActive(next);
   }
 
@@ -42,7 +51,9 @@ export function useWorkspaceOverlay(canvasRef: RefObject<HTMLCanvasElement | nul
       return;
     }
     const dialog = Array.from(
-      document.querySelectorAll<HTMLElement>('[data-workspace-overlay-root] [role="dialog"]'),
+      document.querySelectorAll<HTMLElement>(
+        '[data-workspace-overlay-root] [role="dialog"], [data-workspace-overlay-root][role="menu"]',
+      ),
     ).find((el) => el.getClientRects().length);
     rootRef.current = dialog?.closest<HTMLElement>("[data-workspace-overlay-root]") ?? null;
     dialog?.querySelector<HTMLElement>("input:not(:disabled)")?.focus();

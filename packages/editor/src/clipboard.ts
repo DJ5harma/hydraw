@@ -172,6 +172,7 @@ export function pastedSelection(
     changes.push(
       ...connectorTransaction("Paste selection", document.connectors.length + position, null, {
         ...connector,
+        ...metadata.get(connector.id),
         id: identity.get(connector.id)!,
         start: remap(connector.start),
         end: remap(connector.end),

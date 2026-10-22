@@ -377,3 +377,29 @@ unlock undo/redo, preset insertion, frame naming/movement/history/navigation/SVG
 export/persistence, F creation and the 320 px Insert surface. Desktop and mobile
 layouts were visually inspected. Full browser matrix and performance benchmarks
 were not rerun.
+
+## Milestone 16 — canvas context menus
+
+Completed on 23 October 2026. Objects/selections, locked objects, frames and blank
+canvas expose relevant right-click actions with shortcut hints. Targeting preserves
+an existing multiselection and never creates a gesture or history entry. Keyboard
+Menu / Shift F10, roving arrow/Home/End navigation, Escape/Tab dismissal, viewport
+clamping and touch long-press are implemented. More actions provides a visible
+entry without requiring a mouse. Native input context menus are preserved. Native copy/cut/paste shortcuts also
+close the menu; paste uses the menu target rather than the viewport center.
+
+Removed the long organization block from floating properties; styling, geometry,
+quick duplicate/delete and direct Unlock remain. Clipboard menu commands share
+native selection serialization and paste rules. Async cut writes first, verifies
+the captured document/selection and then deletes atomically; denied writes and
+changed selections keep the board intact. Cut includes a frame's copied contents,
+while Delete frame retains them. Clipboard access errors stay visible. Pasted
+connectors now receive cloned group metadata as well as nodes, preventing copies
+from selecting members of the source group. Paste retains its requested world
+location when the camera changes during clipboard access.
+
+Focused checks cover context targeting and clipboard failure/stale-selection
+safety. Three Chromium journeys cover real right-click selection/lock/group/paste,
+keyboard focus, native-input isolation, touch long-press and viewport placement,
+as well as existing frames and organization through the new menu. Desktop/mobile
+menu layouts were inspected. Full browser matrix was not rerun.
