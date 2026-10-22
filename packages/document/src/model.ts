@@ -1,4 +1,5 @@
 import type { RectangleAppearance } from "./appearance.ts";
+import type { BoardTheme } from "./theme.ts";
 /** The portable semantic model. No browser, renderer or framework dependencies. */
 export const FILLS = [
   "#e7eefb",
@@ -68,7 +69,8 @@ export const MAX_FONT_SIZE = 96;
 
 export type BoardDocument = Readonly<{
   format: "hydraw";
-  version: 6;
+  version: 7;
+  theme?: BoardTheme;
   name: string;
   shapes: readonly Shape[];
   connectors: readonly Connector[];
@@ -84,5 +86,5 @@ export const MAX_ENDPOINT_COORDINATE = MAX_COORDINATE * 2;
 export const MAX_SIZE = 100_000;
 
 export function createDocument(): BoardDocument {
-  return { format: "hydraw", version: 6, name: "Untitled board", shapes: [], connectors: [] };
+  return { format: "hydraw", version: 7, theme: "clean", name: "Untitled board", shapes: [], connectors: [] };
 }

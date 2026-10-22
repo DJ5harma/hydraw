@@ -1,4 +1,4 @@
-import { rectangleAppearance, createConnectorResolver, sceneObjects } from "@hydraw/document";
+import { rectangleAppearance, createConnectorResolver, sceneObjects, boardTheme, themePalette, themedShape, themedConnector } from "@hydraw/document";
 import type { Rectangle, Shape, TextShape, Connector } from "@hydraw/document";
 import { renderGuides } from "./render-guides.ts";
 import { drawConnector, drawConnectorHandles } from "./render-connectors.ts";
@@ -52,7 +52,7 @@ function drawRectangle(
       Math.min(style.cornerRadius * camera.zoom, width / 2, height / 2),
     );
   if (shape.fill !== "transparent") {
-    ctx.fillStyle = shape.fill;
+  ctx.fillStyle = shape.fill;
     ctx.fill();
   }
   const lineWidth = style.strokeWidth * camera.zoom;
@@ -75,11 +75,12 @@ function drawText(
   shape: TextShape,
   camera: Camera,
   textLayout: TextLayouter,
+  fontFamily = TEXT_FONT_FAMILY,
 ): void {
   ctx.save();
   ctx.translate(shape.x * camera.zoom + camera.x, shape.y * camera.zoom + camera.y);
   ctx.scale(camera.zoom, camera.zoom);
-  ctx.font = `${shape.fontWeight} ${shape.fontSize}px ${TEXT_FONT_FAMILY}`;
+  ctx.font = `${shape.fontWeight} ${shape.fontSize}px ${fontFamily}`;
   ctx.fillStyle = shape.color;
   ctx.textBaseline = "top";
   ctx.textAlign = shape.textAlign;
@@ -140,6 +141,7 @@ function drawShape(
   camera: Camera,
   viewport: Viewport,
   textLayout: TextLayouter,
+  fontFamily: string,
 ): void {
   if (shape.type === "rectangle") drawRectangle(ctx, shape, camera, viewport);
   else if (
@@ -148,7 +150,7 @@ function drawShape(
     (shape.x + shape.width) * camera.zoom + camera.x >= 0 &&
     (shape.y + shape.height) * camera.zoom + camera.y >= 0
   )
-    drawText(ctx, shape, camera, textLayout);
+    drawText(ctx, shape, camera, textLayout, fontFamily);
 }
 
 /** Draws a derived scene. It cannot subscribe, dispatch commands or mutate editor state. */
@@ -163,14 +165,20 @@ function renderScene(
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, width, height);
   const { camera, selectedId } = snapshot;
+  const theme = boardTheme(snapshot.document);
+  const palette = themePalette(theme);
+  ctx.fillStyle = palette.background;
+  ctx.fillRect(0, 0, width, height);
   let spacing = 24 * camera.zoom;
   while (spacing < 14) spacing *= 2;
-  ctx.fillStyle = "#d5d9df";
+  ctx.fillStyle = palette.grid;
   for (let x = ((camera.x % spacing) + spacing) % spacing; x < width; x += spacing) {
     for (let y = ((camera.y % spacing) + spacing) % spacing; y < height; y += spacing)
       ctx.fillRect(x, y, 1.2, 1.2);
   }
-  const { shapes: sceneShapes, connectors: sceneConnectors } = selectionScene(snapshot);
+  const selectedScene = selectionScene(snapshot);
+  const sceneShapes = selectedScene.shapes.map((shape) => themedShape(shape, theme));
+  const sceneConnectors = selectedScene.connectors.map((connector) => themedConnector(connector, theme));
   const resolveConnector = createConnectorResolver(sceneShapes);
   const selectedIds = new Set(snapshot.selectedIds);
   for (const object of sceneObjects({
@@ -190,7 +198,7 @@ function renderScene(
         drawLabel(ctx, object, sceneShapes, camera, textLayout, measure);
     } else {
       if (snapshot.textEditing?.ownerId || snapshot.textEditing?.draft.id !== object.id)
-        drawShape(ctx, object, camera, viewport, textLayout);
+        drawShape(ctx, object, camera, viewport, textLayout, palette.fontFamily);
       if (object.type === "rectangle" && snapshot.textEditing?.ownerId !== object.id)
         drawLabel(ctx, object, sceneShapes, camera, textLayout, measure);
     }

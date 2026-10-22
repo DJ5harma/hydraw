@@ -42,8 +42,8 @@ it("keeps a node label attached through movement, resize, duplicate, save, clear
   expect(editor.getSnapshot().document).toEqual(document);
 });
 it("labels a connector without changing bindings or endpoints and migrates v3", () => {
-  const earlier = { ...createDocument(), version: 3 };
-  expect(decodeDocument(earlier).version).toBe(6);
+  const earlier = { format: "hydraw", version: 3, name: "Earlier", shapes: [], connectors: [] };
+  expect(decodeDocument(earlier).version).toBe(7);
   const editor = new Editor(createDocument(), () => "edge", measure);
   editor.addConnector({ x: 200, y: 300 });
   const before = editor.getSnapshot().document.connectors[0]!;

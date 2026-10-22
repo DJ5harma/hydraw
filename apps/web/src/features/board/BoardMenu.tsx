@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Icon, Mark } from "../../components/icons.tsx";
 import type { SaveState } from "./persistence.ts";
+import type { BoardTheme } from "@hydraw/document";
 import "./board-menu.css";
 
 export function BoardMenu({
@@ -19,6 +20,8 @@ export function BoardMenu({
   onToggle,
   onClose,
   onObjects,
+  theme,
+  onThemeChange,
 }: {
   name: string;
   saveState: SaveState;
@@ -35,6 +38,8 @@ export function BoardMenu({
   onToggle: () => void;
   onClose: () => void;
   onObjects: () => void;
+  theme: BoardTheme;
+  onThemeChange: (theme: BoardTheme) => void;
 }) {
   const cancelledEdit = useRef(false);
   const [selectionOnly, setSelectionOnly] = useState(false);
@@ -145,6 +150,15 @@ export function BoardMenu({
               <Icon name="recover" />
               <span>Restore previous board</span>
             </button>
+            <div className="board-menu-divider" />
+            <label className="board-export-area">
+              Board style
+              <select aria-label="Board style" value={theme} onChange={(event) => onThemeChange(event.target.value as BoardTheme)}>
+                <option value="clean">Clean</option>
+                <option value="notebook">Notebook</option>
+                <option value="blueprint">Blueprint</option>
+              </select>
+            </label>
             <div className="board-menu-divider" />
             <label className="board-export-area">
               Export image

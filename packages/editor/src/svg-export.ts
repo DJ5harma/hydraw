@@ -3,6 +3,10 @@ import {
   rectangleAppearance,
   resolveConnector,
   sceneObjects,
+  boardTheme,
+  themePalette,
+  themedShape,
+  themedConnector,
 } from "@hydraw/document";
 import type {
   BoardDocument,
@@ -105,7 +109,7 @@ function rectangleElement(shape: Rectangle): string {
   return `<rect ${common} x="${number(shape.x)}" y="${number(shape.y)}" width="${number(shape.width)}" height="${number(shape.height)}" rx="${number(Math.min(appearance.cornerRadius, shape.width / 2, shape.height / 2))}"/>`;
 }
 
-function textElements(shape: TextShape, measure: TextMeasurer, clipId?: string): string {
+function textElements(shape: TextShape, measure: TextMeasurer, clipId?: string, fontFamily = TEXT_FONT_FAMILY): string {
   const layout = layoutText(shape, measure);
   const x =
     shape.textAlign === "left"
@@ -122,7 +126,7 @@ function textElements(shape: TextShape, measure: TextMeasurer, clipId?: string):
         `<tspan x="${number(x)}" y="${number(shape.y + TEXT_PADDING + index * shape.fontSize * TEXT_LINE_HEIGHT + shape.fontSize * 0.15)}" dominant-baseline="text-before-edge">${escapeXml(line)}</tspan>`,
     )
     .join("");
-  return `<text${clip} font-family="${escapeXml(TEXT_FONT_FAMILY)}" font-size="${number(shape.fontSize)}" font-weight="${shape.fontWeight}" text-anchor="${anchor}" fill="${escapeXml(shape.color)}">${text}</text>`;
+  return `<text${clip} font-family="${escapeXml(fontFamily)}" font-size="${number(shape.fontSize)}" font-weight="${shape.fontWeight}" text-anchor="${anchor}" fill="${escapeXml(shape.color)}">${text}</text>`;
 }
 
 function labelElements(
@@ -130,6 +134,8 @@ function labelElements(
   shapes: readonly Shape[],
   measure: TextMeasurer,
   key: string,
+  fontFamily: string,
+  theme: ReturnType<typeof boardTheme>,
 ): { svg: string; defs?: string } {
   const label = labelTextShape(owner, shapes, measure);
   if (!label) return { svg: "" };
@@ -139,10 +145,10 @@ function labelElements(
   const backing = labelBackdropBounds(label, measure);
   const background =
     owner.type === "connector"
-      ? `<rect x="${number(backing.x)}" y="${number(backing.y)}" width="${number(backing.width)}" height="${number(Math.min(backing.height, clipBounds.height))}" fill="#ffffff"/>`
+      ? `<rect x="${number(backing.x)}" y="${number(backing.y)}" width="${number(backing.width)}" height="${number(Math.min(backing.height, clipBounds.height))}" fill="${themePalette(theme).background}"/>`
       : "";
   return {
-    svg: `<g opacity="${number(owner.type === "rectangle" ? rectangleAppearance(owner).opacity / 100 : 1)}">${background}${textElements(label, measure, clipId)}</g>`,
+    svg: `<g opacity="${number(owner.type === "rectangle" ? rectangleAppearance(owner).opacity / 100 : 1)}">${background}${textElements(label, measure, clipId, fontFamily)}</g>`,
     defs,
   };
 }
@@ -180,9 +186,15 @@ function connectorBounds(connector: Connector, shapes: readonly Shape[]): Bounds
 
 /** Serialize only document semantics; no DOM or browser APIs are accessed. */
 export function exportSvg(document: BoardDocument, options: SvgExportOptions): string {
+  const theme = boardTheme(document);
+  const palette = themePalette(theme);
   const padding = safePadding(options.padding);
-  const background = safeBackground(options.background);
-  const content = selectedContent(document, options.ids);
+  const background = safeBackground(options.background ?? (theme === "clean" ? undefined : palette.background));
+  const rawContent = selectedContent(document, options.ids);
+  const content = {
+    shapes: rawContent.shapes.map((shape) => themedShape(shape, theme)),
+    connectors: rawContent.connectors.map((connector) => themedConnector(connector, theme)),
+  };
   const itemBounds: Bounds[] = content.shapes.map((shape) => {
     if (shape.type === "text") {
       const layout = layoutText(shape, options.measureText);
@@ -232,10 +244,10 @@ export function exportSvg(document: BoardDocument, options: SvgExportOptions): s
     if (object.type === "connector") scene.push(connectorElement(object, document.shapes));
     else if (object.type === "rectangle") scene.push(rectangleElement(object));
     else {
-      scene.push(textElements(object, options.measureText));
+      scene.push(textElements(object, options.measureText, undefined, palette.fontFamily));
       continue;
     }
-    const label = labelElements(object, document.shapes, options.measureText, String(labelIndex++));
+      const label = labelElements(object, document.shapes.map((shape) => themedShape(shape, theme)), options.measureText, String(labelIndex++), palette.fontFamily, theme);
     if (label.svg) {
       if (label.defs) labelDefs.push(label.defs);
       scene.push(label.svg);

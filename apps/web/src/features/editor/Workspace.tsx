@@ -1,4 +1,5 @@
 import type { Alignment, DistributionAxis } from "@hydraw/document";
+import { boardTheme } from "@hydraw/document";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { BoardTransferDialog } from "../board/BoardTransferDialog.tsx";
 import type { TransferMode } from "../board/BoardTransferDialog.tsx";
@@ -120,6 +121,8 @@ export function Workspace({ session }: { session: BoardSession }) {
         <InlineTextEditor editor={editor} canvasRef={canvasRef} />
         <BoardMenu
           name={snapshot.document.name}
+          theme={boardTheme(snapshot.document)}
+          onThemeChange={(theme) => editor.setBoardTheme(theme)}
           saveState={saveState}
           open={overlay.active === "board"}
           onToggle={() => overlay.open(overlay.active === "board" ? null : "board")}

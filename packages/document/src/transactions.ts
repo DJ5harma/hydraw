@@ -9,6 +9,8 @@ import type {
   ObjectMetadata,
 } from "./model.ts";
 import { decodeName, decodeShape, decodeConnector, assertConnectorGraph } from "./validation.ts";
+import { isBoardTheme } from "./theme.ts";
+import type { BoardTheme } from "./theme.ts";
 
 type ShapeChange = Readonly<{
   type: "shape";
@@ -23,7 +25,8 @@ type ConnectorChange = Readonly<{
   after: Connector | null;
 }>;
 type NameChange = Readonly<{ type: "name"; before: string; after: string }>;
-export type DocumentChange = ShapeChange | ConnectorChange | NameChange;
+type ThemeChange = Readonly<{ type: "theme"; before: BoardTheme; after: BoardTheme }>;
+export type DocumentChange = ShapeChange | ConnectorChange | NameChange | ThemeChange;
 export type DocumentTransaction = Readonly<{ label: string; changes: readonly DocumentChange[] }>;
 
 function sameLabel(a?: ShapeLabel, b?: ShapeLabel): boolean {
@@ -151,6 +154,13 @@ export function nameTransaction(before: string, after: string): DocumentTransact
   });
 }
 
+export function boardThemeTransaction(before: BoardTheme, after: BoardTheme): DocumentTransaction | null {
+  if (before === after) return null;
+  return Object.freeze({ label: "Change board style", changes: Object.freeze([
+    Object.freeze({ type: "theme" as const, before, after }),
+  ]) });
+}
+
 type RecordChange<T> = Readonly<{ index: number; before: T | null; after: T | null }>;
 
 /** Each collection is copied only when touched; all changes stay private until graph validation. */
@@ -193,10 +203,16 @@ export function applyTransaction(
 ): BoardDocument {
   if (transaction.changes.length === 0) return document;
   let name = document.name;
+  let theme = document.theme;
   for (const change of transaction.changes) {
-    if (change.type !== "name") continue;
-    if (name !== change.before) throw new Error("The board name changed before this transaction.");
-    name = decodeName(change.after);
+    if (change.type === "name") {
+      if (name !== change.before) throw new Error("The board name changed before this transaction.");
+      name = decodeName(change.after);
+    } else if (change.type === "theme") {
+      if ((theme ?? "clean") !== change.before) throw new Error("The board style changed before this transaction.");
+      if (!isBoardTheme(change.after)) throw new Error("Invalid board style transaction.");
+      theme = change.after;
+    }
   }
   const shapes = applyRecordChanges(
     document.shapes,
@@ -209,7 +225,7 @@ export function applyTransaction(
     { kind: "connector", limit: MAX_CONNECTORS, decode: decodeConnector, same: sameConnector },
   );
   assertConnectorGraph(shapes, connectors);
-  return Object.freeze({ ...document, name, shapes, connectors });
+  return Object.freeze({ ...document, name, ...(theme === undefined ? {} : { theme }), shapes, connectors });
 }
 
 export function invertTransaction(transaction: DocumentTransaction): DocumentTransaction {
@@ -222,6 +238,8 @@ export function invertTransaction(transaction: DocumentTransaction): DocumentTra
 function invertChange(change: DocumentChange): DocumentChange {
   if (change.type === "name")
     return Object.freeze({ type: "name", before: change.after, after: change.before });
+  if (change.type === "theme")
+    return Object.freeze({ type: "theme", before: change.after, after: change.before });
   if (change.type === "connector")
     return Object.freeze({
       type: "connector",

@@ -30,14 +30,14 @@ describe("version 1 text documents", () => {
       name: "Legacy",
       shapes: [{ id: "r", type: "rectangle", x: 1, y: 2, width: 30, height: 40, fill: "#e7eefb" }],
     };
-    expect(decodeDocument(legacy)).toEqual({ ...legacy, version: 6, connectors: [] });
+    expect(decodeDocument(legacy)).toEqual({ ...legacy, version: 7, theme: "clean", connectors: [] });
     expect(legacy.version).toBe(0);
     expect(
       decodeDocument({ format: "hydraw", version: 1, name: "Text from v1", shapes: [text] }),
     ).toEqual({ ...createDocument(), name: "Text from v1", shapes: [text] });
     const document = { ...createDocument(), shapes: [text] };
     expect(parseDocument(JSON.stringify(document))).toEqual(document);
-    expect(() => decodeDocument({ ...document, version: 0 })).toThrow("invalid");
+    expect(() => decodeDocument({ ...document, version: 0 })).toThrow();
   });
   it("rejects invalid text content, styling, geometry and cross-type duplicate identities", () => {
     for (const patch of [

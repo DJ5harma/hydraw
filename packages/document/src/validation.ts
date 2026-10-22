@@ -12,6 +12,7 @@ import {
   MIN_FONT_SIZE,
   MAX_FONT_SIZE,
 } from "./model.ts";
+import { isBoardTheme } from "./theme.ts";
 import type {
   Fill,
   ObjectMetadata,
@@ -48,7 +49,8 @@ export function decodeDocument(value: unknown): BoardDocument {
       value.version !== 3 &&
       value.version !== 4 &&
       value.version !== 5 &&
-      value.version !== 6)
+      value.version !== 6 &&
+      value.version !== 7)
   ) {
     throw new Error("This board uses an unsupported Hydraw format.");
   }
@@ -58,6 +60,8 @@ export function decodeDocument(value: unknown): BoardDocument {
   const name = decodeName(value.name);
   const ids = new Set<string>();
   const valueVersion = value.version;
+  if ((valueVersion < 7 && value.theme !== undefined) || (value.theme !== undefined && !isBoardTheme(value.theme)))
+    throw new Error("This board contains an unsupported visual theme.");
   const shapes = value.shapes.map((value: unknown): Shape => {
     if (
       valueVersion < 3 &&
@@ -102,7 +106,8 @@ export function decodeDocument(value: unknown): BoardDocument {
   assertConnectorGraph(shapes, connectors);
   return Object.freeze({
     format: "hydraw",
-    version: 6,
+    version: 7,
+    theme: value.theme ?? "clean",
     name,
     shapes: Object.freeze(shapes),
     connectors: Object.freeze(connectors),

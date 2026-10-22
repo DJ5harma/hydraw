@@ -7,6 +7,7 @@ export * from "./selection-operations.ts";
 export * from "./arrangement.ts";
 
 export * from "./appearance.ts";
+export * from "./theme.ts";
 
 export * from "./organization.ts";
 export * from "./presets.ts";
