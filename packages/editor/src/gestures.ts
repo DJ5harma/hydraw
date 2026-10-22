@@ -18,6 +18,7 @@ import type { SelectionGesture } from "./selection.ts";
 import type { ConnectorGesture } from "./connector-interactions.ts";
 import {
   endpointAt,
+  connectionHandleAt,
   hitSceneObject,
   hitConnectorEnd,
   previewConnectorGesture,
@@ -40,7 +41,11 @@ export function previewGesture(
 ): Partial<EditorSnapshot> {
   if (gesture.kind === "marquee" || gesture.kind === "move-selection")
     return previewSelectionGesture(gesture, screen, camera, document, snapping);
-  if (gesture.kind === "connect" || gesture.kind === "reconnect")
+  if (
+    gesture.kind === "connect" ||
+    gesture.kind === "reconnect" ||
+    gesture.kind === "create-connected"
+  )
     return previewConnectorGesture(gesture, screen, camera, document.shapes);
   if (gesture.kind === "pan")
     return {
@@ -175,6 +180,36 @@ export function startGesture(
     : document.connectors.find((edge) => edge.id === selectedId);
   const endpoint = connector ? hitConnectorEnd(connector, document.shapes, screen, camera) : null;
   const handle = selectedShape ? hitResizeHandle(selectedShape, screen, camera) : null;
+  const connectionHandle =
+    selectedShape && tool === "select" && !lockedSelection
+      ? connectionHandleAt(selectedShape, screen, camera)
+      : null;
+  if (
+    connectionHandle &&
+    selectedShape?.type === "rectangle" &&
+    selectedShape.kind !== "frame" &&
+    document.connectors.length < MAX_CONNECTORS &&
+    document.shapes.length < MAX_SHAPES
+  ) {
+    const shapeId = makeId();
+    const id = makeId();
+    const start = { type: "binding" as const, shapeId: selectedShape.id };
+    return {
+      gesture: { kind: "create-connected", id, shapeId, source: selectedShape, start },
+      patch: {
+        interacting: true,
+        activeEndpoint: "end",
+        connectorPreview: {
+          id,
+          type: "connector",
+          start,
+          end: start,
+          color: "#243e33",
+          arrowhead: "arrow",
+        },
+      },
+    };
+  }
   if (!hitId && (additive || !endpoint) && !handle)
     return {
       gesture: { kind: "marquee", start: raw, before: selectedIds, additive },

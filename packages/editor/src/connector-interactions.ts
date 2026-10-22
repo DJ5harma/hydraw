@@ -8,7 +8,7 @@ import {
   MAX_ENDPOINT_COORDINATE,
   resolveConnector,
 } from "@hydraw/document";
-import type { BoardDocument, Connector, Endpoint, Point, Shape } from "@hydraw/document";
+import type { BoardDocument, Connector, Endpoint, Point, Rectangle, Shape } from "@hydraw/document";
 import { labelClipBounds } from "./labels.ts";
 import { clamp, screenToWorld } from "./geometry.ts";
 import type { Camera, EditorSnapshot } from "./types.ts";
@@ -16,7 +16,42 @@ import type { Camera, EditorSnapshot } from "./types.ts";
 export type ConnectorEnd = "start" | "end";
 export type ConnectorGesture =
   | { kind: "connect"; id: string; start: Endpoint }
+  | { kind: "create-connected"; id: string; shapeId: string; source: Rectangle; start: Endpoint }
   | { kind: "reconnect"; connector: Connector; endpoint: ConnectorEnd };
+
+export type ConnectionHandle = "north" | "east" | "south" | "west";
+
+export function connectionHandlePoint(shape: Shape, handle: ConnectionHandle): Point {
+  switch (handle) {
+    case "north":
+      return { x: shape.x + shape.width / 2, y: shape.y };
+    case "east":
+      return { x: shape.x + shape.width, y: shape.y + shape.height / 2 };
+    case "south":
+      return { x: shape.x + shape.width / 2, y: shape.y + shape.height };
+    case "west":
+      return { x: shape.x, y: shape.y + shape.height / 2 };
+  }
+}
+
+export function connectionHandleAt(
+  shape: Shape,
+  screen: Point,
+  camera: Camera,
+): ConnectionHandle | null {
+  if (shape.type !== "rectangle" || shape.kind === "frame") return null;
+  for (const handle of ["north", "east", "south", "west"] as const) {
+    const point = connectionHandlePoint(shape, handle);
+    if (
+      Math.hypot(
+        point.x * camera.zoom + camera.x - screen.x,
+        point.y * camera.zoom + camera.y - screen.y,
+      ) <= 9
+    )
+      return handle;
+  }
+  return null;
+}
 
 export function endpointAt(shapes: readonly Shape[], point: Point, tolerance: number): Endpoint {
   const targets = shapes.filter((shape) => !isFrame(shape));
@@ -84,7 +119,7 @@ export function previewConnectorGesture(
   const endpoint = endpointAt(shapes, point, 10 / camera.zoom);
   return {
     connectorPreview:
-      gesture.kind === "connect"
+      gesture.kind === "connect" || gesture.kind === "create-connected"
         ? {
             id: gesture.id,
             type: "connector",
@@ -93,7 +128,9 @@ export function previewConnectorGesture(
             color: "#243e33",
             arrowhead: "arrow",
           }
-        : { ...gesture.connector, [gesture.endpoint]: endpoint },
+        : gesture.kind === "reconnect"
+          ? { ...gesture.connector, [gesture.endpoint]: endpoint }
+          : null,
     bindingTargetId: endpoint.type === "binding" ? endpoint.shapeId : null,
   };
 }

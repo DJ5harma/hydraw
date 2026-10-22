@@ -1,5 +1,7 @@
 import {
   decodeDocument,
+  boardTheme,
+  boardThemeTransaction,
   createFrameAroundSelection,
   frameSelectionContents,
   isFrame,
@@ -26,6 +28,7 @@ import {
   MAX_TEXT_LENGTH,
   MAX_COORDINATE,
   MAX_SHAPES,
+  MAX_SIZE,
   nameTransaction,
   shapeTransaction,
 } from "@hydraw/document";
@@ -42,12 +45,13 @@ import type {
   Rectangle,
   RectangleAppearance,
   ShapeKind,
+  BoardTheme,
   OrderDirection,
   Shape,
   TextShape,
 } from "@hydraw/document";
 import { labelTextShape } from "./labels.ts";
-import { hitSceneObject, hitConnectorEnd } from "./connector-interactions.ts";
+import { hitSceneObject, hitConnectorEnd, connectionHandleAt } from "./connector-interactions.ts";
 import type { ConnectorEnd } from "./connector-interactions.ts";
 import { clamp, hitResizeHandle, screenToWorld } from "./geometry.ts";
 import type { ResizeHandle } from "./geometry.ts";
@@ -619,6 +623,12 @@ export class Editor {
     this.publish({ fill });
   }
 
+  setBoardTheme(theme: BoardTheme): void {
+    this.finishTextEditing();
+    this.cancelGesture();
+    this.commit(boardThemeTransaction(boardTheme(this.snapshot.document), theme));
+  }
+
   setRectangleStyle(style: Partial<RectangleAppearance>): void {
     if (this.selectionLocked()) return;
     this.finishTextEditing();
@@ -857,6 +867,15 @@ export class Editor {
       : null;
   }
 
+  getConnectionHandleAt(screen: Point): boolean {
+    const shape = this.selectionLocked() ? undefined : this.selectedShape();
+    return Boolean(
+      shape &&
+      this.snapshot.tool === "select" &&
+      connectionHandleAt(shape, screen, this.snapshot.camera),
+    );
+  }
+
   begin(screen: Point, pan = false, additive = false): void {
     if (this.documentLocked) return;
     this.finishTextEditing();
@@ -886,7 +905,10 @@ export class Editor {
             ? this.frameDraft(patch.preview)
             : { ...patch.preview, zIndex: this.creationRank(true) },
       };
-    if (this.gesture?.kind === "connect" && patch.connectorPreview)
+    if (
+      (this.gesture?.kind === "connect" || this.gesture?.kind === "create-connected") &&
+      patch.connectorPreview
+    )
       return {
         ...patch,
         connectorPreview: { ...patch.connectorPreview, zIndex: this.creationRank(false) },
@@ -923,7 +945,9 @@ export class Editor {
           updateObjectsTransaction(this.snapshot.document, "Move selection", selectionPreview),
         );
       } else if (
-        (gesture?.kind === "connect" || gesture?.kind === "reconnect") &&
+        (gesture?.kind === "connect" ||
+          gesture?.kind === "reconnect" ||
+          gesture?.kind === "create-connected") &&
         connectorPreview
       ) {
         const selfBound =
@@ -933,17 +957,69 @@ export class Editor {
         const ends = resolveConnector(connectorPreview, this.snapshot.document.shapes);
         if (
           !selfBound &&
-          (gesture.kind !== "connect" ||
+          ((gesture.kind !== "connect" && gesture.kind !== "create-connected") ||
             Math.hypot(ends.end.x - ends.start.x, ends.end.y - ends.start.y) * camera.zoom >= 6)
         ) {
-          this.commitConnector(
-            gesture.kind === "connect" ? "Create connector" : "Reconnect endpoint",
-            gesture.kind === "connect" ? null : gesture.connector,
-            gesture.kind === "connect"
-              ? { ...connectorPreview, zIndex: this.creationRank(false) }
-              : connectorPreview,
-          );
-          this.publish({ selectedIds: [connectorPreview.id], tool: "select" });
+          if (gesture.kind === "create-connected" && connectorPreview.end.type === "point") {
+            const point = connectorPreview.end;
+            const width = Math.min(MAX_SIZE, gesture.source.width);
+            const height = Math.min(MAX_SIZE, gesture.source.height);
+            const shape: Rectangle = {
+              id: gesture.shapeId,
+              type: "rectangle",
+              x: clamp(point.x - width / 2, -MAX_COORDINATE, MAX_COORDINATE),
+              y: clamp(point.y - height / 2, -MAX_COORDINATE, MAX_COORDINATE),
+              width,
+              height,
+              fill: gesture.source.fill,
+              ...(gesture.source.kind && gesture.source.kind !== "rectangle"
+                ? { kind: gesture.source.kind }
+                : {}),
+              ...(gesture.source.appearance ? { appearance: gesture.source.appearance } : {}),
+              zIndex: this.creationRank(true),
+            };
+            const connector: Connector = {
+              ...connectorPreview,
+              start: gesture.start,
+              end: { type: "binding", shapeId: shape.id },
+              zIndex: this.creationRank(false),
+            };
+            const shapeChange = shapeTransaction(
+              "Create connected shape",
+              this.snapshot.document.shapes.length,
+              null,
+              shape,
+            );
+            const connectorChange = connectorTransaction(
+              "Create connected shape",
+              this.snapshot.document.connectors.length,
+              null,
+              connector,
+            );
+            this.commit(
+              shapeChange && connectorChange
+                ? {
+                    label: "Create connected shape",
+                    changes: [...shapeChange.changes, ...connectorChange.changes],
+                  }
+                : null,
+            );
+            this.publish({ selectedIds: [shape.id], tool: "select" });
+            this.editText(shape.id);
+          } else {
+            this.commitConnector(
+              gesture.kind === "connect" || gesture.kind === "create-connected"
+                ? "Create connector"
+                : "Reconnect endpoint",
+              gesture.kind === "connect" || gesture.kind === "create-connected"
+                ? null
+                : gesture.connector,
+              gesture.kind === "connect" || gesture.kind === "create-connected"
+                ? { ...connectorPreview, zIndex: this.creationRank(false) }
+                : connectorPreview,
+            );
+            this.publish({ selectedIds: [connectorPreview.id], tool: "select" });
+          }
         }
       } else if (
         gesture?.kind === "draw" &&

@@ -1,6 +1,7 @@
 import type { Bounds, Connector, Shape } from "@hydraw/document";
 import { handlePoint, resizeHandles } from "../geometry.ts";
 import { selectionBounds } from "../selection.ts";
+import { connectionHandlePoint } from "../connector-interactions.ts";
 import type { Camera, EditorSnapshot } from "../types.ts";
 
 function box(ctx: CanvasRenderingContext2D, bounds: Bounds, camera: Camera): void {
@@ -46,6 +47,25 @@ export function drawSelection(
         ctx.fillRect(x - 3, y - 3, 6, 6);
         ctx.strokeRect(x - 3, y - 3, 6, 6);
       }
+    if (
+      snapshot.tool === "select" &&
+      !snapshot.textEditing &&
+      !selected.locked &&
+      selected.type === "rectangle" &&
+      selected.kind !== "frame"
+    ) {
+      for (const handle of ["north", "east", "south", "west"] as const) {
+        const point = connectionHandlePoint(selected, handle);
+        const x = point.x * camera.zoom + camera.x;
+        const y = point.y * camera.zoom + camera.y;
+        ctx.beginPath();
+        ctx.arc(x, y, 5, 0, Math.PI * 2);
+        ctx.fillStyle = "#ffffff";
+        ctx.fill();
+        ctx.strokeStyle = "#3568db";
+        ctx.stroke();
+      }
+    }
   }
   if (snapshot.marquee) {
     const bounds = snapshot.marquee;

@@ -69,6 +69,54 @@ describe("connector interactions", () => {
     editor.redo();
     expect(edge(editor)).toEqual(original);
   });
+  it("creates a connected node at an empty drop, selects it for typing, and undoes node plus edge together", () => {
+    let nextId = 0;
+    const editor = new Editor(
+      { ...createDocument(), shapes: [a] },
+      () => `created-${++nextId}`,
+      (value) => value.length * 10,
+    );
+    editor.select("a");
+    expect(editor.getConnectionHandleAt({ x: 280, y: 260 })).toBe(true);
+    editor.begin({ x: 280, y: 260 });
+    editor.move({ x: 480, y: 260 });
+    editor.finish();
+    const document = editor.getSnapshot().document;
+    expect(document.shapes).toHaveLength(2);
+    expect(document.shapes[1]).toMatchObject({
+      type: "rectangle",
+      x: 390,
+      y: 200,
+      width: 180,
+      height: 120,
+    });
+    expect(document.connectors).toHaveLength(1);
+    expect(document.connectors[0]).toMatchObject({
+      start: { type: "binding", shapeId: "a" },
+      end: { type: "binding", shapeId: "created-1" },
+    });
+    expect(editor.getSnapshot()).toMatchObject({
+      selectedId: "created-1",
+      textEditing: { ownerId: "created-1" },
+    });
+    editor.cancelTextEditing();
+    editor.undo();
+    expect(editor.getSnapshot().document.shapes).toEqual([a]);
+    expect(editor.getSnapshot().document.connectors).toEqual([]);
+  });
+  it("connects an existing target from a selected shape handle without creating a node", () => {
+    let nextId = 0;
+    const editor = new Editor({ ...createDocument(), shapes: [a, b] }, () => `created-${++nextId}`);
+    editor.select("a");
+    editor.begin({ x: 280, y: 260 });
+    editor.move({ x: 550, y: 260 });
+    editor.finish();
+    expect(editor.getSnapshot().document.shapes).toEqual([a, b]);
+    expect(editor.getSnapshot().document.connectors[0]).toMatchObject({
+      start: { type: "binding", shapeId: "a" },
+      end: { type: "binding", shapeId: "b" },
+    });
+  });
   it("reconnects endpoint handles to nodes and canvas points, with cancellation and self-binding rejection", () => {
     const editor = setup([bound]);
     editor.select("bound");
