@@ -403,3 +403,14 @@ safety. Three Chromium journeys cover real right-click selection/lock/group/past
 keyboard focus, native-input isolation, touch long-press and viewport placement,
 as well as existing frames and organization through the new menu. Desktop/mobile
 menu layouts were inspected. Full browser matrix was not rerun.
+
+## Milestone 17 — connected shape creation
+
+Selected ordinary shapes expose four connection handles. Dragging a handle to another
+shape binds an arrow between them; dropping in empty space creates a matching node
+and its bound arrow in one history step, selects the node and opens its label editor.
+The Connector (C) tool retains free-point drawing.
+
+Focused Chromium journeys cover handle interaction, label editing, separate label undo
+and atomic node-plus-arrow undo, existing-node connections, gesture cancellation and
+the C-tool free-point flow.
