@@ -1,3 +1,4 @@
+import { drawInk } from "./render-ink.ts";
 import {
   rectangleAppearance,
   createConnectorResolver,
@@ -161,6 +162,10 @@ function drawShape(
   fontFamily: string,
   images: ImagePainter,
 ): void {
+  if (shape.type === "ink") {
+    drawInk(ctx, shape, camera);
+    return;
+  }
   if (shape.type === "image") {
     images.draw(ctx, shape, camera);
     return;

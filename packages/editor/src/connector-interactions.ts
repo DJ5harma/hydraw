@@ -21,16 +21,17 @@ export type ConnectorGesture =
 
 export type ConnectionHandle = "north" | "east" | "south" | "west";
 
-export function connectionHandlePoint(shape: Shape, handle: ConnectionHandle): Point {
+export function connectionHandlePoint(shape: Shape, handle: ConnectionHandle, zoom = 1): Point {
+  const offset = 18 / zoom;
   switch (handle) {
     case "north":
-      return { x: shape.x + shape.width / 2, y: shape.y };
+      return { x: shape.x + shape.width / 2, y: shape.y - offset };
     case "east":
-      return { x: shape.x + shape.width, y: shape.y + shape.height / 2 };
+      return { x: shape.x + shape.width + offset, y: shape.y + shape.height / 2 };
     case "south":
-      return { x: shape.x + shape.width / 2, y: shape.y + shape.height };
+      return { x: shape.x + shape.width / 2, y: shape.y + shape.height + offset };
     case "west":
-      return { x: shape.x, y: shape.y + shape.height / 2 };
+      return { x: shape.x - offset, y: shape.y + shape.height / 2 };
   }
 }
 
@@ -41,12 +42,12 @@ export function connectionHandleAt(
 ): ConnectionHandle | null {
   if (shape.type !== "rectangle" || shape.kind === "frame") return null;
   for (const handle of ["north", "east", "south", "west"] as const) {
-    const point = connectionHandlePoint(shape, handle);
+    const point = connectionHandlePoint(shape, handle, camera.zoom);
     if (
       Math.hypot(
         point.x * camera.zoom + camera.x - screen.x,
         point.y * camera.zoom + camera.y - screen.y,
-      ) <= 9
+      ) <= 7
     )
       return handle;
   }

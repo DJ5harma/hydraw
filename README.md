@@ -1,6 +1,6 @@
 # Hydraw
 
-An owned visual workspace, built incrementally. The current increment is a local visual editor with rectangles, text and bound connectors with a React shell and a framework-independent Canvas 2D engine. See [PLAN.md](PLAN.md) for the larger product direction, [the milestone log](docs/PROGRESS.md) for what actually exists, and [the code audit](docs/CODE_REVIEW.md) for cleanup findings.
+An owned visual workspace, built incrementally. The current increment is a local visual editor with shapes, text, images, freehand drawing and bound connectors with a React shell and a framework-independent Canvas 2D engine. See [PLAN.md](PLAN.md) for the larger product direction, [the milestone log](docs/PROGRESS.md) for what actually exists, and [the code audit](docs/CODE_REVIEW.md) for cleanup findings.
 
 ## Run locally
 
@@ -33,6 +33,8 @@ The Dockerfile builds React and Hono together. The runtime image contains the bu
 
 ## Current slice
 
+- Freehand drawing with P or Draw: choose ink color and width, scribble over images or blank canvas, then select, move, resize, group or lock strokes. Hold a roughly closed rectangle or ellipse for half a second to straighten it; moving again continues the original ink. Escape cancels an unfinished stroke. Dots and straight marks work too. Paths persist and export, with up to 4096 points per stroke and 100,000 per board.
+
 - Insert PNG, JPEG or WebP pictures with Insert → Image, paste with the canvas focused, or drag files onto the canvas. Move/resize images, draw over them and attach connectors. Pictures stay embedded through reload, clipboard and native/SVG/PNG export. Files up to 12 MB/40 megapixels are normalized to PNG at up to 4096 pixels per side; encoded data is limited to 4 million characters per picture and 24 million per board.
 - Drag the small connection handles on a selected shape to another object or empty space. Empty drops create a matching connected shape and start label editing. The ordinary C connector tool still supports free arrows.
 - Choose Clean, Notebook or Blueprint in Board menu → Board style. Colors, fonts and canvas background change together, persist, export and undo without replacing editable objects.
@@ -56,28 +58,28 @@ The Dockerfile builds React and Hono together. The runtime image contains the bu
 - Export whole boards or explicit selections as SVG or 2× PNG from Board menu → Export image. Editable JSON export remains available.
 - Undo/redo committed local actions. Group movement, duplication, deletion, alignment and distribution each create one undo step. Escape cancels a gesture; cancelling a marquee restores the prior selection, while Escape outside a gesture clears selection.
 - Pan using the hand tool, wheel, middle mouse button, or Space + drag. Zoom using the controls or Ctrl/⌘ + wheel.
-- Choose R/O/D then Enter to create a centered rectangle/ellipse/diamond. Enter or double-click on a selected shape or connector edits its attached label. Move a selection with arrow keys; Shift moves by 10. V/R/O/D/C/T/H switch tools.
+- Choose R/O/D then Enter to create a centered rectangle/ellipse/diamond. Enter or double-click on a selected shape or connector edits its attached label. Move a selection with arrow keys; Shift moves by 10. V/R/O/D/C/T/P/H switch tools.
 - Create wrapped multiline text with T + click or T then Enter on the canvas. Double-click text, press Enter with it selected, or use Edit text in the floating text properties to edit. Enter inserts a new line; Ctrl/⌘ Enter or clicking away commits one undoable edit; Escape cancels it.
 - Style text with 12–96 px font sizes, regular/bold weight, three alignments and five ink colors. Resize its width using side handles or More properties; height grows with content. Each text object supports up to 2,000 characters.
 - Draw straight connectors with C + drag between objects or canvas points. Bound endpoints follow rectangle movement/resizing and text reflow. Select the line or its object-list entry, then drag endpoint handles to reconnect.
 - Change connector ink, toggle arrowheads, reverse direction or detach endpoints in the selected connector’s properties. Free arrows move by dragging or arrow keys; bound arrows move through their endpoints or attached objects. C + Enter creates a centered free arrow.
 - Deleting a shape removes its attached connectors in one undoable action. Clearing an existing text object follows the same rule.
-- Rename the board and export version 8 semantic JSON as `.hydraw.json`. Existing version 0–7 boards migrate when opened.
+- Rename the board and export version 9 semantic JSON as `.hydraw.json`. Existing version 0–8 boards migrate when opened.
 - Recover the current board from IndexedDB after reload. Save status changes only after the storage transaction commits.
-- Import version 0–8 `.hydraw.json` files up to 160 MB, with validation and a name/object-count preview before opening. Export the current board directly from the review dialog.
+- Import version 0–9 `.hydraw.json` files up to 200 MB, with validation and a name/object-count preview before opening. Export the current board directly from the review dialog.
 - Keep one previous board when importing or restoring. The current board and recovery copy change in one storage transaction; failed imports preserve both. Restore is reversible by restoring again.
 
 One tab owns the local writer lock. Additional tabs enter an explicitly unsaved session instead of overwriting that board. If storage fails or saved data cannot be decoded, the app preserves existing storage and offers in-memory editing/export. Browser storage can still be cleared or evicted; export valuable work.
 
 ## Workspace
 
-| Package                 | Responsibility                                                                                                                                                                   |
-| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@hydraw/document`      | Version 8 shape/image/connector/label/frame/group/lock/order/theme records, earlier-version migration, validation, geometry and reversible transactions; no runtime dependencies |
-| `@hydraw/editor`        | Local editor state, gestures, hit testing, transaction history and camera; depends only on the document package                                                                  |
-| `@hydraw/editor/canvas` | Explicit browser adapter for Canvas rendering and pointer input                                                                                                                  |
-| `@hydraw/web`           | React controls, contextual properties and object navigation, keyboard shortcuts, inline text input, IndexedDB and file transfer                                                  |
-| `@hydraw/server`        | Hono API, static assets and SPA navigation fallback                                                                                                                              |
+| Package                 | Responsibility                                                                                                                                                                       |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `@hydraw/document`      | Version 9 shape/image/ink/connector/label/frame/group/lock/order/theme records, earlier-version migration, validation, geometry and reversible transactions; no runtime dependencies |
+| `@hydraw/editor`        | Local editor state, gestures, hit testing, transaction history and camera; depends only on the document package                                                                      |
+| `@hydraw/editor/canvas` | Explicit browser adapter for Canvas rendering and pointer input                                                                                                                      |
+| `@hydraw/web`           | React controls, contextual properties and object navigation, keyboard shortcuts, inline text input, IndexedDB and file transfer                                                      |
+| `@hydraw/server`        | Hono API, static assets and SPA navigation fallback                                                                                                                                  |
 
 Internal packages expose TypeScript source to the toolchain. They are private workspace packages, not published libraries. The web build bundles them; Vite+ `pack` bundles Hono and its adapter into the backend output.
 
@@ -98,13 +100,13 @@ Individual commands: `pnpm run check`, `pnpm test`, `pnpm run build`, and `pnpm 
 
 ## Current limits
 
-This milestone supports one local board, rectangles/ellipses/diamonds, attached labels, standalone text, embedded images, straight connectors, clipboard reuse, coordinated board styles and visual export. Import requires writable local storage to preserve a recovery copy. Cloud storage, authentication, collaboration and hosted deployment are still planned. Undo history is session-local and resets after reload, import or restore. History retains at most 100 transactions containing changed records rather than full-board snapshots. Transaction application is atomic and checks expected prior values. These are local edit preconditions; server revisions, authorization and collaborative rebase are not implemented yet.
+This milestone supports one local board, rectangles/ellipses/diamonds, attached labels, standalone text, embedded images, freehand ink, straight connectors, clipboard reuse, coordinated board styles and visual export. Import requires writable local storage to preserve a recovery copy. Cloud storage, authentication, collaboration and hosted deployment are still planned. Undo history is session-local and resets after reload, import or restore. History retains at most 100 transactions containing changed records rather than full-board snapshots. Transaction application is atomic and checks expected prior values. These are local edit preconditions; server revisions, authorization and collaborative rebase are not implemented yet.
 
 An already loaded page can edit without network access. Offline application startup is not supported yet. Desktop Chromium is verified; other browsers, pen/touch behavior and accessibility need further testing. The responsive layout is an early shell, not a claim of full mobile editor support.
 
 Text uses the board style’s system font family; custom fonts, rich text and automatic camera scrolling during long edits are future work. Whitespace-only text drafts are discarded; clearing standalone text removes it as an undoable edit; clearing an attached label retains its owner. Font metrics can vary across platforms, so text height is recalculated on opening/import.
 
-Connector routing is straight, with automatic perimeter attachments. Elbow routing, custom ports and self-loops are future work. Edges render beneath nodes and share a separate collection; no arbitrary node/edge stacking controls yet. Current limits are 5,000 shapes, 5,000 connectors and 80 MB imported files.
+Connector routing is straight, with automatic perimeter attachments. Elbow routing, custom ports and self-loops are future work. Shapes and connectors share an explicit stack. Current limits are 5,000 shapes, 5,000 connectors and 200 MB imported files.
 
 Selection currently supports translation, duplication, deletion, alignment and center distribution. Group resizing/rotation and bulk styling are future work. Distribution uses equal center spacing rather than equal edge gaps; it does not prevent overlaps. Selection itself is transient and is not persisted or recorded in document history.
 

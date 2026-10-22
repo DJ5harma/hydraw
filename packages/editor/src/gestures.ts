@@ -8,7 +8,8 @@ import {
   MAX_SIZE,
   rectangleBetween,
 } from "@hydraw/document";
-import type { Fill, Point, Shape, ShapeKind } from "@hydraw/document";
+import { makeInkShape } from "@hydraw/document";
+import type { Fill, InkShape, Point, Shape, ShapeKind } from "@hydraw/document";
 import { clamp, handlePoint, hitResizeHandle, resizeRectangle, screenToWorld } from "./geometry.ts";
 import type { ResizeHandle } from "./geometry.ts";
 import type { Camera, EditorSnapshot } from "./types.ts";
@@ -28,6 +29,15 @@ export type Gesture =
   | SelectionGesture
   | ConnectorGesture
   | { kind: "draw"; start: Point; id: string; shapeKind: ShapeKind }
+  | {
+      kind: "ink";
+      start: Point;
+      id: string;
+      points: readonly Point[];
+      bounds: Readonly<{ minX: number; minY: number; maxX: number; maxY: number }>;
+      recognized: boolean;
+      recognitionAnchor: Point | null;
+    }
   | { kind: "resize"; start: Point; shape: Shape; handle: ResizeHandle }
   | { kind: "pan"; start: Point; camera: Camera };
 
@@ -47,6 +57,7 @@ export function previewGesture(
     gesture.kind === "create-connected"
   )
     return previewConnectorGesture(gesture, screen, camera, document.shapes);
+  if (gesture.kind === "ink") return {};
   if (gesture.kind === "pan")
     return {
       camera: {
@@ -103,6 +114,27 @@ export function startGesture(
   if (pan || tool === "hand")
     return { gesture: { kind: "pan", start: screen, camera }, patch: { interacting: true } };
   if (tool === "text") return null;
+  if (tool === "draw") {
+    if (document.shapes.length >= MAX_SHAPES) return null;
+    const start = {
+      x: clamp(raw.x, -MAX_COORDINATE, MAX_COORDINATE),
+      y: clamp(raw.y, -MAX_COORDINATE, MAX_COORDINATE),
+    };
+    const id = makeId();
+    const initial = makeInkShape(id, [start], snapshot.inkColor, snapshot.inkWidth);
+    return {
+      gesture: {
+        kind: "ink",
+        start,
+        id,
+        points: [start],
+        bounds: { minX: start.x, minY: start.y, maxX: start.x, maxY: start.y },
+        recognized: false,
+        recognitionAnchor: null,
+      },
+      patch: { interacting: true, selectedIds: [], preview: initial as InkShape | null },
+    };
+  }
   if (tool === "connector") {
     if (document.connectors.length >= MAX_CONNECTORS) return null;
     const start = endpointAt(

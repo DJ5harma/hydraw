@@ -402,3 +402,11 @@
     width: 39px;
   }
 }
+
+/* Nine direct tools remain reachable in the narrowest supported viewport. */
+@media (max-width: 360px) {
+  .tool-button {
+    width: 30px;
+    flex-basis: 30px;
+  }
+}

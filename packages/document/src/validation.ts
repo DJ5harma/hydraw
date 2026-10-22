@@ -1,3 +1,5 @@
+import { MAX_INK_POINTS } from "./ink.ts";
+import type { InkShape } from "./ink.ts";
 import type { RectangleAppearance } from "./appearance.ts";
 import {
   MAX_SHAPES,
@@ -54,7 +56,8 @@ export function decodeDocument(value: unknown): BoardDocument {
       value.version !== 5 &&
       value.version !== 6 &&
       value.version !== 7 &&
-      value.version !== 8)
+      value.version !== 8 &&
+      value.version !== 9)
   ) {
     throw new Error("This board uses an unsupported Hydraw format.");
   }
@@ -86,6 +89,8 @@ export function decodeDocument(value: unknown): BoardDocument {
       throw new Error("Object organization requires Hydraw version 5.");
     if (valueVersion < 6 && record(value) && value.kind === "frame")
       throw new Error("Frames require Hydraw version 6.");
+    if (valueVersion < 9 && record(value) && value.type === "ink")
+      throw new Error("Freehand ink requires Hydraw version 9.");
     if (valueVersion < 8 && record(value) && value.type === "image")
       throw new Error("Images require Hydraw version 8.");
     const shape = valueVersion === 0 ? decodeRectangle(value) : decodeShape(value);
@@ -112,11 +117,12 @@ export function decodeDocument(value: unknown): BoardDocument {
   )
     throw new Error("Object organization requires Hydraw version 5.");
   assertImageBudget(shapes);
+  assertInkBudget(shapes);
   const connectors = decodeConnectors(valueVersion >= 2 ? value.connectors : []);
   assertConnectorGraph(shapes, connectors);
   return Object.freeze({
     format: "hydraw",
-    version: 8,
+    version: 9,
     theme: value.theme ?? "clean",
     name,
     shapes: Object.freeze(shapes),
@@ -192,6 +198,7 @@ export function isTextColor(value: unknown): value is TextColor {
 }
 
 export function decodeShape(value: unknown): Shape {
+  if (record(value) && value.type === "ink") return decodeInk(value);
   if (record(value) && value.type === "image") return decodeImage(value);
   if (record(value) && value.type === "text") return decodeText(value);
   return decodeRectangle(value);
@@ -418,5 +425,52 @@ export function assertImageBudget(shapes: readonly Shape[]): void {
       throw new Error(
         "This board has reached its 24 MB embedded image limit. Remove an image or use a smaller one.",
       );
+  }
+}
+
+export function decodeInk(value: unknown): InkShape {
+  if (
+    !record(value) ||
+    value.type !== "ink" ||
+    typeof value.id !== "string" ||
+    !value.id ||
+    value.id.length > 100 ||
+    !finite(value.x, -MAX_COORDINATE, MAX_COORDINATE) ||
+    !finite(value.y, -MAX_COORDINATE, MAX_COORDINATE) ||
+    !finite(value.width, 1, MAX_SIZE) ||
+    !finite(value.height, 1, MAX_SIZE) ||
+    !isTextColor(value.color) ||
+    !finite(value.strokeWidth, 0.5, 12) ||
+    !Array.isArray(value.points) ||
+    !value.points.length ||
+    value.points.length > MAX_INK_POINTS
+  )
+    throw new Error("This board contains an invalid freehand path.");
+  const points = value.points.map((point: unknown) => {
+    if (!record(point) || !finite(point.x, 0, 1) || !finite(point.y, 0, 1))
+      throw new Error("This board contains invalid freehand points.");
+    return Object.freeze({ x: point.x, y: point.y });
+  });
+  return Object.freeze({
+    id: value.id,
+    type: "ink",
+    ...decodeMetadata(value),
+    x: value.x,
+    y: value.y,
+    width: value.width,
+    height: value.height,
+    color: value.color,
+    strokeWidth: value.strokeWidth,
+    points: Object.freeze(points),
+  });
+}
+
+export const MAX_BOARD_INK_POINTS = 100_000;
+export function assertInkBudget(shapes: readonly Shape[]): void {
+  let count = 0;
+  for (const shape of shapes) {
+    if (shape.type === "ink") count += shape.points.length;
+    if (count > MAX_BOARD_INK_POINTS)
+      throw new Error("This board has reached its 100,000 freehand point limit.");
   }
 }

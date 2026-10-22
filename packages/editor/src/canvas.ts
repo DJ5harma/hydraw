@@ -3,7 +3,11 @@ import { bindCanvasInput } from "./browser/input.ts";
 import { createSceneRenderer } from "./browser/render.ts";
 
 /** Owns browser resources only. Input, drawing, and semantic editing have separate lifecycles. */
-export function attachCanvas(canvas: HTMLCanvasElement, editor: Editor): () => void {
+export function attachCanvas(
+  canvas: HTMLCanvasElement,
+  editor: Editor,
+  onError?: (cause: unknown) => void,
+): () => void {
   const context = canvas.getContext("2d");
   if (!context) throw new Error("Your browser could not start the drawing canvas.");
   const renderScene = createSceneRenderer(context, schedule);
@@ -14,7 +18,7 @@ export function attachCanvas(canvas: HTMLCanvasElement, editor: Editor): () => v
   function schedule(): void {
     if (!frame) frame = requestAnimationFrame(render);
   }
-  const input = bindCanvasInput(canvas, editor, schedule);
+  const input = bindCanvasInput(canvas, editor, schedule, onError);
   function render(): void {
     frame = 0;
     const dpr = window.devicePixelRatio || 1;

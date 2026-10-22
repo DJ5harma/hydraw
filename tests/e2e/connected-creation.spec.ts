@@ -49,14 +49,14 @@ test("shows connection handles, creates and labels a connected node, and undoes 
   await closeOverlay(page);
   await clickCanvas(page, { x: 190, y: 260 });
   await page.mouse.move(
-    (await page.locator("canvas").boundingBox())!.x + 280,
+    (await page.locator("canvas").boundingBox())!.x + 298,
     (await page.locator("canvas").boundingBox())!.y + 260,
   );
   await expect(page.locator("canvas")).toHaveCSS("cursor", "crosshair");
 
   const original = await exportBoard(page);
   await closeOverlay(page);
-  await drag(page, { x: 280, y: 260 }, { x: 400, y: 260 });
+  await drag(page, { x: 298, y: 260 }, { x: 400, y: 260 });
   const label = page.getByRole("textbox", { name: "Edit canvas text", exact: true });
   await expect(label).toBeVisible();
   await label.fill("New service");
@@ -95,7 +95,7 @@ test("connects an existing node, cancels empty creation, and keeps C as a free-p
   await clickCanvas(page, { x: 190, y: 260 });
   const before = await exportBoard(page);
   await closeOverlay(page);
-  await drag(page, { x: 280, y: 260 }, { x: 640, y: 260 });
+  await drag(page, { x: 298, y: 260 }, { x: 640, y: 260 });
   const connected = await exportBoard(page);
   expect(connected.shapes).toEqual(before.shapes);
   expect(connected.connectors).toHaveLength(1);
@@ -107,7 +107,7 @@ test("connects an existing node, cancels empty creation, and keeps C as a free-p
   await closeOverlay(page);
   await clickCanvas(page, { x: 190, y: 260 });
   const box = (await page.locator("canvas").boundingBox())!;
-  await page.mouse.move(box.x + 280, box.y + 260);
+  await page.mouse.move(box.x + 298, box.y + 260);
   await page.mouse.down();
   await page.mouse.move(box.x + 400, box.y + 450, { steps: 4 });
   await page.keyboard.press("Escape");

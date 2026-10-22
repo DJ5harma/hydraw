@@ -1,6 +1,11 @@
 import {
   decodeDocument,
   insertImages,
+  makeInkShape,
+  recognizeInk,
+  simplifyInkPoints,
+  MAX_INK_POINTS,
+  isTextColor,
   boardTheme,
   boardThemeTransaction,
   themePalette,
@@ -51,6 +56,7 @@ import type {
   BoardTheme,
   OrderDirection,
   Shape,
+  TextColor,
   TextShape,
 } from "@hydraw/document";
 import { labelTextShape } from "./labels.ts";
@@ -76,6 +82,8 @@ function chromeSnapshot(snapshot: EditorSnapshot): EditorChromeSnapshot {
     tool,
     fill,
     shapeKind,
+    inkColor,
+    inkWidth,
     interacting,
     textEditing,
     canUndo,
@@ -88,6 +96,8 @@ function chromeSnapshot(snapshot: EditorSnapshot): EditorChromeSnapshot {
     tool,
     fill,
     shapeKind,
+    inkColor,
+    inkWidth,
     interacting,
     textEditing,
     canUndo,
@@ -124,6 +134,8 @@ export class Editor {
       tool: "select",
       fill: "#e7eefb",
       shapeKind: "rectangle",
+      inkColor: "#202124",
+      inkWidth: 3,
       camera: { x: 0, y: 0, zoom: 1 },
       connectorPreview: null,
       bindingTargetId: null,
@@ -632,6 +644,27 @@ export class Editor {
     this.publish({ fill });
   }
 
+  setInkStyle(style: Partial<Readonly<{ color: TextColor; strokeWidth: number }>>): void {
+    if (style.color !== undefined && !isTextColor(style.color))
+      throw new Error("Choose a supported drawing color.");
+    const strokeWidth = style.strokeWidth;
+    if (
+      strokeWidth !== undefined &&
+      (!Number.isFinite(strokeWidth) || strokeWidth < 0.5 || strokeWidth > 12)
+    )
+      throw new Error("Ink width must be between 0.5 and 12.");
+    if (this.snapshot.tool === "select" && this.selectionLocked()) return;
+    this.finishTextEditing();
+    this.cancelGesture();
+    const shape = this.selectedShape();
+    const selectedInk = this.snapshot.tool === "select" && shape?.type === "ink" ? shape : null;
+    const color = style.color ?? selectedInk?.color ?? this.snapshot.inkColor;
+    const inkWidth = strokeWidth ?? selectedInk?.strokeWidth ?? this.snapshot.inkWidth;
+    if (selectedInk)
+      this.commitShape("Style ink", selectedInk, { ...selectedInk, color, strokeWidth: inkWidth });
+    this.publish({ inkColor: color, inkWidth });
+  }
+
   setBoardTheme(theme: BoardTheme): void {
     this.finishTextEditing();
     this.cancelGesture();
@@ -930,10 +963,32 @@ export class Editor {
     const start = startGesture(this.snapshot, screen, this.makeId, pan, additive);
     if (!start) return;
     this.gesture = start.gesture;
+    this.lastGestureScreen = screen;
     this.publish(this.rankCreationPreview(start.patch));
   }
 
+  private lastGestureScreen: Point | null = null;
+
+  /** Promote a stationary, closed freehand preview to a rectangle or ellipse. */
+  recognizeDrawing(): boolean {
+    const gesture = this.gesture;
+    if (gesture?.kind !== "ink" || gesture.recognized || !this.lastGestureScreen) return false;
+    const ink = makeInkShape(
+      gesture.id,
+      gesture.points,
+      this.snapshot.inkColor,
+      this.snapshot.inkWidth,
+    );
+    const recognized = ink && recognizeInk(ink);
+    if (!recognized) return false;
+    this.gesture = { ...gesture, recognized: true, recognitionAnchor: this.lastGestureScreen };
+    this.publish({ preview: { ...recognized, zIndex: this.creationRank(true) } });
+    return true;
+  }
+
   private rankCreationPreview(patch: Partial<EditorSnapshot>): Partial<EditorSnapshot> {
+    if (this.gesture?.kind === "ink" && patch.preview?.type === "ink")
+      return { ...patch, preview: { ...patch.preview, zIndex: this.creationRank(true) } };
     if (this.gesture?.kind === "draw" && patch.preview?.type === "rectangle")
       return {
         ...patch,
@@ -955,6 +1010,62 @@ export class Editor {
 
   move(screen: Point, snapping = true): void {
     if (!this.gesture) return;
+    this.lastGestureScreen = screen;
+    if (this.gesture.kind === "ink") {
+      let gesture = this.gesture;
+      if (
+        gesture.recognized &&
+        gesture.recognitionAnchor &&
+        Math.hypot(screen.x - gesture.recognitionAnchor.x, screen.y - gesture.recognitionAnchor.y) >
+          3
+      )
+        gesture = { ...gesture, recognized: false, recognitionAnchor: null };
+      const world = screenToWorld(screen, this.snapshot.camera);
+      const point = {
+        x: clamp(
+          world.x,
+          Math.max(-MAX_COORDINATE, gesture.bounds.maxX - MAX_SIZE),
+          Math.min(MAX_COORDINATE, gesture.bounds.minX + MAX_SIZE),
+        ),
+        y: clamp(
+          world.y,
+          Math.max(-MAX_COORDINATE, gesture.bounds.maxY - MAX_SIZE),
+          Math.min(MAX_COORDINATE, gesture.bounds.minY + MAX_SIZE),
+        ),
+      };
+      const previous = gesture.points.at(-1)!;
+      if (
+        Math.hypot(point.x - previous.x, point.y - previous.y) >
+        0.5 / this.snapshot.camera.zoom
+      ) {
+        let points = [...gesture.points, point];
+        if (points.length > MAX_INK_POINTS) points = [...simplifyInkPoints(points)];
+        gesture = {
+          ...gesture,
+          points,
+          bounds: {
+            minX: Math.min(gesture.bounds.minX, point.x),
+            minY: Math.min(gesture.bounds.minY, point.y),
+            maxX: Math.max(gesture.bounds.maxX, point.x),
+            maxY: Math.max(gesture.bounds.maxY, point.y),
+          },
+        };
+      }
+      this.gesture = gesture;
+      const ink = makeInkShape(
+        gesture.id,
+        gesture.points,
+        this.snapshot.inkColor,
+        this.snapshot.inkWidth,
+      );
+      if (ink)
+        this.publish({
+          preview: gesture.recognized
+            ? this.snapshot.preview
+            : { ...ink, zIndex: this.creationRank(true) },
+        });
+      return;
+    }
     const patch = this.rankCreationPreview(
       previewGesture(
         this.gesture,
@@ -1059,6 +1170,16 @@ export class Editor {
           }
         }
       } else if (
+        gesture?.kind === "ink" &&
+        preview &&
+        (preview.type === "ink" || preview.type === "rectangle")
+      ) {
+        this.commitShape(
+          preview.type === "ink" ? "Draw ink" : "Recognize drawing",
+          null,
+          preview.type === "ink" ? { ...preview, zIndex: this.creationRank(true) } : preview,
+        );
+      } else if (
         gesture?.kind === "draw" &&
         preview &&
         preview.width >= 1 &&
@@ -1078,6 +1199,7 @@ export class Editor {
         this.commitShape("Resize object", gesture.shape, preview);
       }
     } finally {
+      this.lastGestureScreen = null;
       this.publish(IDLE_GESTURE);
     }
   }
@@ -1088,6 +1210,7 @@ export class Editor {
       this.gesture.kind === "marquee" ? this.gesture.before : this.snapshot.selectedIds;
     const camera = this.gesture.kind === "pan" ? this.gesture.camera : this.snapshot.camera;
     this.gesture = null;
+    this.lastGestureScreen = null;
     this.publish({
       ...IDLE_GESTURE,
       camera,

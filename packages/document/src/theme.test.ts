@@ -16,7 +16,7 @@ describe("board themes", () => {
       shapes: [],
       connectors: [],
     });
-    expect(legacy.version).toBe(8);
+    expect(legacy.version).toBe(9);
     expect(legacy.theme).toBe("clean");
     expect(decodeDocument({ ...createDocument(), theme: "notebook" }).theme).toBe("notebook");
   });

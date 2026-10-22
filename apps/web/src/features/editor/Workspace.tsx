@@ -18,6 +18,7 @@ import { CanvasControls } from "./CanvasControls.tsx";
 import { InlineTextEditor } from "./InlineTextEditor.tsx";
 import { CanvasSurface } from "./CanvasSurface.tsx";
 import { EditorToolbar } from "./EditorToolbar.tsx";
+import { DrawingProperties } from "./DrawingProperties.tsx";
 import { EmptyCanvas } from "./EmptyCanvas.tsx";
 import { createEditorControls } from "./controls.ts";
 import { useWorkspaceOverlay } from "./useWorkspaceOverlay.ts";
@@ -120,7 +121,7 @@ export function Workspace({ session }: { session: BoardSession }) {
       }}
     >
       <section className="stage" aria-label="Drawing workspace">
-        <CanvasSurface editor={editor} canvasRef={canvasRef} />
+        <CanvasSurface editor={editor} canvasRef={canvasRef} onError={setActionError} />
         <input
           ref={imageInputRef}
           type="file"
@@ -170,10 +171,12 @@ export function Workspace({ session }: { session: BoardSession }) {
             selectTool(tool);
           }}
         />
+        <DrawingProperties editor={editor} hidden={overlay.active !== null} />
         {snapshot.document.shapes.length === 0 &&
           snapshot.document.connectors.length === 0 &&
           !snapshot.interacting &&
           !snapshot.textEditing &&
+          snapshot.tool !== "draw" &&
           snapshot.tool !== "text" &&
           snapshot.tool !== "connector" && <EmptyCanvas onStart={() => selectTool("rectangle")} />}
         <CanvasControls

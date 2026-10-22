@@ -4,6 +4,7 @@ import type {
   ShapeKind,
   Shape,
   TextShape,
+  TextColor,
   Connector,
   Bounds,
   ObjectUpdates,
@@ -12,7 +13,7 @@ import type { SnapGuide } from "./snapping.ts";
 import type { ConnectorEnd } from "./connector-interactions.ts";
 import type { ResizeHandle } from "./geometry.ts";
 
-export type Tool = "select" | "rectangle" | "text" | "connector" | "hand";
+export type Tool = "select" | "rectangle" | "draw" | "text" | "connector" | "hand";
 export type Camera = Readonly<{ x: number; y: number; zoom: number }>;
 export type EditorSnapshot = Readonly<{
   document: BoardDocument;
@@ -23,6 +24,8 @@ export type EditorSnapshot = Readonly<{
   tool: Tool;
   fill: Fill;
   shapeKind: ShapeKind;
+  inkColor: TextColor;
+  inkWidth: number;
   camera: Camera;
   preview: Shape | null;
   selectionPreview: ObjectUpdates | null;

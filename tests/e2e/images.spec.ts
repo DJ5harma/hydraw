@@ -144,3 +144,71 @@ test("copies embedded PNG data into SVG and renders a downloadable PNG", async (
     Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
   );
 });
+
+test("does not insert an image into a board that was replaced while decoding", async ({ page }) => {
+  await page.addInitScript(() => {
+    const original = window.createImageBitmap.bind(window);
+    const gate: { started: boolean; release: (() => void) | null } = {
+      started: false,
+      release: null,
+    };
+    Object.assign(window, { __imageDecodeGate: gate });
+    window.createImageBitmap = ((...args: Parameters<typeof createImageBitmap>) => {
+      gate.started = true;
+      return new Promise((resolve, reject) => {
+        gate.release = () => void original(...args).then(resolve, reject);
+      });
+    }) as typeof window.createImageBitmap;
+  });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Insert", exact: true }).click();
+  await page.getByRole("button", { name: /Image PNG, JPEG or WebP/ }).click();
+  await page.getByLabel("Image files").setInputFiles({
+    name: "pending.png",
+    mimeType: "image/png",
+    buffer: pngBuffer,
+  });
+  await page.waitForFunction(
+    () =>
+      (window as Window & { __imageDecodeGate?: { started: boolean } }).__imageDecodeGate?.started,
+  );
+
+  const replacement = {
+    format: "hydraw",
+    version: 0,
+    name: "Replacement board",
+    shapes: [
+      {
+        id: "replacement",
+        type: "rectangle",
+        x: 10,
+        y: 20,
+        width: 100,
+        height: 80,
+        fill: "#e7eefb",
+      },
+    ],
+    connectors: [],
+  };
+  await openBoardMenu(page);
+  await page.getByRole("button", { name: "Import board", exact: true }).click();
+  await page.getByLabel("Hydraw board file").setInputFiles({
+    name: "replacement.hydraw.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify(replacement)),
+  });
+  await page.getByRole("button", { name: "Open imported board", exact: true }).click();
+  await page.evaluate(() => {
+    const gate = (
+      window as Window & {
+        __imageDecodeGate?: { release: (() => void) | null };
+      }
+    ).__imageDecodeGate;
+    gate?.release?.();
+  });
+  await expect(page.getByRole("alert")).toContainText("board changed while opening images");
+  const saved = await exportBoard(page);
+  expect(saved.name).toBe("Replacement board");
+  expect(saved.shapes).toHaveLength(1);
+  expect(saved.shapes[0]?.id).toBe("replacement");
+});

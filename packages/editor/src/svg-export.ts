@@ -212,7 +212,12 @@ export function exportSvg(document: BoardDocument, options: SvgExportOptions): s
         height: Math.max(shape.height, layout.height),
       };
     }
-    const halfStroke = shape.type === "rectangle" ? rectangleAppearance(shape).strokeWidth / 2 : 0;
+    const halfStroke =
+      shape.type === "rectangle"
+        ? rectangleAppearance(shape).strokeWidth / 2
+        : shape.type === "ink"
+          ? shape.strokeWidth / 2
+          : 0;
     return {
       x: shape.x - halfStroke,
       y: shape.y - halfStroke,
@@ -255,7 +260,27 @@ export function exportSvg(document: BoardDocument, options: SvgExportOptions): s
   })) {
     if (object.type === "connector") scene.push(connectorElement(object, document.shapes));
     else if (object.type === "rectangle") scene.push(rectangleElement(object));
-    else if (object.type === "image") {
+    else if (object.type === "ink") {
+      const first = object.points[0]!;
+      const x = object.x + first.x * object.width,
+        y = object.y + first.y * object.height;
+      if (object.points.length === 1)
+        scene.push(
+          `<circle cx="${number(x)}" cy="${number(y)}" r="${number(object.strokeWidth / 2)}" fill="${object.color}"/>`,
+        );
+      else {
+        const d = object.points
+          .map(
+            (p, i) =>
+              `${i === 0 ? "M" : "L"} ${number(object.x + p.x * object.width)} ${number(object.y + p.y * object.height)}`,
+          )
+          .join(" ");
+        scene.push(
+          `<path d="${d}" fill="none" stroke="${object.color}" stroke-width="${number(object.strokeWidth)}" stroke-linecap="round" stroke-linejoin="round"/>`,
+        );
+      }
+      continue;
+    } else if (object.type === "image") {
       scene.push(
         `<image x="${number(object.x)}" y="${number(object.y)}" width="${number(object.width)}" height="${number(object.height)}" preserveAspectRatio="none" href="${escapeXml(object.src)}"/>`,
       );
@@ -266,7 +291,7 @@ export function exportSvg(document: BoardDocument, options: SvgExportOptions): s
     }
     const label = labelElements(
       object,
-      document.shapes.map((shape) => themedShape(shape, theme)),
+      document.shapes,
       options.measureText,
       String(labelIndex++),
       palette.fontFamily,

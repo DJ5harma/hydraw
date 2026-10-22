@@ -10,6 +10,7 @@ const tools = [
   { id: "rectangle", label: "Diamond", key: "D", icon: "diamond", shapeKind: "diamond" },
   { id: "connector", label: "Connector", key: "C", icon: "connector" },
   { id: "text", label: "Text", key: "T", icon: "text" },
+  { id: "draw", label: "Draw", key: "P", icon: "pen" },
   { id: "hand", label: "Hand", key: "H", icon: "hand" },
 ] as const;
 

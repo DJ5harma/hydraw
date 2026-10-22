@@ -1,3 +1,4 @@
+import { InkStyleControls } from "./DrawingProperties.tsx";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { isFrame } from "@hydraw/document";
 import { FrameProperties } from "./FrameProperties.tsx";
@@ -112,9 +113,11 @@ export function SelectionActions({
           ? "Connector style"
           : selectedShape?.type === "text"
             ? "Text style"
-            : selectedShape?.type === "image"
-              ? "Image"
-              : `${selectedShape?.type === "rectangle" && selectedShape.kind ? selectedShape.kind[0]!.toUpperCase() + selectedShape.kind.slice(1) : "Rectangle"} style`;
+            : selectedShape?.type === "ink"
+              ? "Drawing style"
+              : selectedShape?.type === "image"
+                ? "Image"
+                : `${selectedShape?.type === "rectangle" && selectedShape.kind ? selectedShape.kind[0]!.toUpperCase() + selectedShape.kind.slice(1) : "Rectangle"} style`;
   const geometryOpen =
     overlay === "geometry" && selectedShape !== undefined && !multi && !anyLocked;
 
@@ -175,6 +178,12 @@ export function SelectionActions({
             />
           ) : selectedShape?.type === "text" ? (
             <TextStyleControls key={selectedShape.id} shape={selectedShape} editor={editor} />
+          ) : selectedShape?.type === "ink" ? (
+            <InkStyleControls
+              editor={editor}
+              color={selectedShape.color}
+              strokeWidth={selectedShape.strokeWidth}
+            />
           ) : selectedShape?.type === "image" ? (
             <p className="locked-selection-message">
               {selectedShape.name} · Drag to move; use handles to resize.
@@ -211,7 +220,7 @@ export function SelectionActions({
                     ? "Delete frame"
                     : selectedConnector
                       ? "Delete connector"
-                      : `Delete ${selectedShape?.type === "text" ? "text" : selectedShape?.type === "rectangle" ? (selectedShape.kind ?? "rectangle") : "image"}`
+                      : `Delete ${selectedShape?.type === "text" ? "text" : selectedShape?.type === "rectangle" ? (selectedShape.kind ?? "rectangle") : selectedShape?.type === "ink" ? "drawing" : "image"}`
               }
               onClick={() => editor.removeSelection()}
             >

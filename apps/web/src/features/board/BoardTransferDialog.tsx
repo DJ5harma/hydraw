@@ -72,7 +72,9 @@ export function BoardTransferDialog({
   }
 
   const textCount = preview?.shapes.filter((shape) => shape.type === "text").length ?? 0;
-  const rectangleCount = (preview?.shapes.length ?? 0) - textCount;
+  const rectangleCount = preview?.shapes.filter((shape) => shape.type === "rectangle").length ?? 0;
+  const imageCount = preview?.shapes.filter((shape) => shape.type === "image").length ?? 0;
+  const inkCount = preview?.shapes.filter((shape) => shape.type === "ink").length ?? 0;
   return (
     <dialog
       ref={dialog}
@@ -123,6 +125,8 @@ export function BoardTransferDialog({
               {rectangleCount} {rectangleCount === 1 ? "rectangle" : "rectangles"} · {textCount}{" "}
               {textCount === 1 ? "text object" : "text objects"} · {preview.connectors.length}{" "}
               {preview.connectors.length === 1 ? "connector" : "connectors"}
+              {imageCount > 0 && ` · ${imageCount} ${imageCount === 1 ? "image" : "images"}`}
+              {inkCount > 0 && ` · ${inkCount} ${inkCount === 1 ? "drawing" : "drawings"}`}
             </span>
           </div>
         </div>

@@ -5,6 +5,8 @@ import { Icon } from "../../components/icons.tsx";
 import { useEditorSnapshot } from "./useEditorSnapshot.ts";
 
 const shortcuts = [
+  ["Freehand drawing", "P"],
+  ["Recognize a drawn rectangle / ellipse", "Hold briefly before releasing"],
   ["Select", "V"],
   ["Context actions", "Right-click / Shift F10 / long-press"],
   ["Rectangle / ellipse / diamond", "R / O / D"],

@@ -13,12 +13,40 @@ const resizeCursors: Record<ResizeHandle, string> = {
   w: "ew-resize",
 };
 
-export function bindCanvasInput(canvas: HTMLCanvasElement, editor: Editor, schedule: () => void) {
+export function bindCanvasInput(
+  canvas: HTMLCanvasElement,
+  editor: Editor,
+  schedule: () => void,
+  onError?: (cause: unknown) => void,
+) {
   let activePointer: number | null = null;
   let spacePressed = false;
   let lastPoint: Point | null = null;
+  let recognitionTimer: ReturnType<typeof setTimeout> | null = null;
+  let recognitionAnchor: Point | null = null;
   const events = new AbortController();
   const options = { signal: events.signal };
+  function clearRecognition(): void {
+    if (recognitionTimer !== null) clearTimeout(recognitionTimer);
+    recognitionTimer = null;
+    recognitionAnchor = null;
+  }
+  function scheduleRecognition(anchor: Point): void {
+    clearRecognition();
+    if (editor.getSnapshot().tool !== "draw") return;
+    recognitionAnchor = anchor;
+    recognitionTimer = setTimeout(() => {
+      recognitionTimer = null;
+      try {
+        editor.recognizeDrawing();
+        schedule();
+      } catch (error) {
+        cancel();
+        if (onError) onError(error);
+        else throw error;
+      }
+    }, 500);
+  }
   function point(event: MouseEvent): Point {
     const rect = canvas.getBoundingClientRect();
     return { x: event.clientX - rect.left, y: event.clientY - rect.top };
@@ -26,6 +54,7 @@ export function bindCanvasInput(canvas: HTMLCanvasElement, editor: Editor, sched
   function cancel(): void {
     const pointer = activePointer;
     activePointer = null;
+    clearRecognition();
     editor.cancelGesture();
     if (pointer !== null && canvas.hasPointerCapture(pointer))
       canvas.releasePointerCapture(pointer);
@@ -41,9 +70,12 @@ export function bindCanvasInput(canvas: HTMLCanvasElement, editor: Editor, sched
       try {
         canvas.setPointerCapture(event.pointerId);
         editor.begin(point(event), spacePressed || event.button === 1, event.shiftKey);
+        if (editor.getSnapshot().tool === "draw" && editor.getSnapshot().interacting)
+          scheduleRecognition(lastPoint);
       } catch (error) {
         cancel();
-        throw error;
+        if (onError) onError(error);
+        else throw error;
       }
     },
     options,
@@ -52,7 +84,21 @@ export function bindCanvasInput(canvas: HTMLCanvasElement, editor: Editor, sched
     "pointermove",
     (event) => {
       lastPoint = point(event);
-      if (activePointer === event.pointerId) editor.move(lastPoint, !event.altKey);
+      if (activePointer === event.pointerId) {
+        try {
+          editor.move(lastPoint, !event.altKey);
+          if (
+            editor.getSnapshot().tool === "draw" &&
+            recognitionAnchor &&
+            Math.hypot(lastPoint.x - recognitionAnchor.x, lastPoint.y - recognitionAnchor.y) > 3
+          )
+            scheduleRecognition(lastPoint);
+        } catch (error) {
+          cancel();
+          if (onError) onError(error);
+          else throw error;
+        }
+      }
       schedule();
     },
     options,
@@ -64,6 +110,9 @@ export function bindCanvasInput(canvas: HTMLCanvasElement, editor: Editor, sched
       try {
         editor.move(point(event), !event.altKey);
         editor.finish();
+      } catch (error) {
+        if (onError) onError(error);
+        else throw error;
       } finally {
         cancel();
       }
@@ -172,7 +221,12 @@ export function bindCanvasInput(canvas: HTMLCanvasElement, editor: Editor, sched
       const snapshot = editor.getSnapshot();
       if (snapshot.tool === "hand" || spacePressed)
         return snapshot.interacting ? "grabbing" : "grab";
-      if (snapshot.tool === "rectangle" || snapshot.tool === "connector") return "crosshair";
+      if (
+        snapshot.tool === "rectangle" ||
+        snapshot.tool === "draw" ||
+        snapshot.tool === "connector"
+      )
+        return "crosshair";
       if (snapshot.tool === "text") return "text";
       if (snapshot.activeEndpoint || (lastPoint && editor.getConnectorEndpointAt(lastPoint)))
         return "crosshair";

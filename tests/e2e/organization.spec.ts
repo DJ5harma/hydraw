@@ -73,7 +73,7 @@ test("smart placement, group lock and ordering remain usable in the floating wor
   await page.getByRole("button", { name: "More actions", exact: true }).click();
   await page.getByRole("menuitem", { name: "Lock", exact: true }).click();
   const locked = await exported(page);
-  expect(locked.version).toBe(6);
+  expect(locked.version).toBe(9);
   expect(locked.shapes.slice(0, 2)).toMatchObject([
     { x: 320, y: 210, locked: true },
     { x: 520, y: 290, locked: true },

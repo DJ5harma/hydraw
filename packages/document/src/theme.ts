@@ -18,7 +18,7 @@ export type ThemePalette = Readonly<{
   text: string;
   shapeFill: (shape: Rectangle) => string;
   shapeStroke: (shape: Rectangle) => string;
-  objectText: (shape: TextShape) => TextColor;
+  objectText: (shape: Pick<TextShape, "color">) => TextColor;
   connector: (connector: Connector) => TextColor;
   fontFamily: string;
 }>;
@@ -45,7 +45,7 @@ export function themePalette(theme: BoardTheme): ThemePalette {
       shapeStroke: (shape) =>
         rectangleAppearance(shape).stroke === "#364152"
           ? "#77715f"
-          : rectangleAppearance(shape).stroke,
+          : mapped(rectangleAppearance(shape).stroke, sourceText, notebookText),
       objectText: (shape) => mapped(shape.color, sourceText, notebookText) as TextColor,
       connector: (item) => mapped(item.color, sourceText, notebookText) as TextColor,
       fontFamily: "Georgia, 'Times New Roman', serif",
@@ -60,10 +60,10 @@ export function themePalette(theme: BoardTheme): ThemePalette {
       shapeStroke: (shape) =>
         rectangleAppearance(shape).stroke === "#364152"
           ? "#c6e6ff"
-          : rectangleAppearance(shape).stroke,
+          : mapped(rectangleAppearance(shape).stroke, sourceText, blueprintText),
       objectText: (shape) => mapped(shape.color, sourceText, blueprintText) as TextColor,
       connector: (item) => mapped(item.color, sourceText, blueprintText) as TextColor,
-      fontFamily: "Arial, sans-serif",
+      fontFamily: "ui-monospace, SFMono-Regular, Consolas, monospace",
     };
   return {
     background: "#ffffff",
@@ -77,16 +77,32 @@ export function themePalette(theme: BoardTheme): ThemePalette {
   };
 }
 
+const themedShapes = new Map<BoardTheme, WeakMap<Shape, Shape>>();
+
+/** Immutable source records retain cached derived visuals across pan/selection repaints. */
 export function themedShape(shape: Shape, theme: BoardTheme): Shape {
+  if (theme === "clean") return shape;
+  let cache = themedShapes.get(theme);
+  if (!cache) {
+    cache = new WeakMap();
+    themedShapes.set(theme, cache);
+  }
+  const cached = cache.get(shape);
+  if (cached) return cached;
   const palette = themePalette(theme);
-  if (shape.type === "text") return { ...shape, color: palette.objectText(shape) };
-  if (shape.type !== "rectangle") return shape;
-  const appearance = rectangleAppearance(shape);
-  return {
-    ...shape,
-    fill: palette.shapeFill(shape) as Rectangle["fill"],
-    appearance: { ...appearance, stroke: palette.shapeStroke(shape) },
-  };
+  let result: Shape = shape;
+  if (shape.type === "ink" || shape.type === "text")
+    result = { ...shape, color: palette.objectText(shape) };
+  else if (shape.type === "rectangle") {
+    const appearance = rectangleAppearance(shape);
+    result = {
+      ...shape,
+      fill: palette.shapeFill(shape) as Rectangle["fill"],
+      appearance: { ...appearance, stroke: palette.shapeStroke(shape) },
+    };
+  }
+  cache.set(shape, result);
+  return result;
 }
 
 export function themedConnector(connector: Connector, theme: BoardTheme): Connector {

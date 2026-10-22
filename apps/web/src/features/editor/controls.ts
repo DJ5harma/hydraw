@@ -82,6 +82,7 @@ function createKeyboardHandler(
         selectTool("rectangle");
       } else if (key === "c") selectTool("connector");
       else if (key === "t") selectTool("text");
+      else if (key === "p") selectTool("draw");
       else if (key === "h") selectTool("hand");
       else if (key === "delete" || key === "backspace") {
         event.preventDefault();
@@ -95,7 +96,7 @@ function createKeyboardHandler(
         if (snapshot.tool === "select" && snapshot.selectedId) editor.editText();
         else if (snapshot.tool === "text") editor.addText(center(), "center");
         else if (snapshot.tool === "connector") editor.addConnector(center());
-        else editor.addRectangle(center());
+        else if (snapshot.tool !== "draw") editor.addRectangle(center());
       } else if (key.startsWith("arrow")) {
         event.preventDefault();
         const distance = event.shiftKey ? 10 : 1;

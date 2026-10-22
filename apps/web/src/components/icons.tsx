@@ -16,6 +16,7 @@ type IconName =
   | "rectangle"
   | "ellipse"
   | "diamond"
+  | "pen"
   | "text"
   | "hand"
   | "undo"
@@ -107,6 +108,7 @@ const paths: Record<IconName, React.ReactNode> = {
       <rect x="6" y="15" width="12" height="3" />
     </>
   ),
+  pen: <path d="m15 4 5 5M4 20l5-1L21 7a2 2 0 0 0-5-5L4 15l-1 6 6-2" />,
   select: <path d="m5 3 13 9-6 1-3 6-4-16Z" />,
   text: <path d="M4 5V3h16v2M12 3v18M8 21h8" />,
   duplicate: (

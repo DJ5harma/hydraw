@@ -432,3 +432,27 @@ and embedded images to round trip. This is a file limit, not a speed guarantee.
 Canvas image resources are released with their renderer. Theme font measurement,
 label colors and caption backing now match inline editing and visual export;
 changing themes refits text in the same undo step.
+
+## Milestone 20 — freehand drawing and hold-to-shape
+
+P selects Draw with visible color/width controls. Strokes, straight marks and dots
+are editable records with normalized paths, proper path hit testing and ordinary
+move/resize/group/lock/history behavior. Hold a roughly closed rectangle or ellipse
+for 500 ms to turn it into a clean shape; moving again resumes the ink. Raw and
+recognized strokes each commit once, and Escape/blur/lost capture cancel safely.
+Drawing errors, including record/point budgets, are visible in the workspace.
+
+Native v9 adds freehand records with at most 4096 points per path and 100,000 per
+board. Stroke extents stay within the ordinary geometry limits. Ink colors follow
+board styles, and SVG/PNG preserve paths and dots. Blueprint also uses measured
+monospace typography. Nine direct tools remain reachable at 320 px. ADR 0012
+records document, asset, recognition and rendering contracts.
+
+Integrated verification: `pnpm run ready` passes formatting/lint, strict workspace
+types, dependency boundaries, 169 unit/server checks, production builds and all
+112 development/production Chromium browser journeys. Desktop and 320 px drawing
+and theme surfaces were visually inspected. The full run caught an Enter shortcut
+regression, now fixed; connection handles are separated from the four edge resize
+handles and remain correctly positioned at different zoom levels. The native
+file envelope is now 200 MB, with a conservative worst-case serialization budget
+including labels, organization metadata, images and ink samples.

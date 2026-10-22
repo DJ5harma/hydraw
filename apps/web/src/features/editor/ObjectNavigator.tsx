@@ -28,10 +28,19 @@ export function ObjectNavigator({
       label:
         shape.type === "text"
           ? `Text ${index + 1} · ${shape.text.slice(0, 32)}`
+          : shape.type === "ink"
+            ? `Drawing ${index + 1}`
+            : shape.type === "image"
+              ? `Image ${index + 1} · ${shape.name}`
+              : `${shape.kind ? shape.kind[0]!.toUpperCase() + shape.kind.slice(1) : "Rectangle"} ${index + 1}${shape.label ? ` · ${shape.label.text.slice(0, 32)}` : ""}`,
+      kind:
+        shape.type === "text"
+          ? "T"
           : shape.type === "image"
-            ? `Image ${index + 1} · ${shape.name}`
-            : `${shape.kind ? shape.kind[0]!.toUpperCase() + shape.kind.slice(1) : "Rectangle"} ${index + 1}${shape.label ? ` · ${shape.label.text.slice(0, 32)}` : ""}`,
-      kind: shape.type === "text" ? "T" : shape.type === "image" ? "▧" : "▭",
+            ? "▧"
+            : shape.type === "ink"
+              ? "✎"
+              : "▭",
       locked: shape.locked === true,
       grouped: shape.groupId !== undefined,
     }));

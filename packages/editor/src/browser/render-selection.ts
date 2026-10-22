@@ -19,6 +19,7 @@ export function drawSelection(
   shapes: readonly Shape[],
   connectors: readonly Connector[],
 ): void {
+  if (snapshot.tool === "draw" && snapshot.interacting) return;
   const { camera, selectedIds } = snapshot;
   const selected =
     (snapshot.textEditing?.ownerId ? null : snapshot.textEditing?.draft) ??
@@ -55,7 +56,7 @@ export function drawSelection(
       selected.kind !== "frame"
     ) {
       for (const handle of ["north", "east", "south", "west"] as const) {
-        const point = connectionHandlePoint(selected, handle);
+        const point = connectionHandlePoint(selected, handle, camera.zoom);
         const x = point.x * camera.zoom + camera.x;
         const y = point.y * camera.zoom + camera.y;
         ctx.beginPath();

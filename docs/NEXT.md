@@ -83,3 +83,11 @@ idempotent retries, commit-ordered catch-up, local outbox/recovery, conflicts an
 two-client conditional undo. Current local transaction preconditions are not that
 protocol. A hosted local-only preview is separate from cloud saving; publication
 is not part of this request.
+
+## Board creation follow-up — 23 October 2026
+
+Connected creation, embedded image insertion/paste/drop, freehand ink and held
+rectangle/ellipse recognition, and Clean/Notebook/Blueprint styles are implemented.
+See ADR 0012 for native v9, image/sample budgets, undo, export and font contracts.
+These additions broaden the local board; backend persistence and collaboration
+remain separate later milestones.

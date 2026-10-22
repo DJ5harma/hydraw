@@ -1,0 +1,36 @@
+.drawing-properties {
+  position: absolute;
+  z-index: 3;
+  top: 88px;
+  left: 16px;
+  width: 232px;
+  padding: 14px;
+  border: 1px solid var(--line, #e0e5eb);
+  border-radius: 12px;
+  background: var(--surface, #fff);
+  box-shadow: var(--shadow, 0 8px 24px #1424380a);
+  font-size: 12px;
+}
+.drawing-properties p {
+  margin: 6px 0 12px;
+  color: var(--text-muted, #647182);
+  line-height: 1.5;
+}
+.drawing-properties .inspector-section {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.drawing-properties .geometry-field {
+  margin-top: 10px;
+}
+@media (max-width: 660px) {
+  .drawing-properties {
+    top: auto;
+    bottom: 78px;
+    left: 8px;
+    width: min(260px, calc(100% - 16px));
+    max-height: calc(100% - 200px);
+    overflow: auto;
+  }
+}

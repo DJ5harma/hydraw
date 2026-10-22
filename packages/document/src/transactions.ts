@@ -14,6 +14,7 @@ import {
   decodeConnector,
   assertConnectorGraph,
   assertImageBudget,
+  assertInkBudget,
 } from "./validation.ts";
 import { isBoardTheme } from "./theme.ts";
 import type { BoardTheme } from "./theme.ts";
@@ -80,6 +81,13 @@ export function sameShape(a: Shape, b: Shape): boolean {
       left.cornerRadius === right.cornerRadius
     );
   }
+  if (a.type === "ink" && b.type === "ink")
+    return (
+      a.color === b.color &&
+      a.strokeWidth === b.strokeWidth &&
+      a.points.length === b.points.length &&
+      a.points.every((p, i) => p.x === b.points[i]!.x && p.y === b.points[i]!.y)
+    );
   if (a.type === "image" && b.type === "image") return a.src === b.src && a.name === b.name;
   return (
     a.type === "text" &&
@@ -239,6 +247,7 @@ export function applyTransaction(
   );
   assertConnectorGraph(shapes, connectors);
   assertImageBudget(shapes);
+  assertInkBudget(shapes);
   return Object.freeze({
     ...document,
     name,

@@ -77,8 +77,8 @@ describe("connector interactions", () => {
       (value) => value.length * 10,
     );
     editor.select("a");
-    expect(editor.getConnectionHandleAt({ x: 280, y: 260 })).toBe(true);
-    editor.begin({ x: 280, y: 260 });
+    expect(editor.getConnectionHandleAt({ x: 298, y: 260 })).toBe(true);
+    editor.begin({ x: 298, y: 260 });
     editor.move({ x: 480, y: 260 });
     editor.finish();
     const document = editor.getSnapshot().document;
@@ -108,13 +108,65 @@ describe("connector interactions", () => {
     let nextId = 0;
     const editor = new Editor({ ...createDocument(), shapes: [a, b] }, () => `created-${++nextId}`);
     editor.select("a");
-    editor.begin({ x: 280, y: 260 });
+    editor.begin({ x: 298, y: 260 });
     editor.move({ x: 550, y: 260 });
     editor.finish();
     expect(editor.getSnapshot().document.shapes).toEqual([a, b]);
     expect(editor.getSnapshot().document.connectors[0]).toMatchObject({
       start: { type: "binding", shapeId: "a" },
       end: { type: "binding", shapeId: "b" },
+    });
+  });
+  it("keeps every cardinal edge resize target and scales the connection offset at zoom", () => {
+    const cases = [
+      {
+        start: { x: 280, y: 260 },
+        end: { x: 300, y: 260 },
+        expected: { x: 100, y: 200, width: 200, height: 120 },
+      },
+      {
+        start: { x: 100, y: 260 },
+        end: { x: 80, y: 260 },
+        expected: { x: 80, y: 200, width: 200, height: 120 },
+      },
+      {
+        start: { x: 190, y: 200 },
+        end: { x: 190, y: 180 },
+        expected: { x: 100, y: 180, width: 180, height: 140 },
+      },
+      {
+        start: { x: 190, y: 320 },
+        end: { x: 190, y: 340 },
+        expected: { x: 100, y: 200, width: 180, height: 140 },
+      },
+    ];
+    for (const item of cases) {
+      const editor = setup();
+      editor.select("a");
+      expect(editor.getConnectionHandleAt(item.start)).toBe(false);
+      editor.begin(item.start);
+      expect(editor.getSnapshot().activeHandle).not.toBeNull();
+      editor.move(item.end);
+      editor.finish();
+      expect(editor.getSnapshot().document.shapes[0]).toMatchObject(item.expected);
+    }
+
+    let nextId = 0;
+    const editor = new Editor(
+      { ...createDocument(), shapes: [a] },
+      () => `zoomed-${++nextId}`,
+      (value) => value.length * 10,
+    );
+    editor.select("a");
+    editor.zoomAt({ x: 0, y: 0 }, 2);
+    expect(editor.getConnectionHandleAt({ x: 578, y: 520 })).toBe(true);
+    editor.begin({ x: 578, y: 520 });
+    editor.move({ x: 960, y: 520 });
+    editor.finish();
+    expect(editor.getSnapshot().document.shapes[1]).toMatchObject({ x: 390, y: 200 });
+    expect(editor.getSnapshot().document.connectors[0]).toMatchObject({
+      start: { type: "binding", shapeId: "a" },
+      end: { type: "binding", shapeId: "zoomed-1" },
     });
   });
   it("reconnects endpoint handles to nodes and canvas points, with cancellation and self-binding rejection", () => {

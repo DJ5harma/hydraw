@@ -1,3 +1,4 @@
+import { hitTestInk } from "./ink.ts";
 import type { Fill, Point, Rectangle, Shape, ShapeKind } from "./model.ts";
 
 export function rectangleBetween(
@@ -20,6 +21,7 @@ export function rectangleBetween(
 }
 
 export function containsShape(shape: Shape, point: Point, tolerance = 0): boolean {
+  if (shape.type === "ink") return hitTestInk(shape, point, tolerance);
   const nx = Math.abs(point.x - shape.x - shape.width / 2) / (shape.width / 2 + tolerance);
   const ny = Math.abs(point.y - shape.y - shape.height / 2) / (shape.height / 2 + tolerance);
   if (shape.type === "rectangle" && shape.kind === "ellipse") return nx * nx + ny * ny <= 1;
