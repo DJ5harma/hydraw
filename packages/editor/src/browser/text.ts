@@ -6,7 +6,7 @@ export function createTextMeasurer(
 ): TextMeasurer {
   if (!context) throw new Error("Your browser could not measure text.");
   return (text, style) => {
-    context.font = `${style.fontWeight} ${style.fontSize}px ${TEXT_FONT_FAMILY}`;
+    context.font = `${style.fontWeight} ${style.fontSize}px ${style.fontFamily ?? TEXT_FONT_FAMILY}`;
     return context.measureText(text).width;
   };
 }

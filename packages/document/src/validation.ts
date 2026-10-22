@@ -1,6 +1,8 @@
 import type { RectangleAppearance } from "./appearance.ts";
 import {
   MAX_SHAPES,
+  MAX_IMAGE_DATA_LENGTH,
+  MAX_BOARD_IMAGE_DATA_LENGTH,
   MAX_CONNECTORS,
   MAX_ENDPOINT_COORDINATE,
   MAX_DOCUMENT_BYTES,
@@ -15,6 +17,7 @@ import {
 import { isBoardTheme } from "./theme.ts";
 import type {
   Fill,
+  ImageShape,
   ObjectMetadata,
   ShapeLabel,
   Rectangle,
@@ -50,7 +53,8 @@ export function decodeDocument(value: unknown): BoardDocument {
       value.version !== 4 &&
       value.version !== 5 &&
       value.version !== 6 &&
-      value.version !== 7)
+      value.version !== 7 &&
+      value.version !== 8)
   ) {
     throw new Error("This board uses an unsupported Hydraw format.");
   }
@@ -60,7 +64,10 @@ export function decodeDocument(value: unknown): BoardDocument {
   const name = decodeName(value.name);
   const ids = new Set<string>();
   const valueVersion = value.version;
-  if ((valueVersion < 7 && value.theme !== undefined) || (value.theme !== undefined && !isBoardTheme(value.theme)))
+  if (
+    (valueVersion < 7 && value.theme !== undefined && value.theme !== "clean") ||
+    (value.theme !== undefined && !isBoardTheme(value.theme))
+  )
     throw new Error("This board contains an unsupported visual theme.");
   const shapes = value.shapes.map((value: unknown): Shape => {
     if (
@@ -79,6 +86,8 @@ export function decodeDocument(value: unknown): BoardDocument {
       throw new Error("Object organization requires Hydraw version 5.");
     if (valueVersion < 6 && record(value) && value.kind === "frame")
       throw new Error("Frames require Hydraw version 6.");
+    if (valueVersion < 8 && record(value) && value.type === "image")
+      throw new Error("Images require Hydraw version 8.");
     const shape = valueVersion === 0 ? decodeRectangle(value) : decodeShape(value);
     if (ids.has(shape.id)) throw new Error("This board contains invalid duplicate shape IDs.");
     ids.add(shape.id);
@@ -102,11 +111,12 @@ export function decodeDocument(value: unknown): BoardDocument {
     value.connectors.some((item: unknown) => record(item) && hasMetadata(item))
   )
     throw new Error("Object organization requires Hydraw version 5.");
+  assertImageBudget(shapes);
   const connectors = decodeConnectors(valueVersion >= 2 ? value.connectors : []);
   assertConnectorGraph(shapes, connectors);
   return Object.freeze({
     format: "hydraw",
-    version: 7,
+    version: 8,
     theme: value.theme ?? "clean",
     name,
     shapes: Object.freeze(shapes),
@@ -182,6 +192,7 @@ export function isTextColor(value: unknown): value is TextColor {
 }
 
 export function decodeShape(value: unknown): Shape {
+  if (record(value) && value.type === "image") return decodeImage(value);
   if (record(value) && value.type === "text") return decodeText(value);
   return decodeRectangle(value);
 }
@@ -363,4 +374,49 @@ function decodeMetadata(value: Record<string, unknown>): ObjectMetadata {
     ...(value.locked === undefined ? {} : { locked: value.locked as boolean }),
     ...(value.zIndex === undefined ? {} : { zIndex: value.zIndex as number }),
   };
+}
+
+/** Embedded PNGs keep image boards portable, offline and free of external fetches. */
+export function decodeImage(value: unknown): ImageShape {
+  if (
+    !record(value) ||
+    value.type !== "image" ||
+    typeof value.id !== "string" ||
+    !value.id ||
+    value.id.length > 100 ||
+    !finite(value.x, -MAX_COORDINATE, MAX_COORDINATE) ||
+    !finite(value.y, -MAX_COORDINATE, MAX_COORDINATE) ||
+    !finite(value.width, 1, MAX_SIZE) ||
+    !finite(value.height, 1, MAX_SIZE) ||
+    typeof value.name !== "string" ||
+    value.name.length > 120 ||
+    typeof value.src !== "string" ||
+    value.src.length > MAX_IMAGE_DATA_LENGTH ||
+    !/^data:image\/png;base64,iVBORw0KGgo[A-Za-z0-9+/]*={0,2}$/u.test(value.src)
+  )
+    throw new Error(
+      "This board contains an invalid image. Images must be embedded PNGs under 3 MB.",
+    );
+  return Object.freeze({
+    id: value.id,
+    type: "image",
+    ...decodeMetadata(value),
+    x: value.x,
+    y: value.y,
+    width: value.width,
+    height: value.height,
+    name: value.name,
+    src: value.src,
+  });
+}
+
+export function assertImageBudget(shapes: readonly Shape[]): void {
+  let length = 0;
+  for (const shape of shapes) {
+    if (shape.type === "image") length += shape.src.length;
+    if (length > MAX_BOARD_IMAGE_DATA_LENGTH)
+      throw new Error(
+        "This board has reached its 24 MB embedded image limit. Remove an image or use a smaller one.",
+      );
+  }
 }

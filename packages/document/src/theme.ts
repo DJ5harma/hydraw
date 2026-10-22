@@ -32,28 +32,43 @@ const blueprintText = ["#e8f5ff", "#c6e6ff", "#ffd5dc", "#ffe6a6", "#f2f8ff"];
 
 function mapped(value: string, from: readonly string[], to: readonly string[]): string {
   const index = from.indexOf(value);
-  return index < 0 ? value : to[index] ?? value;
+  return index < 0 ? value : (to[index] ?? value);
 }
 
 export function themePalette(theme: BoardTheme): ThemePalette {
-  if (theme === "notebook") return {
-    background: "#fffdf5", grid: "#e5dfce", text: "#34332e",
-    shapeFill: (shape) => mapped(shape.fill, colors, notebookColors),
-    shapeStroke: (shape) => rectangleAppearance(shape).stroke === "#364152" ? "#77715f" : rectangleAppearance(shape).stroke,
-    objectText: (shape) => mapped(shape.color, sourceText, notebookText) as TextColor,
-    connector: (item) => mapped(item.color, sourceText, notebookText) as TextColor,
-    fontFamily: "Georgia, 'Times New Roman', serif",
-  };
-  if (theme === "blueprint") return {
-    background: "#173f63", grid: "#477398", text: "#f2f8ff",
-    shapeFill: (shape) => shape.fill === "transparent" ? "transparent" : mapped(shape.fill, colors, blueprintColors),
-    shapeStroke: (shape) => rectangleAppearance(shape).stroke === "#364152" ? "#c6e6ff" : rectangleAppearance(shape).stroke,
-    objectText: (shape) => mapped(shape.color, sourceText, blueprintText) as TextColor,
-    connector: (item) => mapped(item.color, sourceText, blueprintText) as TextColor,
-    fontFamily: "Arial, sans-serif",
-  };
+  if (theme === "notebook")
+    return {
+      background: "#fffdf5",
+      grid: "#e5dfce",
+      text: "#34332e",
+      shapeFill: (shape) => mapped(shape.fill, colors, notebookColors),
+      shapeStroke: (shape) =>
+        rectangleAppearance(shape).stroke === "#364152"
+          ? "#77715f"
+          : rectangleAppearance(shape).stroke,
+      objectText: (shape) => mapped(shape.color, sourceText, notebookText) as TextColor,
+      connector: (item) => mapped(item.color, sourceText, notebookText) as TextColor,
+      fontFamily: "Georgia, 'Times New Roman', serif",
+    };
+  if (theme === "blueprint")
+    return {
+      background: "#173f63",
+      grid: "#477398",
+      text: "#f2f8ff",
+      shapeFill: (shape) =>
+        shape.fill === "transparent" ? "transparent" : mapped(shape.fill, colors, blueprintColors),
+      shapeStroke: (shape) =>
+        rectangleAppearance(shape).stroke === "#364152"
+          ? "#c6e6ff"
+          : rectangleAppearance(shape).stroke,
+      objectText: (shape) => mapped(shape.color, sourceText, blueprintText) as TextColor,
+      connector: (item) => mapped(item.color, sourceText, blueprintText) as TextColor,
+      fontFamily: "Arial, sans-serif",
+    };
   return {
-    background: "#ffffff", grid: "#d5d9df", text: "#202124",
+    background: "#ffffff",
+    grid: "#d5d9df",
+    text: "#202124",
     shapeFill: (shape) => shape.fill,
     shapeStroke: (shape) => rectangleAppearance(shape).stroke,
     objectText: (shape) => shape.color,
@@ -67,7 +82,11 @@ export function themedShape(shape: Shape, theme: BoardTheme): Shape {
   if (shape.type === "text") return { ...shape, color: palette.objectText(shape) };
   if (shape.type !== "rectangle") return shape;
   const appearance = rectangleAppearance(shape);
-  return { ...shape, fill: palette.shapeFill(shape) as Rectangle["fill"], appearance: { ...appearance, stroke: palette.shapeStroke(shape) } };
+  return {
+    ...shape,
+    fill: palette.shapeFill(shape) as Rectangle["fill"],
+    appearance: { ...appearance, stroke: palette.shapeStroke(shape) },
+  };
 }
 
 export function themedConnector(connector: Connector, theme: BoardTheme): Connector {

@@ -10,11 +10,13 @@ export function InsertPanel({
   center,
   onClose,
   onInserted,
+  onImage,
 }: {
   editor: Editor;
   center: () => Point;
   onClose: () => void;
   onInserted: () => void;
+  onImage: () => void;
 }) {
   const snapshot = useEditorSnapshot(editor);
   const [error, setError] = useState<string | null>(null);
@@ -36,7 +38,7 @@ export function InsertPanel({
         <header className="insert-panel-heading">
           <div>
             <h2>Insert</h2>
-            <p>Add a frame or a ready-made architecture flow.</p>
+            <p>Add images, frames or a ready-made architecture flow.</p>
           </div>
           <button
             className="insert-panel-close"
@@ -54,6 +56,9 @@ export function InsertPanel({
           </p>
         )}
 
+        <button type="button" className="file-button" onClick={onImage}>
+          Image <small>PNG, JPEG or WebP · also paste or drop onto the canvas</small>
+        </button>
         <div className="insert-panel-frames" aria-label="Frames">
           {snapshot.selectedIds.length > 0 && (
             <button type="button" onClick={() => run(() => editor.frameSelection())}>

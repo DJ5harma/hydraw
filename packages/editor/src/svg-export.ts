@@ -109,8 +109,13 @@ function rectangleElement(shape: Rectangle): string {
   return `<rect ${common} x="${number(shape.x)}" y="${number(shape.y)}" width="${number(shape.width)}" height="${number(shape.height)}" rx="${number(Math.min(appearance.cornerRadius, shape.width / 2, shape.height / 2))}"/>`;
 }
 
-function textElements(shape: TextShape, measure: TextMeasurer, clipId?: string, fontFamily = TEXT_FONT_FAMILY): string {
-  const layout = layoutText(shape, measure);
+function textElements(
+  shape: TextShape,
+  measure: TextMeasurer,
+  clipId?: string,
+  fontFamily = TEXT_FONT_FAMILY,
+): string {
+  const layout = layoutText(shape, measure, fontFamily);
   const x =
     shape.textAlign === "left"
       ? shape.x + TEXT_PADDING
@@ -137,18 +142,18 @@ function labelElements(
   fontFamily: string,
   theme: ReturnType<typeof boardTheme>,
 ): { svg: string; defs?: string } {
-  const label = labelTextShape(owner, shapes, measure);
+  const label = labelTextShape(owner, shapes, measure, fontFamily);
   if (!label) return { svg: "" };
   const clipBounds = labelClipBounds(owner, shapes);
   const clipId = `label-clip-${key}`;
   const defs = `<clipPath id="${escapeXml(clipId)}"><rect x="${number(clipBounds.x)}" y="${number(clipBounds.y)}" width="${number(clipBounds.width)}" height="${number(clipBounds.height)}"/></clipPath>`;
-  const backing = labelBackdropBounds(label, measure);
+  const backing = labelBackdropBounds(label, measure, fontFamily);
   const background =
     owner.type === "connector"
       ? `<rect x="${number(backing.x)}" y="${number(backing.y)}" width="${number(backing.width)}" height="${number(Math.min(backing.height, clipBounds.height))}" fill="${themePalette(theme).background}"/>`
       : "";
   return {
-    svg: `<g opacity="${number(owner.type === "rectangle" ? rectangleAppearance(owner).opacity / 100 : 1)}">${background}${textElements(label, measure, clipId, fontFamily)}</g>`,
+    svg: `<g opacity="${number(owner.type === "rectangle" ? rectangleAppearance(owner).opacity / 100 : 1)}">${background}${textElements({ ...label, color: themePalette(theme).objectText(label) }, measure, clipId, fontFamily)}</g>`,
     defs,
   };
 }
@@ -189,7 +194,9 @@ export function exportSvg(document: BoardDocument, options: SvgExportOptions): s
   const theme = boardTheme(document);
   const palette = themePalette(theme);
   const padding = safePadding(options.padding);
-  const background = safeBackground(options.background ?? (theme === "clean" ? undefined : palette.background));
+  const background = safeBackground(
+    options.background ?? (theme === "clean" ? undefined : palette.background),
+  );
   const rawContent = selectedContent(document, options.ids);
   const content = {
     shapes: rawContent.shapes.map((shape) => themedShape(shape, theme)),
@@ -197,7 +204,7 @@ export function exportSvg(document: BoardDocument, options: SvgExportOptions): s
   };
   const itemBounds: Bounds[] = content.shapes.map((shape) => {
     if (shape.type === "text") {
-      const layout = layoutText(shape, options.measureText);
+      const layout = layoutText(shape, options.measureText, palette.fontFamily);
       return {
         x: shape.x,
         y: shape.y,
@@ -205,7 +212,7 @@ export function exportSvg(document: BoardDocument, options: SvgExportOptions): s
         height: Math.max(shape.height, layout.height),
       };
     }
-    const halfStroke = rectangleAppearance(shape).strokeWidth / 2;
+    const halfStroke = shape.type === "rectangle" ? rectangleAppearance(shape).strokeWidth / 2 : 0;
     return {
       x: shape.x - halfStroke,
       y: shape.y - halfStroke,
@@ -215,13 +222,18 @@ export function exportSvg(document: BoardDocument, options: SvgExportOptions): s
   });
   for (const shape of content.shapes) {
     if (shape.type === "rectangle") {
-      const label = labelTextShape(shape, document.shapes, options.measureText);
+      const label = labelTextShape(shape, document.shapes, options.measureText, palette.fontFamily);
       if (label) itemBounds.push(labelClipBounds(shape, document.shapes));
     }
   }
   for (const connector of content.connectors) {
     itemBounds.push(connectorBounds(connector, document.shapes));
-    const label = labelTextShape(connector, document.shapes, options.measureText);
+    const label = labelTextShape(
+      connector,
+      document.shapes,
+      options.measureText,
+      palette.fontFamily,
+    );
     if (label) itemBounds.push(labelClipBounds(connector, document.shapes));
   }
   const bounds = unions(itemBounds);
@@ -243,11 +255,23 @@ export function exportSvg(document: BoardDocument, options: SvgExportOptions): s
   })) {
     if (object.type === "connector") scene.push(connectorElement(object, document.shapes));
     else if (object.type === "rectangle") scene.push(rectangleElement(object));
-    else {
+    else if (object.type === "image") {
+      scene.push(
+        `<image x="${number(object.x)}" y="${number(object.y)}" width="${number(object.width)}" height="${number(object.height)}" preserveAspectRatio="none" href="${escapeXml(object.src)}"/>`,
+      );
+      continue;
+    } else {
       scene.push(textElements(object, options.measureText, undefined, palette.fontFamily));
       continue;
     }
-      const label = labelElements(object, document.shapes.map((shape) => themedShape(shape, theme)), options.measureText, String(labelIndex++), palette.fontFamily, theme);
+    const label = labelElements(
+      object,
+      document.shapes.map((shape) => themedShape(shape, theme)),
+      options.measureText,
+      String(labelIndex++),
+      palette.fontFamily,
+      theme,
+    );
     if (label.svg) {
       if (label.defs) labelDefs.push(label.defs);
       scene.push(label.svg);

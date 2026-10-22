@@ -66,6 +66,7 @@ export function useClipboard({ editor, center, onError, onHandled }: ClipboardOp
     }
 
     function paste(event: ClipboardEvent) {
+      if (event.defaultPrevented) return;
       if (!clipboardFocusIsInWorkspace() || !event.clipboardData) return;
       const text = event.clipboardData.getData("text/plain");
       if (!text) return;

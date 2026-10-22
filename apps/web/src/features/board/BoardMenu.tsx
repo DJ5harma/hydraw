@@ -153,7 +153,11 @@ export function BoardMenu({
             <div className="board-menu-divider" />
             <label className="board-export-area">
               Board style
-              <select aria-label="Board style" value={theme} onChange={(event) => onThemeChange(event.target.value as BoardTheme)}>
+              <select
+                aria-label="Board style"
+                value={theme}
+                onChange={(event) => onThemeChange(event.target.value as BoardTheme)}
+              >
                 <option value="clean">Clean</option>
                 <option value="notebook">Notebook</option>
                 <option value="blueprint">Blueprint</option>

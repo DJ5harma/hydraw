@@ -51,6 +51,18 @@ describe("owned text layout and editing", () => {
     expect(measurements).toBeGreaterThan(count);
     expect(createTextLayouter(() => 1)(text).lines).toEqual(["one two three"]);
   });
+  it("uses the selected font family for text measurements and keeps themed layouts separate", () => {
+    const families = new Set<string>();
+    const layout = createTextLayouter((value, style) => {
+      families.add(style.fontFamily ?? "default");
+      return measure(value, style);
+    });
+    const regular = layout(text, "Arial, sans-serif");
+    const notebook = layout(text, "Georgia, serif");
+    expect(regular).not.toBe(notebook);
+    expect(families).toEqual(new Set(["Arial, sans-serif", "Georgia, serif"]));
+    expect(layout(text, "Georgia, serif")).toBe(notebook);
+  });
   it("wraps words, explicit blank lines and long Unicode tokens without breaking graphemes", () => {
     expect(layoutText(text, measure).lines).toEqual(["one two", "three"]);
     const shape = { ...text, width: 18, text: "👩‍💻\n\nx" };

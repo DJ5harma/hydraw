@@ -1,7 +1,9 @@
 import {
   decodeDocument,
+  insertImages,
   boardTheme,
   boardThemeTransaction,
+  themePalette,
   createFrameAroundSelection,
   frameSelectionContents,
   isFrame,
@@ -34,6 +36,7 @@ import {
 } from "@hydraw/document";
 import type {
   PresetId,
+  ImageInput,
   Alignment,
   DistributionAxis,
   Connector,
@@ -101,6 +104,8 @@ export class Editor {
   private readonly history = new TransactionHistory();
   private gesture: Gesture | null = null;
   private documentLocked = false;
+  private documentEpoch = 0;
+  getDocumentEpoch = (): number => this.documentEpoch;
   private readonly measureText: TextMeasurer | undefined;
   private readonly makeId: () => string;
 
@@ -351,16 +356,20 @@ export class Editor {
   /** Canonicalize imported text bounds using this editor's injected font metrics before saving. */
   prepareDocument(value: unknown): BoardDocument {
     const document = decodeDocument(value);
+    const fontFamily = themePalette(boardTheme(document)).fontFamily;
     return Object.freeze({
       ...document,
       shapes: Object.freeze(
-        document.shapes.map((shape) => (shape.type === "text" ? this.fitText(shape) : shape)),
+        document.shapes.map((shape) =>
+          shape.type === "text" ? this.fitText(shape, fontFamily) : shape,
+        ),
       ),
     });
   }
 
   private replaceDocument(next: BoardDocument): void {
     const document = this.prepareDocument(next);
+    this.documentEpoch++;
     this.cancelGesture();
     this.history.clear();
     this.publish({
@@ -626,7 +635,21 @@ export class Editor {
   setBoardTheme(theme: BoardTheme): void {
     this.finishTextEditing();
     this.cancelGesture();
-    this.commit(boardThemeTransaction(boardTheme(this.snapshot.document), theme));
+    const changes = [
+      ...(boardThemeTransaction(boardTheme(this.snapshot.document), theme)?.changes ?? []),
+    ];
+    const fontFamily = themePalette(theme).fontFamily;
+    this.snapshot.document.shapes.forEach((shape, index) => {
+      if (!this.measureText) return;
+      if (shape.type !== "text") return;
+      const next = decodeText({
+        ...shape,
+        height: layoutText(shape, this.measureText, fontFamily).height,
+      });
+      const change = shapeTransaction("Change board style", index, shape, next);
+      if (change) changes.push(...change.changes);
+    });
+    this.commit(changes.length ? { label: "Change board style", changes } : null);
   }
 
   setRectangleStyle(style: Partial<RectangleAppearance>): void {
@@ -664,6 +687,15 @@ export class Editor {
     }
   }
 
+  addImages(images: readonly ImageInput[], world: Point): void {
+    this.assertWritable();
+    this.finishTextEditing();
+    this.cancelGesture();
+    const result = insertImages(this.snapshot.document, images, world, this.makeId);
+    this.commit(result.transaction);
+    if (result.transaction) this.publish({ selectedIds: result.ids, tool: "select" });
+  }
+
   addRectangle(screen: Point): void {
     if (this.snapshot.shapeKind === "frame") {
       this.addFrame(screen);
@@ -689,10 +721,13 @@ export class Editor {
     this.publish({ selectedIds: [shape.id], tool: "select" });
   }
 
-  private fitText(shape: TextShape): TextShape {
+  private fitText(
+    shape: TextShape,
+    fontFamily = themePalette(boardTheme(this.snapshot.document)).fontFamily,
+  ): TextShape {
     const valid = decodeText(shape);
     if (!this.measureText) throw new Error("Text editing requires a text measurement adapter.");
-    return decodeText({ ...valid, height: layoutText(valid, this.measureText).height });
+    return decodeText({ ...valid, height: layoutText(valid, this.measureText, fontFamily).height });
   }
 
   addText(screen: Point, placement: "start" | "center" = "start"): void {
@@ -755,7 +790,7 @@ export class Editor {
       return;
     }
     const owner = shape ?? this.snapshot.document.connectors.find((item) => item.id === id);
-    if (!owner) return;
+    if (!owner || (owner.type !== "rectangle" && owner.type !== "connector")) return;
     if (!this.measureText) throw new Error("Label editing requires text measurement.");
     const draft = labelTextShape(
       {
@@ -764,6 +799,7 @@ export class Editor {
       },
       this.snapshot.document.shapes,
       this.measureText,
+      themePalette(boardTheme(this.snapshot.document)).fontFamily,
     )!;
     this.publish({
       selectedIds: [owner.id],
@@ -785,11 +821,12 @@ export class Editor {
       const owner =
         this.snapshot.document.shapes.find((item) => item.id === editing.ownerId) ??
         this.snapshot.document.connectors.find((item) => item.id === editing.ownerId);
-      if (!owner || owner.type === "text") return;
+      if (!owner || (owner.type !== "rectangle" && owner.type !== "connector")) return;
       draft = labelTextShape(
         { ...owner, label: decodeLabel(content) },
         this.snapshot.document.shapes,
         this.measureText,
+        themePalette(boardTheme(this.snapshot.document)).fontFamily,
       )!;
     } else draft = this.fitText(content);
     this.publish({ textEditing: { ...editing, draft } });
@@ -804,7 +841,7 @@ export class Editor {
       const owner =
         this.snapshot.document.shapes.find((item) => item.id === editing.ownerId) ??
         this.snapshot.document.connectors.find((item) => item.id === editing.ownerId);
-      if (owner && owner.type !== "text") {
+      if (owner && (owner.type === "rectangle" || owner.type === "connector")) {
         const { label: _oldLabel, ...rest } = owner;
         const label = draft.text.trim() ? decodeLabel(draft) : undefined;
         const next = label ? { ...rest, label } : rest;

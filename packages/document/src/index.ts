@@ -13,3 +13,5 @@ export * from "./organization.ts";
 export * from "./presets.ts";
 export { clonedMetadata } from "./object-scene.ts";
 export * from "./frames.ts";
+
+export * from "./images.ts";

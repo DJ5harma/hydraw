@@ -48,7 +48,17 @@ export type TextShape = Bounds &
     textAlign: "left" | "center" | "right";
     color: TextColor;
   }>;
-export type Shape = Rectangle | TextShape;
+export type ImageShape = Bounds &
+  ObjectMetadata &
+  Readonly<{
+    id: string;
+    type: "image";
+    src: string;
+    name: string;
+  }>;
+export const MAX_IMAGE_DATA_LENGTH = 4_000_000;
+export const MAX_BOARD_IMAGE_DATA_LENGTH = 24_000_000;
+export type Shape = Rectangle | TextShape | ImageShape;
 export type Endpoint =
   | Readonly<{ type: "point"; x: number; y: number }>
   | Readonly<{ type: "binding"; shapeId: string }>;
@@ -69,7 +79,7 @@ export const MAX_FONT_SIZE = 96;
 
 export type BoardDocument = Readonly<{
   format: "hydraw";
-  version: 7;
+  version: 8;
   theme?: BoardTheme;
   name: string;
   shapes: readonly Shape[];
@@ -79,12 +89,19 @@ export type BoardDocument = Readonly<{
 export const MAX_SHAPES = 5_000;
 // Covers the worst-case JSON encoding of every permitted record, including escaped Unicode.
 // Record counts and text lengths remain the tighter semantic limits.
-export const MAX_DOCUMENT_BYTES = 80_000_000;
+export const MAX_DOCUMENT_BYTES = 160_000_000;
 export const MAX_COORDINATE = 1_000_000;
 // Bound endpoints may lie beyond a node origin by the node's width/height.
 export const MAX_ENDPOINT_COORDINATE = MAX_COORDINATE * 2;
 export const MAX_SIZE = 100_000;
 
 export function createDocument(): BoardDocument {
-  return { format: "hydraw", version: 7, theme: "clean", name: "Untitled board", shapes: [], connectors: [] };
+  return {
+    format: "hydraw",
+    version: 8,
+    theme: "clean",
+    name: "Untitled board",
+    shapes: [],
+    connectors: [],
+  };
 }

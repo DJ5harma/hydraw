@@ -5,7 +5,11 @@ function endpointName(endpoint: Endpoint, document: BoardDocument): string {
   if (endpoint.type === "point") return "Canvas point";
   const index = document.shapes.findIndex((shape) => shape.id === endpoint.shapeId);
   const shape = document.shapes[index];
-  return shape?.type === "text" ? `Text ${index + 1}` : `Rectangle ${index + 1}`;
+  return shape?.type === "image"
+    ? `Image ${index + 1}`
+    : shape?.type === "text"
+      ? `Text ${index + 1}`
+      : `Rectangle ${index + 1}`;
 }
 
 export function ConnectorInspector({

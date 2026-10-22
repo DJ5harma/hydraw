@@ -43,6 +43,7 @@ export function labelTextShape(
   owner: Rectangle | Connector,
   shapes: readonly Shape[],
   measure: TextMeasurer,
+  fontFamily?: string,
 ): TextShape | null {
   const label = owner.label;
   if (!label) return null;
@@ -57,16 +58,20 @@ export function labelTextShape(
     color: label.color,
     textAlign: owner.type === "rectangle" && owner.kind === "frame" ? "left" : "center",
   };
-  const { height } = layoutText(draft, measure);
+  const { height } = layoutText(draft, measure, fontFamily);
   return { ...draft, height, y: box.y + Math.max(0, (box.height - height) / 2) };
 }
 
 /** Back only the visible caption, not its entire wrapping area. */
-export function labelBackdropBounds(label: TextShape, measure: TextMeasurer): Bounds {
-  const layout = layoutText(label, measure);
+export function labelBackdropBounds(
+  label: TextShape,
+  measure: TextMeasurer,
+  fontFamily?: string,
+): Bounds {
+  const layout = layoutText(label, measure, fontFamily);
   const width = Math.min(
     label.width,
-    Math.max(1, ...layout.lines.map((line) => measure(line, label))) + 8,
+    Math.max(1, ...layout.lines.map((line) => measure(line, { ...label, fontFamily }))) + 8,
   );
   return { x: label.x + (label.width - width) / 2, y: label.y, width, height: label.height };
 }

@@ -21,7 +21,7 @@ export function GeometryFields({ shape, editor }: { shape: Shape; editor: Editor
             className="geometry-field"
             key={key}
             {...field}
-            name={`${shape.type === "text" ? "Text" : shape.kind ? shape.kind[0]!.toUpperCase() + shape.kind.slice(1) : "Rectangle"} ${key}`}
+            name={`${shape.type === "text" ? "Text" : shape.type === "rectangle" ? (shape.kind ? shape.kind[0]!.toUpperCase() + shape.kind.slice(1) : "Rectangle") : "Image"} ${key}`}
             value={shape[key]}
             onCommit={(value) => editor.setGeometry({ [key]: value })}
           />

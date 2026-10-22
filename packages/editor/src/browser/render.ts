@@ -1,5 +1,15 @@
-import { rectangleAppearance, createConnectorResolver, sceneObjects, boardTheme, themePalette, themedShape, themedConnector } from "@hydraw/document";
+import {
+  rectangleAppearance,
+  createConnectorResolver,
+  sceneObjects,
+  boardTheme,
+  themePalette,
+  themedShape,
+  themedConnector,
+} from "@hydraw/document";
 import type { Rectangle, Shape, TextShape, Connector } from "@hydraw/document";
+import { createImagePainter } from "./render-images.ts";
+import type { ImagePainter } from "./render-images.ts";
 import { renderGuides } from "./render-guides.ts";
 import { drawConnector, drawConnectorHandles } from "./render-connectors.ts";
 import { labelBackdropBounds, labelClipBounds, labelTextShape } from "../labels.ts";
@@ -52,7 +62,7 @@ function drawRectangle(
       Math.min(style.cornerRadius * camera.zoom, width / 2, height / 2),
     );
   if (shape.fill !== "transparent") {
-  ctx.fillStyle = shape.fill;
+    ctx.fillStyle = shape.fill;
     ctx.fill();
   }
   const lineWidth = style.strokeWidth * camera.zoom;
@@ -84,7 +94,7 @@ function drawText(
   ctx.fillStyle = shape.color;
   ctx.textBaseline = "top";
   ctx.textAlign = shape.textAlign;
-  const layout = textLayout(shape);
+  const layout = textLayout(shape, fontFamily);
   const x =
     shape.textAlign === "left"
       ? TEXT_PADDING
@@ -108,8 +118,9 @@ function drawLabel(
   camera: Camera,
   textLayout: TextLayouter,
   measure: TextMeasurer,
+  palette: ReturnType<typeof themePalette>,
 ): void {
-  const label = labelTextShape(owner, shapes, measure);
+  const label = labelTextShape(owner, shapes, measure, palette.fontFamily);
   if (!label || !label.text) return;
   const clip = labelClipBounds(owner, shapes);
   ctx.save();
@@ -122,8 +133,8 @@ function drawLabel(
   );
   ctx.clip();
   if (owner.type === "connector") {
-    const backing = labelBackdropBounds(label, measure);
-    ctx.fillStyle = "#ffffff";
+    const backing = labelBackdropBounds(label, measure, palette.fontFamily);
+    ctx.fillStyle = palette.background;
     ctx.fillRect(
       backing.x * camera.zoom + camera.x,
       backing.y * camera.zoom + camera.y,
@@ -131,7 +142,13 @@ function drawLabel(
       Math.min(backing.height, clip.height) * camera.zoom,
     );
   } else ctx.globalAlpha = rectangleAppearance(owner).opacity / 100;
-  drawText(ctx, label, camera, textLayout);
+  drawText(
+    ctx,
+    { ...label, color: palette.objectText(label) },
+    camera,
+    textLayout,
+    palette.fontFamily,
+  );
   ctx.restore();
 }
 
@@ -142,7 +159,12 @@ function drawShape(
   viewport: Viewport,
   textLayout: TextLayouter,
   fontFamily: string,
+  images: ImagePainter,
 ): void {
+  if (shape.type === "image") {
+    images.draw(ctx, shape, camera);
+    return;
+  }
   if (shape.type === "rectangle") drawRectangle(ctx, shape, camera, viewport);
   else if (
     shape.x * camera.zoom + camera.x <= viewport.width &&
@@ -160,6 +182,7 @@ function renderScene(
   viewport: Viewport,
   textLayout: TextLayouter,
   measure: TextMeasurer,
+  images: ImagePainter,
 ): void {
   const { width, height, dpr } = viewport;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -178,7 +201,9 @@ function renderScene(
   }
   const selectedScene = selectionScene(snapshot);
   const sceneShapes = selectedScene.shapes.map((shape) => themedShape(shape, theme));
-  const sceneConnectors = selectedScene.connectors.map((connector) => themedConnector(connector, theme));
+  const sceneConnectors = selectedScene.connectors.map((connector) =>
+    themedConnector(connector, theme),
+  );
   const resolveConnector = createConnectorResolver(sceneShapes);
   const selectedIds = new Set(snapshot.selectedIds);
   for (const object of sceneObjects({
@@ -195,12 +220,12 @@ function renderScene(
         selectedIds.has(object.id) || object.id === snapshot.connectorPreview?.id,
       );
       if (snapshot.textEditing?.ownerId !== object.id)
-        drawLabel(ctx, object, sceneShapes, camera, textLayout, measure);
+        drawLabel(ctx, object, sceneShapes, camera, textLayout, measure, palette);
     } else {
       if (snapshot.textEditing?.ownerId || snapshot.textEditing?.draft.id !== object.id)
-        drawShape(ctx, object, camera, viewport, textLayout, palette.fontFamily);
+        drawShape(ctx, object, camera, viewport, textLayout, palette.fontFamily, images);
       if (object.type === "rectangle" && snapshot.textEditing?.ownerId !== object.id)
-        drawLabel(ctx, object, sceneShapes, camera, textLayout, measure);
+        drawLabel(ctx, object, sceneShapes, camera, textLayout, measure, palette);
     }
   }
   const selectedConnector =
@@ -229,9 +254,20 @@ function renderScene(
 }
 
 /** Per-canvas caches share the renderer's font metrics and live only as long as the adapter. */
-export function createSceneRenderer(ctx: CanvasRenderingContext2D) {
+export function createSceneRenderer(
+  ctx: CanvasRenderingContext2D,
+  schedule: () => void = () => {},
+) {
   const measure = createTextMeasurer(ctx);
   const textLayout = createTextLayouter(measure);
-  return (snapshot: EditorSnapshot, viewport: Viewport): void =>
-    renderScene(ctx, snapshot, viewport, textLayout, measure);
+  const images = createImagePainter(schedule);
+  const render = (snapshot: EditorSnapshot, viewport: Viewport): void => {
+    images.retain(
+      new Set(
+        snapshot.document.shapes.flatMap((shape) => (shape.type === "image" ? [shape.src] : [])),
+      ),
+    );
+    renderScene(ctx, snapshot, viewport, textLayout, measure, images);
+  };
+  return Object.assign(render, { dispose: () => images.dispose() });
 }

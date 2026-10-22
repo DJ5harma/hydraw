@@ -25,7 +25,9 @@ test("board styles render, undo, redo, persist and export", async ({ page }) => 
   const file = await download;
   const path = await file.path();
   expect(path).toBeTruthy();
-  const exported = JSON.parse(await import("node:fs/promises").then(({ readFile }) => readFile(path!, "utf8")));
+  const exported = JSON.parse(
+    await import("node:fs/promises").then(({ readFile }) => readFile(path!, "utf8")),
+  );
   expect(exported.theme).toBe("blueprint");
-  expect(exported.version).toBe(7);
+  expect(exported.version).toBe(8);
 });

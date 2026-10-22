@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { TEXT_FONT_FAMILY, TEXT_LINE_HEIGHT, TEXT_PADDING } from "@hydraw/editor";
+import { boardTheme, themePalette } from "@hydraw/document";
 import type { Editor } from "@hydraw/editor";
 import type { RefObject } from "react";
 
@@ -35,7 +36,10 @@ function TextDraft({
   canvasRef: RefObject<HTMLCanvasElement | null>;
   interactive: boolean;
 }) {
-  const { camera, textEditing } = useSyncExternalStore(editor.subscribe, editor.getSnapshot);
+  const { camera, document, textEditing } = useSyncExternalStore(
+    editor.subscribe,
+    editor.getSnapshot,
+  );
   const input = useRef<HTMLTextAreaElement>(null);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
@@ -65,7 +69,7 @@ function TextDraft({
           width: draft.width,
           height: draft.height,
           transform: `scale(${camera.zoom})`,
-          fontFamily: TEXT_FONT_FAMILY,
+          fontFamily: themePalette(boardTheme(document)).fontFamily || TEXT_FONT_FAMILY,
           fontSize: draft.fontSize,
           fontWeight: draft.fontWeight,
           lineHeight: TEXT_LINE_HEIGHT,

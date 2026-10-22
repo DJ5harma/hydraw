@@ -19,7 +19,7 @@ describe("frames", () => {
   it("migrates v0-v5 documents and gates the frame kind to v6", () => {
     for (let version = 0; version <= 5; version++) {
       const old = { format: "hydraw", version, name: "Board", shapes: [], connectors: [] };
-      expect(decodeDocument(old).version).toBe(7);
+      expect(decodeDocument(old).version).toBe(8);
       expect(() =>
         decodeDocument({ ...old, shapes: [{ ...rect("f", 0, 0), kind: "frame" }] }),
       ).toThrow();

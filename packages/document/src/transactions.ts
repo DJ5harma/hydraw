@@ -8,7 +8,13 @@ import type {
   Endpoint,
   ObjectMetadata,
 } from "./model.ts";
-import { decodeName, decodeShape, decodeConnector, assertConnectorGraph } from "./validation.ts";
+import {
+  decodeName,
+  decodeShape,
+  decodeConnector,
+  assertConnectorGraph,
+  assertImageBudget,
+} from "./validation.ts";
 import { isBoardTheme } from "./theme.ts";
 import type { BoardTheme } from "./theme.ts";
 
@@ -74,6 +80,7 @@ export function sameShape(a: Shape, b: Shape): boolean {
       left.cornerRadius === right.cornerRadius
     );
   }
+  if (a.type === "image" && b.type === "image") return a.src === b.src && a.name === b.name;
   return (
     a.type === "text" &&
     b.type === "text" &&
@@ -154,11 +161,15 @@ export function nameTransaction(before: string, after: string): DocumentTransact
   });
 }
 
-export function boardThemeTransaction(before: BoardTheme, after: BoardTheme): DocumentTransaction | null {
+export function boardThemeTransaction(
+  before: BoardTheme,
+  after: BoardTheme,
+): DocumentTransaction | null {
   if (before === after) return null;
-  return Object.freeze({ label: "Change board style", changes: Object.freeze([
-    Object.freeze({ type: "theme" as const, before, after }),
-  ]) });
+  return Object.freeze({
+    label: "Change board style",
+    changes: Object.freeze([Object.freeze({ type: "theme" as const, before, after })]),
+  });
 }
 
 type RecordChange<T> = Readonly<{ index: number; before: T | null; after: T | null }>;
@@ -206,10 +217,12 @@ export function applyTransaction(
   let theme = document.theme;
   for (const change of transaction.changes) {
     if (change.type === "name") {
-      if (name !== change.before) throw new Error("The board name changed before this transaction.");
+      if (name !== change.before)
+        throw new Error("The board name changed before this transaction.");
       name = decodeName(change.after);
     } else if (change.type === "theme") {
-      if ((theme ?? "clean") !== change.before) throw new Error("The board style changed before this transaction.");
+      if ((theme ?? "clean") !== change.before)
+        throw new Error("The board style changed before this transaction.");
       if (!isBoardTheme(change.after)) throw new Error("Invalid board style transaction.");
       theme = change.after;
     }
@@ -225,7 +238,14 @@ export function applyTransaction(
     { kind: "connector", limit: MAX_CONNECTORS, decode: decodeConnector, same: sameConnector },
   );
   assertConnectorGraph(shapes, connectors);
-  return Object.freeze({ ...document, name, ...(theme === undefined ? {} : { theme }), shapes, connectors });
+  assertImageBudget(shapes);
+  return Object.freeze({
+    ...document,
+    name,
+    ...(theme === undefined ? {} : { theme }),
+    shapes,
+    connectors,
+  });
 }
 
 export function invertTransaction(transaction: DocumentTransaction): DocumentTransaction {

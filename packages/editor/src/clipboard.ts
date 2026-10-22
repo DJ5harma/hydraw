@@ -23,7 +23,7 @@ import { selectionBounds } from "./selection.ts";
 
 const CLIPBOARD_FORMAT = "hydraw/selection";
 const CLIPBOARD_VERSION = 1;
-export const MAX_CLIPBOARD_BYTES = 1_000_000;
+export const MAX_CLIPBOARD_BYTES = 28_000_000;
 
 function utf8ByteLengthUpTo(text: string, limit: number): number {
   let bytes = 0;

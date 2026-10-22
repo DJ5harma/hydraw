@@ -6,7 +6,7 @@ import { createSceneRenderer } from "./browser/render.ts";
 export function attachCanvas(canvas: HTMLCanvasElement, editor: Editor): () => void {
   const context = canvas.getContext("2d");
   if (!context) throw new Error("Your browser could not start the drawing canvas.");
-  const renderScene = createSceneRenderer(context);
+  const renderScene = createSceneRenderer(context, schedule);
   let width = 0;
   let height = 0;
   let frame = 0;
@@ -40,6 +40,7 @@ export function attachCanvas(canvas: HTMLCanvasElement, editor: Editor): () => v
     observer.disconnect();
     unsubscribe();
     input.dispose();
+    renderScene.dispose();
     if (frame) cancelAnimationFrame(frame);
   };
 }

@@ -21,12 +21,14 @@ import { EditorToolbar } from "./EditorToolbar.tsx";
 import { EmptyCanvas } from "./EmptyCanvas.tsx";
 import { createEditorControls } from "./controls.ts";
 import { useWorkspaceOverlay } from "./useWorkspaceOverlay.ts";
+import { useBoardImages } from "./useBoardImages.ts";
 import { useClipboard } from "./useClipboard.ts";
 import { useEditorSnapshot } from "./useEditorSnapshot.ts";
 
 export function Workspace({ session }: { session: BoardSession }) {
   const { editor, storage } = session;
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const snapshot = useEditorSnapshot(editor);
   const overlay = useWorkspaceOverlay(canvasRef);
   const context = useCanvasContextMenu(editor, canvasRef, () => overlay.open("context"));
@@ -56,6 +58,7 @@ export function Workspace({ session }: { session: BoardSession }) {
   const distribute = (axis: DistributionAxis) =>
     runSelectionAction(() => editor.distributeSelection(axis));
   const { center, selectTool, keyboard } = createEditorControls(editor, canvasRef, duplicate);
+  const insertImages = useBoardImages({ editor, canvasRef, center, onError: setActionError });
   useClipboard({
     editor,
     center: () =>
@@ -118,6 +121,18 @@ export function Workspace({ session }: { session: BoardSession }) {
     >
       <section className="stage" aria-label="Drawing workspace">
         <CanvasSurface editor={editor} canvasRef={canvasRef} />
+        <input
+          ref={imageInputRef}
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          multiple
+          aria-label="Image files"
+          hidden
+          onChange={(event) => {
+            insertImages(Array.from(event.currentTarget.files ?? []));
+            event.currentTarget.value = "";
+          }}
+        />
         <InlineTextEditor editor={editor} canvasRef={canvasRef} />
         <BoardMenu
           name={snapshot.document.name}
@@ -174,6 +189,10 @@ export function Workspace({ session }: { session: BoardSession }) {
             editor={editor}
             center={center}
             onInserted={fit}
+            onImage={() => {
+              imageInputRef.current?.click();
+              overlay.close(false);
+            }}
             onClose={() => overlay.close()}
           />
         )}

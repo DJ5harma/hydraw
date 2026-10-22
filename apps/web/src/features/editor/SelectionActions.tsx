@@ -112,7 +112,9 @@ export function SelectionActions({
           ? "Connector style"
           : selectedShape?.type === "text"
             ? "Text style"
-            : `${selectedShape?.type === "rectangle" && selectedShape.kind ? selectedShape.kind[0]!.toUpperCase() + selectedShape.kind.slice(1) : "Rectangle"} style`;
+            : selectedShape?.type === "image"
+              ? "Image"
+              : `${selectedShape?.type === "rectangle" && selectedShape.kind ? selectedShape.kind[0]!.toUpperCase() + selectedShape.kind.slice(1) : "Rectangle"} style`;
   const geometryOpen =
     overlay === "geometry" && selectedShape !== undefined && !multi && !anyLocked;
 
@@ -173,6 +175,10 @@ export function SelectionActions({
             />
           ) : selectedShape?.type === "text" ? (
             <TextStyleControls key={selectedShape.id} shape={selectedShape} editor={editor} />
+          ) : selectedShape?.type === "image" ? (
+            <p className="locked-selection-message">
+              {selectedShape.name} · Drag to move; use handles to resize.
+            </p>
           ) : selectedShape?.type === "rectangle" ? (
             <RectangleStyleControls shape={selectedShape} editor={editor} />
           ) : null}
@@ -205,7 +211,7 @@ export function SelectionActions({
                     ? "Delete frame"
                     : selectedConnector
                       ? "Delete connector"
-                      : `Delete ${selectedShape?.type === "text" ? "text" : (selectedShape?.kind ?? "rectangle")}`
+                      : `Delete ${selectedShape?.type === "text" ? "text" : selectedShape?.type === "rectangle" ? (selectedShape.kind ?? "rectangle") : "image"}`
               }
               onClick={() => editor.removeSelection()}
             >

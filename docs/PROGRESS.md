@@ -414,3 +414,21 @@ The Connector (C) tool retains free-point drawing.
 Focused Chromium journeys cover handle interaction, label editing, separate label undo
 and atomic node-plus-arrow undo, existing-node connections, gesture cancellation and
 the C-tool free-point flow.
+
+## Milestone 19 — portable board images
+
+PNG, JPEG and WebP files can be inserted from Insert → Image, pasted while the
+canvas is focused, or dropped at a canvas location. The browser normalizes raster
+files to embedded PNGs; no image host or backend is required. Multiple files enter
+in one atomic history step. Images support movement, resizing, grouping, locks,
+clipboard reuse, attached connectors and native/SVG/PNG export. Pending decoding
+cannot insert into a replaced board or a disposed workspace.
+
+Native v8 adds image records and migrates older boards. Sources are limited to
+12 MB and 40 megapixels, normalized to at most 4096 pixels per side and 4 million
+encoded characters per image; each board permits 24 million encoded image
+characters. The native file envelope is 160 MB, allowing existing text/label limits
+and embedded images to round trip. This is a file limit, not a speed guarantee.
+Canvas image resources are released with their renderer. Theme font measurement,
+label colors and caption backing now match inline editing and visual export;
+changing themes refits text in the same undo step.
