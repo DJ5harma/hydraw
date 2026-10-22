@@ -9,8 +9,10 @@ test("board styles render, undo, redo, persist and export", async ({ page }) => 
   await expect(style).toHaveValue("notebook");
   await expect(page.getByRole("button", { name: "Undo", exact: true })).toBeEnabled();
   await page.getByRole("button", { name: "Undo", exact: true }).click();
+  await openBoardMenu(page);
   await expect(style).toHaveValue("clean");
   await page.getByRole("button", { name: "Redo", exact: true }).click();
+  await openBoardMenu(page);
   await expect(style).toHaveValue("notebook");
   await style.selectOption("blueprint");
   await expect(style).toHaveValue("blueprint");
