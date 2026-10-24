@@ -57,6 +57,7 @@ import type {
   OrderDirection,
   Shape,
   TextColor,
+  InkShape,
   TextShape,
 } from "@hydraw/document";
 import { labelTextShape } from "./labels.ts";
@@ -73,6 +74,7 @@ import { layoutText } from "./text-layout.ts";
 import type { TextMeasurer } from "./text-layout.ts";
 import { TransactionHistory } from "./history.ts";
 import type { EditorChromeSnapshot, EditorSnapshot, Tool } from "./types.ts";
+import { hitInkStroke, ERASER_RADIUS_SCREEN } from "./eraser.ts";
 
 function chromeSnapshot(snapshot: EditorSnapshot): EditorChromeSnapshot {
   const {
@@ -136,6 +138,8 @@ export class Editor {
       shapeKind: "rectangle",
       inkColor: "#202124",
       inkWidth: 3,
+      erasedIds: Object.freeze([]),
+      eraserCursor: null,
       camera: { x: 0, y: 0, zoom: 1 },
       connectorPreview: null,
       bindingTargetId: null,
@@ -504,7 +508,7 @@ export class Editor {
   setTool(tool: Tool): void {
     this.finishTextEditing();
     this.cancelGesture();
-    this.publish({ tool });
+    this.publish({ tool, eraserCursor: null });
   }
 
   /** Context actions target the hit object without collapsing an existing selection. */
@@ -663,6 +667,13 @@ export class Editor {
     if (selectedInk)
       this.commitShape("Style ink", selectedInk, { ...selectedInk, color, strokeWidth: inkWidth });
     this.publish({ inkColor: color, inkWidth });
+  }
+
+  setEraserCursor(point: Point | null): void {
+    if (this.snapshot.tool !== "eraser") return;
+    if (this.snapshot.eraserCursor?.x === point?.x && this.snapshot.eraserCursor?.y === point?.y)
+      return;
+    this.publish({ eraserCursor: point });
   }
 
   setBoardTheme(theme: BoardTheme): void {
@@ -965,6 +976,7 @@ export class Editor {
     this.gesture = start.gesture;
     this.lastGestureScreen = screen;
     this.publish(this.rankCreationPreview(start.patch));
+    if (this.gesture?.kind === "erase") this.move(screen);
   }
 
   private lastGestureScreen: Point | null = null;
@@ -1011,6 +1023,34 @@ export class Editor {
   move(screen: Point, snapping = true): void {
     if (!this.gesture) return;
     this.lastGestureScreen = screen;
+    if (this.gesture.kind === "erase") {
+      const gesture = this.gesture;
+      const next = screenToWorld(screen, this.snapshot.camera);
+      const protectedInk = (shape: InkShape): boolean => {
+        if (shape.locked) return true;
+        if (!shape.groupId) return false;
+        return [...this.snapshot.document.shapes, ...this.snapshot.document.connectors].some(
+          (item) => item.groupId === shape.groupId && item.locked,
+        );
+      };
+      const hits = this.snapshot.document.shapes
+        .filter(
+          (shape): shape is InkShape =>
+            shape.type === "ink" &&
+            !protectedInk(shape) &&
+            hitInkStroke(
+              shape,
+              gesture.last,
+              next,
+              ERASER_RADIUS_SCREEN / this.snapshot.camera.zoom,
+            ),
+        )
+        .map(({ id }) => id);
+      const erasedIds = [...new Set([...gesture.erasedIds, ...hits])];
+      this.gesture = { kind: "erase", last: next, erasedIds };
+      this.publish({ erasedIds, eraserCursor: screen, interacting: true });
+      return;
+    }
     if (this.gesture.kind === "ink") {
       let gesture = this.gesture;
       if (
@@ -1169,6 +1209,9 @@ export class Editor {
             this.publish({ selectedIds: [connectorPreview.id], tool: "select" });
           }
         }
+      } else if (gesture?.kind === "erase") {
+        const transaction = deleteObjectsTransaction(this.snapshot.document, gesture.erasedIds);
+        if (transaction) this.commit({ ...transaction, label: "Erase strokes" });
       } else if (
         gesture?.kind === "ink" &&
         preview &&

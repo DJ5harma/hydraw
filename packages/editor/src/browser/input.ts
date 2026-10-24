@@ -84,6 +84,8 @@ export function bindCanvasInput(
     "pointermove",
     (event) => {
       lastPoint = point(event);
+      if (activePointer !== event.pointerId && editor.getSnapshot().tool === "eraser")
+        editor.setEraserCursor(lastPoint);
       if (activePointer === event.pointerId) {
         try {
           editor.move(lastPoint, !event.altKey);
@@ -209,6 +211,7 @@ export function bindCanvasInput(
   canvas.addEventListener(
     "pointerleave",
     () => {
+      editor.setEraserCursor(null);
       if (activePointer === null) {
         lastPoint = null;
         schedule();
@@ -221,6 +224,7 @@ export function bindCanvasInput(
       const snapshot = editor.getSnapshot();
       if (snapshot.tool === "hand" || spacePressed)
         return snapshot.interacting ? "grabbing" : "grab";
+      if (snapshot.tool === "eraser") return "none";
       if (
         snapshot.tool === "rectangle" ||
         snapshot.tool === "draw" ||

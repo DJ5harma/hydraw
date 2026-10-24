@@ -135,7 +135,16 @@ export function selectionScene(snapshot: EditorSnapshot): ObjectUpdates {
     )
   )
     connectors.push(snapshot.connectorPreview);
-  return { shapes, connectors };
+  const erased = new Set(snapshot.erasedIds);
+  return {
+    shapes: shapes.filter((shape) => !erased.has(shape.id)),
+    connectors: connectors.filter(
+      (edge) =>
+        !erased.has(edge.id) &&
+        !(edge.start.type === "binding" && erased.has(edge.start.shapeId)) &&
+        !(edge.end.type === "binding" && erased.has(edge.end.shapeId)),
+    ),
+  };
 }
 
 export { selectionBounds } from "./selection-bounds.ts";

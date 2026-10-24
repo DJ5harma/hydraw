@@ -11,6 +11,7 @@ const tools = [
   { id: "connector", label: "Connector", key: "C", icon: "connector" },
   { id: "text", label: "Text", key: "T", icon: "text" },
   { id: "draw", label: "Draw", key: "P", icon: "pen" },
+  { id: "eraser", label: "Eraser", key: "E", icon: "eraser" },
   { id: "hand", label: "Hand", key: "H", icon: "hand" },
 ] as const;
 

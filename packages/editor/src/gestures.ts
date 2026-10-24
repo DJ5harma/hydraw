@@ -38,6 +38,7 @@ export type Gesture =
       recognized: boolean;
       recognitionAnchor: Point | null;
     }
+  | { kind: "erase"; last: Point; erasedIds: readonly string[] }
   | { kind: "resize"; start: Point; shape: Shape; handle: ResizeHandle }
   | { kind: "pan"; start: Point; camera: Camera };
 
@@ -57,7 +58,7 @@ export function previewGesture(
     gesture.kind === "create-connected"
   )
     return previewConnectorGesture(gesture, screen, camera, document.shapes);
-  if (gesture.kind === "ink") return {};
+  if (gesture.kind === "ink" || gesture.kind === "erase") return {};
   if (gesture.kind === "pan")
     return {
       camera: {
@@ -97,6 +98,8 @@ export const IDLE_GESTURE = Object.freeze({
   activeEndpoint: null,
   interacting: false,
   activeHandle: null,
+  erasedIds: Object.freeze([]),
+  eraserCursor: null,
 });
 
 type GestureStart = Readonly<{ gesture: Gesture | null; patch: Partial<EditorSnapshot> }>;
@@ -133,6 +136,12 @@ export function startGesture(
         recognitionAnchor: null,
       },
       patch: { interacting: true, selectedIds: [], preview: initial as InkShape | null },
+    };
+  }
+  if (tool === "eraser") {
+    return {
+      gesture: { kind: "erase", last: raw, erasedIds: [] },
+      patch: { interacting: true, erasedIds: [], eraserCursor: screen },
     };
   }
   if (tool === "connector") {

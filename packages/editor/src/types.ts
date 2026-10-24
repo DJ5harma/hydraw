@@ -8,12 +8,13 @@ import type {
   Connector,
   Bounds,
   ObjectUpdates,
+  Point,
 } from "@hydraw/document";
 import type { SnapGuide } from "./snapping.ts";
 import type { ConnectorEnd } from "./connector-interactions.ts";
 import type { ResizeHandle } from "./geometry.ts";
 
-export type Tool = "select" | "rectangle" | "draw" | "text" | "connector" | "hand";
+export type Tool = "select" | "rectangle" | "draw" | "eraser" | "text" | "connector" | "hand";
 export type Camera = Readonly<{ x: number; y: number; zoom: number }>;
 export type EditorSnapshot = Readonly<{
   document: BoardDocument;
@@ -26,6 +27,8 @@ export type EditorSnapshot = Readonly<{
   shapeKind: ShapeKind;
   inkColor: TextColor;
   inkWidth: number;
+  erasedIds: readonly string[];
+  eraserCursor: Point | null;
   camera: Camera;
   preview: Shape | null;
   selectionPreview: ObjectUpdates | null;
@@ -52,5 +55,7 @@ export type EditorChromeSnapshot = Omit<
   | "connectorPreview"
   | "bindingTargetId"
   | "activeEndpoint"
+  | "erasedIds"
+  | "eraserCursor"
 > &
   Readonly<{ zoom: number }>;

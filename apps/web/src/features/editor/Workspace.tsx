@@ -204,6 +204,7 @@ export function Workspace({ session }: { session: BoardSession }) {
           snapshot.document.connectors.length === 0 &&
           !snapshot.interacting &&
           !snapshot.textEditing &&
+          snapshot.tool !== "eraser" &&
           snapshot.tool !== "draw" &&
           snapshot.tool !== "text" &&
           snapshot.tool !== "connector" && <EmptyCanvas onStart={() => selectTool("rectangle")} />}

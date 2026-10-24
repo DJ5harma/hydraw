@@ -470,3 +470,14 @@ Six production/development Chromium checks pass using the actual image clipboard
 selected bounds and crisp dimensions, alpha transparency, frame contents, blueprint
 background pixels, and failure preserving undo. Scoped formatting/lint/types and
 the workspace typecheck pass.
+
+## Milestone 22 — whole-stroke eraser
+
+E selects an eraser that sweeps across freehand paths. Segment-to-segment hit tests
+cover fast motion, dots and zoom. Candidates disappear transiently; release removes
+crossed ink and its attached connectors in one undo transaction. Escape, blur or
+lost capture discard the preview. Locked strokes and locked groups stay protected,
+and ordinary shapes/images/text are not erased. Ten direct tools fit at 320 px.
+
+Five focused geometry/editor checks and two production/development browser journeys
+pass. Coverage includes fast sweeps, atomic undo, cancellation and lock protection.

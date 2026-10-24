@@ -256,6 +256,18 @@ function renderScene(
   }
   renderGuides(ctx, snapshot.guides, camera);
   drawSelection(ctx, snapshot, sceneShapes, sceneConnectors);
+  if (snapshot.tool === "eraser" && snapshot.eraserCursor) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(snapshot.eraserCursor.x, snapshot.eraserCursor.y, 12, 0, Math.PI * 2);
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.strokeStyle = "#364152";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.restore();
+  }
 }
 
 /** Per-canvas caches share the renderer's font metrics and live only as long as the adapter. */

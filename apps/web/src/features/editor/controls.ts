@@ -83,6 +83,7 @@ function createKeyboardHandler(
       } else if (key === "c") selectTool("connector");
       else if (key === "t") selectTool("text");
       else if (key === "p") selectTool("draw");
+      else if (key === "e") selectTool("eraser");
       else if (key === "h") selectTool("hand");
       else if (key === "delete" || key === "backspace") {
         event.preventDefault();
