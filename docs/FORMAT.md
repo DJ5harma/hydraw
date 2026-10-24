@@ -47,3 +47,7 @@ connectors and ink use opaque six-digit HEX. Decoding normalizes hexadecimal
 letters to lowercase and rejects arbitrary CSS, short hex and alpha encodings.
 The UI may expand short hex before committing. Preset palette values follow the
 board theme; colors outside the preset palettes retain their exact values.
+
+Recent custom colors are a separate UI preference under localStorage key
+`hydraw-recent-colors-v1`, bounded to eight validated HEX entries. Preference
+storage failures keep recents in memory and do not affect board persistence.

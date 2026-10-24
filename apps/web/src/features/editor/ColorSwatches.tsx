@@ -1,3 +1,4 @@
+import { CustomColorPicker } from "../colors/CustomColorPicker.tsx";
 import { FILLS, TEXT_COLORS } from "@hydraw/document";
 import { Icon } from "../../components/icons.tsx";
 
@@ -51,6 +52,12 @@ export function ColorSwatches<Color extends string>({
           {value === color && <Icon name="check" />}
         </button>
       ))}
+      <CustomColorPicker
+        value={value}
+        suffix={suffix}
+        custom={value !== "transparent" && !palette.some((item) => item.color === value)}
+        onChange={(color) => onChange(color as Color)}
+      />
     </div>
   );
 }

@@ -25,3 +25,8 @@ canvas/SVG/PNG, hit testing, erasing, labels, framing and selection bounds share
 polyline geometry. Bend dragging previews without saving, commits one undo step,
 and cancels without changing history. Straight/elbow, end direction and reset
 controls live in connector properties.
+
+Custom HEX colors are available beside preset swatches for fills, strokes, text,
+connectors and freehand ink. A shared picker stages edits until Apply, accepts
+short HEX input and keeps eight recent colors in browser-local preferences.
+Transparency remains a separate fill choice. Invalid CSS never reaches records.
