@@ -21,7 +21,7 @@ organization are the next focus.
 | Order | Increment                                 | Exit condition                                                                                                                                                                                                        |
 | ----- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Done  | Canvas-first workspace and fit navigation | No reserved header/default sidebar. Contextual actions preserve every existing workflow; fit board/selection makes offscreen content recoverable. Keyboard, responsive, persistence and interaction regressions pass. |
-| Done  | Labels attached to shapes/connectors      | Type directly; label follows movement, resize, duplication, save and undo. Existing files migrate without losing standalone text or bindings.                                                                         |
+| Done  | Labels attached to shapes/connectors      | Type directly; label follows movement, resize, duplication, save and undo. Native round trips preserve standalone text and bindings.                                                                                  |
 | Done  | SVG and PNG export                        | Board/selection exports faithfully include geometry and text, use predictable bounds/padding, and open in ordinary viewers. Editable native files remain available.                                                   |
 | Done  | Selection clipboard                       | Copy/cut/paste connected selections with fresh identities and one undo step. Internal bindings survive; external references detach safely. Native input clipboard remains untouched.                                  |
 | Done  | Smart placement and organization          | Edge/center and neighboring-gap guides during translation, Alt bypass, flat groups, direct-edit locks and cross-type ordering with atomic history.                                                                    |
@@ -34,19 +34,19 @@ list needs excellent navigation immediately. Visual export moves before clipboar
 because a named diagram that cannot leave the app as an image does not complete
 the handoff. Clipboard is valuable once that end-to-end workflow works.
 
-Each row spans small, runnable milestones. Include migrations, documentation and
+Each row spans small, runnable milestones. Include format validation, documentation and
 regressions with the behavior they verify; commit verified milestones separately.
 Do not combine this entire table into one implementation branch-sized change.
 
 ## Implemented label contract
 
-ADR 0009 records native format v4. Labels start with plain text contained
+ADR 0009 records the label contract. Labels start with plain text contained
 by a rectangle, sharing existing text metrics and native input integration. Own
 label content and placement on the shape rather than simulating attachment to an
 independent text record. Specify wrapping, padding, overflow and minimum size;
 avoid automatic resizing that unexpectedly moves neighboring geometry.
 
-Preserve rectangle/text/connector identities during migration. Label editing is
+Preserve rectangle/text/connector identities during native round trips. Label editing is
 one undoable action; movement/resizing and graph duplication carry the label.
 Empty labels retain their rectangle. Standalone text remains available for notes.
 Verify reload, native import/export/recovery, cancellation, IME composition and
@@ -73,7 +73,7 @@ Include keyboard, 200% browser zoom, high DPI, IME and another browser engine.
 
 Smart placement, flat groups, locking and front/back ordering are implemented in
 ADR 0010. Named frames and three architecture presets are implemented in ADR 0011
-(native format v6). Frames use spatial containment and exclude partially contained
+(current native format). Frames use spatial containment and exclude partially contained
 groups. Nested frames and presentation mode remain future work. Elbow routing
 needs a concrete routing contract first. Defer broad shape
 catalog expansion, templates, sketch styles, AI, presentation,
@@ -88,7 +88,7 @@ is not part of this request.
 
 Connected creation, embedded image insertion/paste/drop, freehand ink and held
 rectangle/ellipse recognition, and Clean/Notebook/Blueprint styles are implemented.
-See ADR 0012 for native v9, image/sample budgets, undo, export and font contracts.
+See ADR 0012 for native records, image/sample budgets, undo, export and font contracts.
 These additions broaden the local board; backend persistence and collaboration
 remain separate later milestones.
 

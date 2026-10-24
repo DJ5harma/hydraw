@@ -144,7 +144,8 @@ test("object navigation pages large boards and finds offscreen content without g
     buffer: Buffer.from(
       JSON.stringify({
         format: "hydraw",
-        version: 2,
+        version: 1,
+        theme: "clean",
         name: "Large board",
         shapes: Array.from({ length: 205 }, (_, i) => ({
           id: `r${i}`,

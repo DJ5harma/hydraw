@@ -46,21 +46,7 @@ export function isFill(value: unknown): value is Fill {
 
 /** Decode into new, known fields so persisted data never leaks arbitrary properties. */
 export function decodeDocument(value: unknown): BoardDocument {
-  if (
-    !record(value) ||
-    value.format !== "hydraw" ||
-    (value.version !== 0 &&
-      value.version !== 1 &&
-      value.version !== 2 &&
-      value.version !== 3 &&
-      value.version !== 4 &&
-      value.version !== 5 &&
-      value.version !== 6 &&
-      value.version !== 7 &&
-      value.version !== 8 &&
-      value.version !== 9 &&
-      value.version !== 10)
-  ) {
+  if (!record(value) || value.format !== "hydraw" || value.version !== 1) {
     throw new Error("This board uses an unsupported Hydraw format.");
   }
   if (!Array.isArray(value.shapes) || value.shapes.length > MAX_SHAPES) {
@@ -68,66 +54,22 @@ export function decodeDocument(value: unknown): BoardDocument {
   }
   const name = decodeName(value.name);
   const ids = new Set<string>();
-  const valueVersion = value.version;
-  if (
-    (valueVersion < 7 && value.theme !== undefined && value.theme !== "clean") ||
-    (value.theme !== undefined && !isBoardTheme(value.theme))
-  )
+  if (!isBoardTheme(value.theme))
     throw new Error("This board contains an unsupported visual theme.");
   const shapes = value.shapes.map((value: unknown): Shape => {
-    if (
-      valueVersion < 3 &&
-      record(value) &&
-      (value.appearance !== undefined || value.fill === "transparent")
-    )
-      throw new Error("Rectangle appearance requires Hydraw version 3.");
-    if (
-      valueVersion < 4 &&
-      record(value) &&
-      (value.kind !== undefined || value.label !== undefined)
-    )
-      throw new Error("Shape kinds and labels require Hydraw version 4.");
-    if (valueVersion < 5 && record(value) && hasMetadata(value))
-      throw new Error("Object organization requires Hydraw version 5.");
-    if (valueVersion < 6 && record(value) && value.kind === "frame")
-      throw new Error("Frames require Hydraw version 6.");
-    if (valueVersion < 9 && record(value) && value.type === "ink")
-      throw new Error("Freehand ink requires Hydraw version 9.");
-    if (valueVersion < 8 && record(value) && value.type === "image")
-      throw new Error("Images require Hydraw version 8.");
-    if (valueVersion < 10 && record(value) && value.type === "image" && value.crop !== undefined)
-      throw new Error("Image cropping requires Hydraw version 10.");
-    const shape = valueVersion === 0 ? decodeRectangle(value) : decodeShape(value);
+    const shape = decodeShape(value);
     if (ids.has(shape.id)) throw new Error("This board contains invalid duplicate shape IDs.");
     ids.add(shape.id);
     return shape;
   });
-  if (
-    valueVersion < 2 &&
-    value.connectors !== undefined &&
-    (!Array.isArray(value.connectors) || value.connectors.length !== 0)
-  )
-    throw new Error("Connectors require Hydraw version 2.");
-  if (
-    valueVersion < 4 &&
-    Array.isArray(value.connectors) &&
-    value.connectors.some((item: unknown) => record(item) && item.label !== undefined)
-  )
-    throw new Error("Connector labels require Hydraw version 4.");
-  if (
-    valueVersion < 5 &&
-    Array.isArray(value.connectors) &&
-    value.connectors.some((item: unknown) => record(item) && hasMetadata(item))
-  )
-    throw new Error("Object organization requires Hydraw version 5.");
   assertImageBudget(shapes);
   assertInkBudget(shapes);
-  const connectors = decodeConnectors(valueVersion >= 2 ? value.connectors : []);
+  const connectors = decodeConnectors(value.connectors);
   assertConnectorGraph(shapes, connectors);
   return Object.freeze({
     format: "hydraw",
-    version: 10,
-    theme: value.theme ?? "clean",
+    version: 1,
+    theme: value.theme,
     name,
     shapes: Object.freeze(shapes),
     connectors: Object.freeze(connectors),
@@ -369,9 +311,6 @@ export function decodeLabel(value: unknown): ShapeLabel {
   });
 }
 
-function hasMetadata(value: Record<string, unknown>): boolean {
-  return value.groupId !== undefined || value.locked !== undefined || value.zIndex !== undefined;
-}
 function decodeMetadata(value: Record<string, unknown>): ObjectMetadata {
   if (
     (value.groupId !== undefined &&

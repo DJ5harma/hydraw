@@ -38,7 +38,8 @@ test("context actions preserve selection, support locks, clipboard, keyboard and
     buffer: Buffer.from(
       JSON.stringify({
         format: "hydraw",
-        version: 6,
+        version: 1,
+        theme: "clean",
         name: "Context actions",
         connectors: [],
         shapes: [
@@ -122,7 +123,7 @@ test("context actions preserve selection, support locks, clipboard, keyboard and
   const cdp = await page.context().newCDPSession(page);
   await cdp.send("Input.dispatchTouchEvent", {
     type: "touchStart",
-    touchPoints: [{ x: 200, y: 400 }],
+    touchPoints: [{ x: 200, y: 160 }],
   });
   await expect(menu).toBeVisible();
   await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });

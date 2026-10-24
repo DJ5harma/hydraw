@@ -220,7 +220,7 @@ test("cancels drawing and endpoint changes, supports keyboard arrows, and reject
   await page.keyboard.press("Delete");
   expect(await exportBoard(page)).toEqual(before);
   for (const invalid of [
-    { ...before, version: 1 },
+    { ...before, version: 99 },
     {
       ...before,
       connectors: [{ ...before.connectors[0], end: { type: "binding", shapeId: "missing" } }],

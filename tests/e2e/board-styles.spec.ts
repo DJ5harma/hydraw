@@ -29,5 +29,5 @@ test("board styles render, undo, redo, persist and export", async ({ page }) => 
     await import("node:fs/promises").then(({ readFile }) => readFile(path!, "utf8")),
   );
   expect(exported.theme).toBe("blueprint");
-  expect(exported.version).toBe(10);
+  expect(exported.version).toBe(1);
 });

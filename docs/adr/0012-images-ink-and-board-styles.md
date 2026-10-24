@@ -7,8 +7,8 @@ recognition, connected creation and coordinated styles without a backend.
 
 ## Document and ownership
 
-Native v7 adds an optional board theme (Clean by default), v8 adds embedded image
-shapes, and v9 adds normalized freehand ink. Every earlier format migrates to v9.
+The current version-1 format requires an explicit board theme and supports embedded
+image shapes and normalized freehand ink. New boards start with the Clean theme.
 A theme change is a document transaction; standalone text is refitted with the
 chosen font in that same transaction. Theme rendering derives colors from the
 original semantic objects so switching back restores their authored styles.
@@ -56,7 +56,7 @@ are separate, predictable steps.
 ## Verification
 
 Unit tests exercise bounds, normalized points, recognition, style preservation,
-locked edits, semantic migrations, asset/sample limits, transaction atomicity,
+locked edits, semantic round trips, asset/sample limits, transaction atomicity,
 clipboard, fonts and exports. Browser journeys exercise image file/paste/drop,
 stale asynchronous insertion, persistence, drawing, recognition, cancellation,
 pan/zoom, connected creation and theme history. Desktop and 320 px layouts are

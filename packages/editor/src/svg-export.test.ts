@@ -4,7 +4,8 @@ import { exportSvg } from "./svg-export.ts";
 
 const document: BoardDocument = {
   format: "hydraw",
-  version: 10,
+  version: 1,
+  theme: "clean",
   name: "Export test",
   shapes: [
     {

@@ -83,8 +83,8 @@ export const MAX_FONT_SIZE = 96;
 
 export type BoardDocument = Readonly<{
   format: "hydraw";
-  version: 10;
-  theme?: BoardTheme;
+  version: 1;
+  theme: BoardTheme;
   name: string;
   shapes: readonly Shape[];
   connectors: readonly Connector[];
@@ -102,7 +102,7 @@ export const MAX_SIZE = 100_000;
 export function createDocument(): BoardDocument {
   return {
     format: "hydraw",
-    version: 10,
+    version: 1,
     theme: "clean",
     name: "Untitled board",
     shapes: [],

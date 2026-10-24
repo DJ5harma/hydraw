@@ -18,7 +18,7 @@ IndexedDB stores the current semantic board using transaction completion as the 
 
 History initially uses up to 100 immutable document snapshots. This makes local gesture behavior reviewable while the shape model is small. It has O(shape count × history depth) memory cost and performs whole-document validation per commit. Before large documents or collaboration, replace that implementation with explicit reversible transactions/operations, preserve these gesture tests, and measure memory and latency. Do not treat snapshot restoration as a collaborative undo protocol.
 
-Portable JSON version 0 is deliberately limited to rectangles. Export serializes semantic records rather than canvas state. Future unsupported versions fail explicitly; version migrations require fixtures.
+Portable JSON uses the current [version-1 document contract](../FORMAT.md). Export serializes semantic records rather than canvas state. Unsupported formats fail explicitly.
 
 ## Verification and revisit triggers
 

@@ -66,7 +66,7 @@ test("draw style and freehand strokes persist, undo and export", async ({ page }
   await page.mouse.up();
 
   const drawn = await exportBoard(page);
-  expect(drawn.version).toBe(10);
+  expect(drawn.version).toBe(1);
   expect(drawn.shapes).toHaveLength(1);
   expect(drawn.shapes[0]).toMatchObject({ type: "ink", color: "#3568db", strokeWidth: 5 });
   const ink = drawn.shapes[0]!;

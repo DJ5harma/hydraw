@@ -161,7 +161,7 @@ zoom for documents spanning the coordinate limits.
 ## Shape styling baseline
 
 Rectangle background/transparent fill, stroke color/width/style, opacity and
-square/rounded corners are implemented and persist in native format v3. Text and
+square/rounded corners are implemented and persist in the current native format. Text and
 connector selections immediately expose their existing controls. These are the
 first useful gaps against Excalidraw's [element defaults](https://github.com/excalidraw/excalidraw/blob/master/packages/common/src/constants.ts),
 not a claim of full parity. Patterned fills, sketch roughness, rotation and nested groups still need

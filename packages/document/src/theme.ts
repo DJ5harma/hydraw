@@ -9,7 +9,7 @@ export function isBoardTheme(value: unknown): value is BoardTheme {
 }
 
 export function boardTheme(document: Pick<BoardDocument, "theme">): BoardTheme {
-  return document.theme ?? "clean";
+  return document.theme;
 }
 
 export type ThemePalette = Readonly<{

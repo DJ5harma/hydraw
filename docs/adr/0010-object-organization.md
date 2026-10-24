@@ -2,9 +2,8 @@
 
 Accepted 21 October 2026.
 
-Native format v5 adds optional `groupId`, `locked` and finite `zIndex` metadata
-to shapes and connectors. Earlier versions migrate without changing identities,
-bindings or geometry. Metadata participates in transaction preconditions and undo.
+The current format supports optional `groupId`, `locked` and finite `zIndex` metadata
+on shapes and connectors. Metadata participates in transaction preconditions and undo.
 
 Groups are flat: selecting a member expands to its entire group. Movement and
 nudging preserve the members' relative positions. Regrouping merges whole groups;

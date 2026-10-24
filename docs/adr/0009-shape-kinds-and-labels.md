@@ -2,10 +2,9 @@
 
 Accepted 21 October 2026.
 
-Native format v4 adds optional rectangle `kind` (rectangle, ellipse, diamond) and
+The current format supports optional rectangle `kind` (rectangle, ellipse, diamond, frame) and
 optional `label` to nodes and connectors. Existing rectangle identity/type is
-preserved; absent kind is rectangle. Versions 0–3 migrate without mutating input;
-older versions reject the new fields. Labels own plain text, font size/weight and
+preserved; absent kind is rectangle. Labels own plain text, font size/weight and
 ink color, with the existing text limits. Clearing a label retains its owner.
 
 One native text draft handles standalone text and labels. Owner identity routes

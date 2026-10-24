@@ -4,7 +4,7 @@ Status: accepted, 20 October 2026.
 
 ## Document operations
 
-Selection identities are editor state, not document records. Version 2 remains unchanged. Focused document operation builders accept identities and return ordinary reversible transactions. Movement can also produce temporary record updates without validating or committing an entire board on every pointer frame.
+Selection identities are editor state, not document records. Selection does not change the document schema. Focused document operation builders accept identities and return ordinary reversible transactions. Movement can also produce temporary record updates without validating or committing an entire board on every pointer frame.
 
 All selected node origins and selected free connector endpoints constrain one shared movement delta. Group movement preserves relative positions when any member reaches its coordinate limit. Bindings remain references: selected nodes move their attached ends automatically, while explicit free endpoints move once. An attached end referencing an unselected node remains attached to it.
 

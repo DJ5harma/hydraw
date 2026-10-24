@@ -44,17 +44,10 @@ describe("bound connector documents", () => {
     expect(resolve(free)).toEqual(resolveConnector(free, [a, moved]));
     expect(() => createConnectorResolver([a])(connector)).toThrow("missing");
   });
-  it("migrates earlier versions and round-trips endpoint semantics", () => {
-    for (const version of [0, 1])
-      expect(decodeDocument({ format: "hydraw", version, name: "Earlier", shapes: [a] })).toEqual({
-        ...createDocument(),
-        name: "Earlier",
-        shapes: [a],
-      });
+  it("round-trips endpoint semantics", () => {
     const document = initial();
     expect(decodeDocument(JSON.parse(JSON.stringify(document)))).toEqual(document);
     expect(Object.isFrozen(document.connectors[0]?.start)).toBe(true);
-    expect(() => decodeDocument({ ...document, version: 1 })).toThrow("version 2");
   });
   it("rejects dangling, duplicate, self-bound and malformed connector records", () => {
     for (const patch of [

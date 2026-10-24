@@ -16,14 +16,7 @@ const rect = (id: string, x: number, y: number, width = 20, height = 20): Rectan
 });
 
 describe("frames", () => {
-  it("migrates v0-v5 documents and gates the frame kind to v6", () => {
-    for (let version = 0; version <= 5; version++) {
-      const old = { format: "hydraw", version, name: "Board", shapes: [], connectors: [] };
-      expect(decodeDocument(old).version).toBe(10);
-      expect(() =>
-        decodeDocument({ ...old, shapes: [{ ...rect("f", 0, 0), kind: "frame" }] }),
-      ).toThrow();
-    }
+  it("decodes the frame kind", () => {
     const frame = { ...rect("f", 0, 0), kind: "frame" };
     expect(decodeDocument({ ...createDocument(), shapes: [frame] }).shapes[0]).toMatchObject({
       kind: "frame",

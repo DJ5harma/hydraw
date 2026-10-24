@@ -4,9 +4,9 @@ Status: accepted, 20 October 2026. Extends ADRs 0002 and 0003.
 
 ## Version boundary
 
-New documents use version 1. Shapes are a discriminated union of rectangles and text, sharing immutable bounds and identity. Text records contain plain content, font size, weight, alignment and ink color. Validation bounds text to 2,000 UTF-16 code units, 12–96 px fonts, supported styles and finite geometry. Clipboard tabs normalize to four spaces; line endings normalize to LF before validation. Control characters other than LF are rejected.
+The current version-1 format includes standalone text. Shapes are a discriminated union, sharing immutable bounds and identity. Text records contain plain content, font size, weight, alignment and ink color. Validation bounds text to 2,000 UTF-16 code units, 12–96 px fonts, supported styles and finite geometry. Clipboard tabs normalize to four spaces; line endings normalize to LF before validation. Control characters other than LF are rejected.
 
-The decoder accepts rectangle-only version 0 and constructs version 1 without mutating the input. Version 1 decodes both supported types. Unknown versions and shape types still fail rather than being stripped or silently rewritten. Old stored data is only rewritten through an explicit edit or replacement; exporting always uses the current model. Earlier app builds reject version 1, preserving their existing unsupported-data behavior.
+The decoder accepts only the complete [current format](../FORMAT.md). Unknown versions and shape types fail rather than being stripped or silently rewritten. Exporting uses the same validated model as importing.
 
 Shape transactions retain full semantic before/after records for either type. Preconditions include content and style, so undo cannot silently overwrite a later text edit. An existing identity cannot change shape type.
 

@@ -112,7 +112,7 @@ export function BoardTransferDialog({
               void choose(file);
             }}
           />
-          <small>{fileName || `Versions 0–2 · up to ${MAX_DOCUMENT_BYTES / 1_000_000} MB`}</small>
+          <small>{fileName || `Version 1 · up to ${MAX_DOCUMENT_BYTES / 1_000_000} MB`}</small>
         </label>
       )}
       {reading && <p className="transfer-reading">Reading and validating your board…</p>}

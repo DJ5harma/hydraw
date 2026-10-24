@@ -7,7 +7,7 @@ cleanup; missing product features are not code defects.
 
 | Finding                                                                                             | Consequence                                                                 | Status                                                                                   |
 | --------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| Export has no byte limit while import caps files at 2 MB                                            | Valid local boards can produce backups that cannot be reopened              | Fixed: compact native serialization and an 80 MB envelope covering all supported records |
+| Export has no byte limit while import caps files at 2 MB                                            | Valid local boards can produce backups that cannot be reopened              | Fixed: compact native serialization and a 200 MB envelope covering all supported records |
 | Shape/connector transaction application repeats the same algorithm and copies both collections      | Duplicated invariants and unnecessary allocations on unrelated edits        | Fixed: shared application rules, indexed identities and untouched collection sharing     |
 | Editor coordination contains pointer hit testing and gesture construction                           | Tool interactions are difficult to review independently of commands/history | Fixed: pure gesture planning is separate from editor commands/history                    |
 | Single-object and selection movement use different coordinate constraints                           | Single-object drags can jump or stop early near the coordinate boundary     | Fixed: one translation path for all movable selections                                   |
@@ -20,7 +20,7 @@ cleanup; missing product features are not code defects.
 | Missing built assets fall through to the HTML navigation fallback                                   | Stale script/style URLs report success with the wrong content type          | Fixed: missing assets return 404; dotted frontend routes still receive the SPA           |
 
 Keep the existing package direction, atomic replacement queue, mutation lease,
-version migrations, native text input and gesture-scoped history. These mechanisms
+strict current-format validation, native text input and gesture-scoped history. These mechanisms
 have concrete correctness responsibilities and should not be removed as cosmetic
 "simplification". Do not introduce a general state framework, plugin system or
 speculative cloud abstractions during this cleanup.

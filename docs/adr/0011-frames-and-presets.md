@@ -2,9 +2,9 @@
 
 Accepted 21 October 2026.
 
-Native v6 adds the semantic rectangle kind `frame`. A frame reuses shape bounds,
+The current format supports the semantic rectangle kind `frame`. A frame reuses shape bounds,
 identity, lock, label and history rules. Its label is a name above its border.
-Earlier documents migrate without identity changes. Frames cannot be connector
+Frames cannot be connector
 binding targets. They remain transparent and do not intercept their empty interior.
 
 Frame contents are spatial: fully enclosed nodes and edges travel when the frame

@@ -23,26 +23,11 @@ const text: TextShape = {
   color: "#243e33",
 };
 describe("version 1 text documents", () => {
-  it("migrates rectangle-only v0 without losing records, and round-trips v1 text", () => {
-    const legacy = {
-      format: "hydraw",
-      version: 0,
-      name: "Legacy",
-      shapes: [{ id: "r", type: "rectangle", x: 1, y: 2, width: 30, height: 40, fill: "#e7eefb" }],
-    };
-    expect(decodeDocument(legacy)).toEqual({
-      ...legacy,
-      version: 10,
-      theme: "clean",
-      connectors: [],
-    });
-    expect(legacy.version).toBe(0);
-    expect(
-      decodeDocument({ format: "hydraw", version: 1, name: "Text from v1", shapes: [text] }),
-    ).toEqual({ ...createDocument(), name: "Text from v1", shapes: [text] });
+  it("round-trips text without changing the source", () => {
     const document = { ...createDocument(), shapes: [text] };
+    expect(decodeDocument(document)).toEqual(document);
+    expect(decodeDocument(document)).not.toBe(document);
     expect(parseDocument(JSON.stringify(document))).toEqual(document);
-    expect(() => decodeDocument({ ...document, version: 0 })).toThrow();
   });
   it("rejects invalid text content, styling, geometry and cross-type duplicate identities", () => {
     for (const patch of [

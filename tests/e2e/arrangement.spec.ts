@@ -6,7 +6,8 @@ const rectangle = { type: "rectangle", fill: "#e7eefb" };
 const connector = { type: "connector", color: "#243e33", arrowhead: "arrow" };
 const fixture = {
   format: "hydraw",
-  version: 2,
+  version: 1,
+  theme: "clean",
   name: "Arrange ideas",
   shapes: [
     { ...rectangle, id: "a", x: 100, y: 80, width: 100, height: 80 },

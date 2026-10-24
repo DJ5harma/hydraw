@@ -2,10 +2,11 @@ import { expect, it } from "vite-plus/test";
 import { decodeDocument, parseDocument, serializeDocument } from "@hydraw/document";
 import { Editor } from "./editor.ts";
 
-it("migrates plain v2 rectangles and round-trips undoable appearance without losing bindings", () => {
-  const legacy = {
+it("round-trips undoable appearance without losing bindings", () => {
+  const source = {
     format: "hydraw",
-    version: 2,
+    version: 1,
+    theme: "clean",
     name: "Earlier",
     shapes: [{ id: "r", type: "rectangle", x: 0, y: 0, width: 100, height: 80, fill: "#ffffff" }],
     connectors: [
@@ -19,10 +20,10 @@ it("migrates plain v2 rectangles and round-trips undoable appearance without los
       },
     ],
   };
-  const migrated = decodeDocument(legacy);
-  expect(migrated.version).toBe(10);
-  expect(migrated.shapes).toEqual(legacy.shapes);
-  const editor = new Editor(migrated);
+  const document = decodeDocument(source);
+  expect(document.version).toBe(1);
+  expect(document.shapes).toEqual(source.shapes);
+  const editor = new Editor(document);
   editor.select("r");
   editor.setRectangleStyle({
     stroke: "#3568db",
@@ -42,9 +43,9 @@ it("migrates plain v2 rectangles and round-trips undoable appearance without los
     },
   });
   expect(parseDocument(serializeDocument(styled))).toEqual(styled);
-  expect(styled.connectors).toEqual(migrated.connectors);
+  expect(styled.connectors).toEqual(document.connectors);
   editor.undo();
-  expect(editor.getSnapshot().document).toEqual(migrated);
+  expect(editor.getSnapshot().document).toEqual(document);
   editor.redo();
   expect(editor.getSnapshot().document).toEqual(styled);
   expect(() => editor.setRectangleStyle({ opacity: 101 })).toThrow("styling");

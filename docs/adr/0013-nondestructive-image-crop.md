@@ -2,8 +2,8 @@
 
 Status: implemented, 24 October 2026.
 
-Native v10 adds an optional image crop rectangle, normalized against the original
-embedded PNG. Earlier formats migrate without a crop. The original pixels and
+The current format supports an optional image crop rectangle, normalized against the original
+embedded PNG. The original pixels and
 identity remain unchanged; displayed bounds describe only the visible crop.
 Source bounds are recovered from those bounds and crop proportions, so subsequent
 movement and resizing apply coherently to both cropping and reset.
@@ -25,7 +25,7 @@ same proportions. Native/SVG exports retain the original embedded pixels; export
 PNG and clipboard images rasterize only the visible region. Ordinary clipboard and
 library fragments preserve crop metadata and remap identity on insertion.
 
-Unit checks cover validation, migrations, undo, bounds and binding changes, source
+Unit checks cover validation, round trips, undo, bounds and binding changes, source
 preservation, repeated crops and move/resize/reset. Browser checks cover entry,
 keyboard/drag controls, cancellation, reset, undo/redo, reload and exported pixel
 content. Desktop and 320 px overlays are visually inspected.

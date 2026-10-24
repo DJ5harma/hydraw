@@ -4,7 +4,7 @@ Status: accepted, 20 October 2026.
 
 ## Review and validation
 
-Import reads an explicitly selected file, checks the 2,000,000-byte limit, parses JSON and applies the existing document decoder. The parser also checks UTF-8 bytes so callers cannot bypass the limit using multibyte characters. Only supported version 0 documents enter the editor. The dialog shows the board name and rectangle count; it does not render a canvas thumbnail.
+Import reads an explicitly selected file, checks the 200,000,000-byte limit, parses JSON and applies the existing document decoder. The parser also checks UTF-8 bytes so callers cannot bypass the limit using multibyte characters. Only current version-1 documents enter the editor. The dialog shows the board name and object counts; it does not render a canvas thumbnail.
 
 Choosing a file does not modify the open board. A native modal keeps background editing inactive during review. Cancel leaves storage and editor state unchanged; outdated file reads are ignored. Import is unavailable without writable local storage because retaining the current board is part of the replacement contract.
 
@@ -20,6 +20,6 @@ The lease exposes replacement and idempotent release. A released lease cannot mu
 
 There is one recovery slot, not a board library or historical backup archive. Every successful import or restore replaces it with the current board. Restore uses the same operation, so it can be reversed by restoring again. Normal autosaves only update the primary slot.
 
-An invalid recovery slot is decoded separately from a valid primary board. The app opens the primary board, preserves unreadable recovery data during autosave and warns before explicit replacement overwrites it. Invalid primary data still enters the existing unsaved fallback without overwriting storage. Recovery from arbitrary primary corruption and migration of future document formats remain separate work.
+An invalid recovery slot is decoded separately from a valid primary board. The app opens the primary board, preserves unreadable recovery data during autosave and warns before explicit replacement overwrites it. Invalid primary data still enters the existing unsaved fallback without overwriting storage. Recovery from arbitrary primary corruption remains separate work.
 
 Browser data may be evicted or cleared, and the retained copy shares the same storage failure domain. Export remains the portable backup. Undo history belongs to the editing session and is never imported or persisted.

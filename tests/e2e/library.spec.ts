@@ -3,7 +3,7 @@ import { openBoardMenu } from "./ui.ts";
 
 const board = {
   format: "hydraw",
-  version: 10,
+  version: 1,
   theme: "clean",
   name: "Flow board",
   shapes: [
@@ -129,7 +129,7 @@ test("shows quota errors and preserves unreadable library records", async ({ pag
     version: 1,
     document: {
       format: "hydraw",
-      version: 10,
+      version: 1,
       theme: "clean",
       name: "Reusable",
       shapes: [board.shapes[0]],
@@ -202,7 +202,7 @@ test("cross-tab quota checks serialize concurrent library saves", async ({ page 
     version: 1,
     document: {
       format: "hydraw",
-      version: 10,
+      version: 1,
       theme: "clean",
       name: "Reusable",
       shapes: [board.shapes[0]],

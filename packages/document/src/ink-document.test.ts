@@ -21,7 +21,7 @@ const stroke = makeInkShape(
   3,
 )!;
 
-it("round trips ink and rejects invalid samples and legacy-format ink", () => {
+it("round trips ink and rejects invalid samples", () => {
   const document = decodeDocument({ ...createDocument(), shapes: [stroke] });
   expect(parseDocument(serializeDocument(document))).toEqual(document);
   for (const points of [
@@ -34,7 +34,6 @@ it("round trips ink and rejects invalid samples and legacy-format ink", () => {
       "freehand",
     );
   }
-  expect(() => decodeDocument({ ...document, version: 8 })).toThrow("version 9");
 });
 
 it("enforces a board point budget through imports and transactions without changing the source", () => {

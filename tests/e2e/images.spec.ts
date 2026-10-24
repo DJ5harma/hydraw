@@ -181,7 +181,8 @@ test("does not insert an image into a board that was replaced while decoding", a
 
   const replacement = {
     format: "hydraw",
-    version: 0,
+    version: 1,
+    theme: "clean",
     name: "Replacement board",
     shapes: [
       {

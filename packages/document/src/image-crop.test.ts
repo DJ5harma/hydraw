@@ -104,7 +104,7 @@ describe("non-destructive image cropping", () => {
     expect(resetImage.crop).toBeUndefined();
   });
 
-  it("rejects invalid normalized crops and crop metadata in legacy versions", () => {
+  it("rejects invalid normalized crops", () => {
     const doc = decodeDocument({ ...createDocument(), shapes: [original] });
     for (const crop of [
       { x: -0.1, y: 0, width: 0.5, height: 1 },
@@ -114,9 +114,6 @@ describe("non-destructive image cropping", () => {
     ])
       expect(() => imageCropTransaction(doc, "photo", crop)).toThrow();
     const crop = { x: 0.1, y: 0.1, width: 0.8, height: 0.8 };
-    expect(() =>
-      decodeDocument({ ...createDocument(), version: 9, shapes: [{ ...original, crop }] }),
-    ).toThrow("version 10");
     expect(
       decodeDocument({ ...createDocument(), shapes: [{ ...original, crop }] }).shapes[0],
     ).toMatchObject({ crop });

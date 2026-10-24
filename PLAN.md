@@ -125,7 +125,7 @@ Retain the explicitly chosen application stack: React, Hono, Drizzle, PostgreSQL
 
 ### What we own
 
-- Semantic document records, schema validation, migrations and portable file format.
+- Semantic document records, schema validation and portable file format.
 - Geometry, transforms, spatial indexing, snapping, connector binding and routing.
 - Tool state machines, pointer/keyboard interaction, selection and manipulation.
 - Canvas rendering, deterministic sketch rendering, freehand stroke processing and export.
@@ -188,7 +188,7 @@ hydraw/
     web/                    React routes, dashboard, editor shell, browser adapters
     server/                 Hono composition, API routes, Node entry point
   packages/
-    document/               record schemas, serialization, migrations, operation reducer
+    document/               record schemas, serialization, operation reducer
     editor/                 commands, tools, geometry, bindings, render adapters
     ui/                     shared accessible controls and design tokens
     contracts/              runtime API schemas and transport DTOs
@@ -274,17 +274,17 @@ Own the history stack and inverse-command construction. Keep remote actions out 
 
 Keep pointer handling and scene updates out of React-wide rerenders. Subscribe contextual controls to selected records; update the renderer from document deltas. Use world coordinates, a consistent transform matrix, a spatial index, viewport culling, dirty-layer rendering, cached geometry, and device-pixel-ratio handling. Move heavy layout/import computation to workers when profiling warrants it.
 
-The shape registry defines validation, defaults, geometry, ports, rendering, export, and migration for built-in shape types. This is an internal extension mechanism initially; arbitrary third-party code is deferred.
+The shape registry defines validation, defaults, geometry, ports, rendering, and export for built-in shape types. This is an internal extension mechanism initially; arbitrary third-party code is deferred.
 
 Canvas text and the DOM editing overlay must share font metrics, wrapping, baseline, and sizing rules. Prototype CJK/IME, emoji, RTL, pasted text, and font loading early. Accessibility requires keyboard creation/manipulation, visible focus, accessible properties, a navigable object/layers view, and reduced-motion support. A canvas bitmap alone is insufficient.
 
 Use consistent geometry for on-screen rendering and SVG export. Derive PNG from a tested export path. Wait for fonts/assets and warn about substitutions. Cross-origin assets must be fetched through controlled storage paths to avoid tainted canvas exports. Persist roughness seeds so sketch geometry stays stable.
 
-### File format and migration
+### File format
 
-The `.hydraw` portable format has a format version, board/page metadata, semantic records, and an asset manifest. Prefer a ZIP container with JSON and assets for a complete portable board. Internal cloud synchronization uses versioned semantic operations; neither rendering caches nor raw React state define the public file format.
+The current `.hydraw.json` portable format is version 1 JSON with semantic records and embedded images; see [the format contract](docs/FORMAT.md). A ZIP container and cloud synchronization are future design options. Neither rendering caches nor raw React state define the file format.
 
-Validate import sizes and archive expansion limits, migrate through explicit version steps, and report unsupported elements. Keep migration fixtures from each shipped version. Publish JSON schema/documentation when the format stabilizes. Read-only forward compatibility is preferable to silently dropping unknown data.
+Validate import sizes and reject unsupported formats explicitly. There are no compatibility decoders for pre-release development formats. Add a migration policy only when a shipped format has users who depend on it; any future archive format must also bound expansion sizes.
 
 ## 8. Persistence and collaboration protocol
 
@@ -451,7 +451,7 @@ Performance scenes must include text, long strokes, connectors, nesting, and hig
 
 ### Verification strategy
 
-- Unit/property tests for geometry, coordinate transforms, connector binding, ordering, schema migration, and command undo boundaries.
+- Unit/property tests for geometry, coordinate transforms, connector binding, ordering, schema validation, and command undo boundaries.
 - Multi-client operation tests for deterministic replay, preconditions, conflicts, undo, retries, duplicate/out-of-order delivery and offline recovery.
 - Postgres integration tests for transaction order, idempotency, compaction races, membership changes, RLS and repository isolation.
 - Browser journeys for guest drawing, reload recovery, OAuth return, cloud adoption, two editors, disconnected editing, permission rejection and export.
@@ -479,7 +479,7 @@ The earlier aggregate estimate is withdrawn: fully owning rendering, strokes, hi
 ### First implementation backlog
 
 1. Scaffold a pinned Vite+ pnpm workspace with React and Hono; shared strict TypeScript, CI, one production artifact and correct routing.
-2. Define version 0 document records and a five-object fixture: two labelled nodes, a bound connector, a sticky note, and a frame.
+2. Use the current version-1 document records and a five-object fixture: two labelled nodes, a bound connector, a sticky note, and a frame.
 3. Implement create/connect/edit/export using our own Canvas 2D renderer, geometry, tools and history. Measure interaction quality against the reference workflow.
 4. Prove text overlay alignment and export on the selected fonts, with IME and high-DPI input.
 5. Prove owned IndexedDB persistence, operation outbox, crash recovery, gesture undo and two-tab behavior.

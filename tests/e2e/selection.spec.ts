@@ -7,7 +7,8 @@ const rectangle = { type: "rectangle", y: 200, width: 140, height: 100, fill: "#
 const connector = { type: "connector", color: "#243e33", arrowhead: "arrow" };
 const fixture = {
   format: "hydraw",
-  version: 2,
+  version: 1,
+  theme: "clean",
   name: "Selection playground",
   shapes: [
     { ...rectangle, id: "a", x: 100 },

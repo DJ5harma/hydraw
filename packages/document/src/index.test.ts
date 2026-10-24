@@ -24,6 +24,19 @@ describe("semantic documents", () => {
       "rendererCache",
     );
   });
+  it("supports only the complete current schema without migration", () => {
+    const document = createDocument();
+    expect(document.version).toBe(1);
+    for (const version of [0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 99]) {
+      expect(() => decodeDocument({ ...document, version })).toThrow("unsupported Hydraw format");
+    }
+    // The pre-reset version-1 format did not have themes or connectors.
+    expect(() =>
+      decodeDocument({ format: "hydraw", version: 1, name: "Old", shapes: [] }),
+    ).toThrow();
+    expect(() => decodeDocument({ ...document, theme: undefined })).toThrow("theme");
+    expect(() => decodeDocument({ ...document, connectors: undefined })).toThrow("connector");
+  });
   it("rejects future versions, malformed geometry, duplicate IDs and unbounded files", () => {
     expect(() => decodeDocument({ ...createDocument(), version: 99 })).toThrow("unsupported");
     for (const invalid of [NaN, Infinity, -1, 0, 100_001]) {

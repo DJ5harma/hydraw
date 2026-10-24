@@ -2,13 +2,13 @@
 
 Status: accepted, 20 October 2026.
 
-## Records and migration
+## Records and validation
 
-Version 2 adds a separate connector collection. Shape records remain rectangles or text with bounds; connectors contain identity, two endpoints, ink color and an arrowhead setting. A connector is not a rectangle with fabricated bounds. IDs are unique across both collections.
+The current format has a separate connector collection. Shape records have bounds; connectors contain identity, two endpoints, ink color and an arrowhead setting. A connector is not a rectangle with fabricated bounds. IDs are unique across both collections.
 
 An endpoint is either an explicit canvas point or a reference to a rectangle/text identity. Bound positions are derived rather than persisted: a ray from the target's center toward the other endpoint intersects the target's bounds. If both centers coincide, deterministic opposite horizontal sides avoid invalid arithmetic. Shape movement, resizing and text reflow therefore change attachment positions without modifying the edge record. Straight segments are the first routing policy; custom ports, self-loops, bends and obstacle avoidance are separate work.
 
-The decoder migrates version 0 rectangle boards and version 1 rectangle/text boards into version 2 with no connectors. Legacy versions carrying nonempty connector data are rejected instead of silently dropping edges. Unsupported versions, malformed endpoints, duplicate identities, missing targets and both ends bound to the same shape fail validation. Free endpoints allow a larger coordinate range than node origins so detaching a perimeter beyond an origin limit preserves its location. Whole-arrow movement clamps both endpoint extents together.
+Unsupported versions, malformed endpoints, duplicate identities, missing targets and both ends bound to the same shape fail validation. Free endpoints allow a larger coordinate range than node origins so detaching a perimeter beyond an origin limit preserves its location. Whole-arrow movement clamps both endpoint extents together.
 
 ## Transactions and deletion
 
@@ -26,4 +26,4 @@ Clicking a bound line selects it without moving its endpoints. Endpoint handles 
 
 ## Verification
 
-Domain tests cover migration, immutable decoding, invalid references and identities, perimeter geometry, coincident centers, line-distance hit testing, cascade deletion with interleaved unrelated edges, inverse ordering and stale connector changes. Interaction tests cover zoom, preview stability, live attachment geometry, reconnection, cancellation, free movement, coordinate limits, replacement locks and text-clear cascades. Browser journeys exercise drawing, node edits, endpoint dragging, styling, undo, reload, import and recovery against development and production builds.
+Domain tests cover round trips, immutable decoding, invalid references and identities, perimeter geometry, coincident centers, line-distance hit testing, cascade deletion with interleaved unrelated edges, inverse ordering and stale connector changes. Interaction tests cover zoom, preview stability, live attachment geometry, reconnection, cancellation, free movement, coordinate limits, replacement locks and text-clear cascades. Browser journeys exercise drawing, node edits, endpoint dragging, styling, undo, reload, import and recovery against development and production builds.
