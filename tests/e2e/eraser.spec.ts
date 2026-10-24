@@ -58,3 +58,56 @@ test("E erases every crossed stroke in one undo step and Escape cancels the swee
   await page.mouse.up();
   expect(await exportBoard(page)).toEqual(before);
 });
+
+test("eraser follows intermediate samples in a batched pointer move", async ({ page }) => {
+  await page.goto("/");
+  const canvas = page.locator("canvas");
+  await canvas.focus();
+  await page.keyboard.press("p");
+  await stroke(page, { x: 280, y: 200 }, { x: 320, y: 200 });
+  await page.keyboard.press("e");
+  const start = await point(page, { x: 100, y: 400 });
+  await page.mouse.move(start.x, start.y);
+  await canvas.evaluate((element) => {
+    element.addEventListener(
+      "pointerdown",
+      (event) => {
+        const canvas = element as HTMLCanvasElement;
+        const bounds = canvas.getBoundingClientRect();
+        const sample = (x: number, y: number) =>
+          new PointerEvent("pointermove", {
+            pointerId: (event as PointerEvent).pointerId,
+            clientX: bounds.left + x,
+            clientY: bounds.top + y,
+            buttons: 1,
+            bubbles: true,
+          });
+        const move = sample(500, 400);
+        Object.defineProperty(move, "getCoalescedEvents", {
+          value: () => [sample(300, 200), sample(500, 400)],
+        });
+        canvas.dispatchEvent(move);
+      },
+      { once: true },
+    );
+  });
+  await page.mouse.down();
+  await page.mouse.up();
+  expect((await exportBoard(page)).shapes).toHaveLength(0);
+});
+
+test("eraser removes ordinary shapes and undo restores them", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("canvas").focus();
+  await page.keyboard.press("r");
+  await stroke(page, { x: 250, y: 250 }, { x: 450, y: 400 });
+  const before = await exportBoard(page);
+  expect(before.shapes[0]?.type).toBe("rectangle");
+  await closeOverlay(page);
+  await page.locator("canvas").focus();
+  await page.keyboard.press("e");
+  await stroke(page, { x: 100, y: 320 }, { x: 600, y: 320 });
+  expect((await exportBoard(page)).shapes).toHaveLength(0);
+  await page.getByRole("button", { name: "Undo", exact: true }).click();
+  expect((await exportBoard(page)).shapes).toEqual(before.shapes);
+});

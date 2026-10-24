@@ -58,7 +58,6 @@ import type {
   OrderDirection,
   Shape,
   TextColor,
-  InkShape,
   ImageCrop,
   TextShape,
 } from "@hydraw/document";
@@ -76,7 +75,7 @@ import { layoutText } from "./text-layout.ts";
 import type { TextMeasurer } from "./text-layout.ts";
 import { TransactionHistory } from "./history.ts";
 import type { EditorChromeSnapshot, EditorSnapshot, Tool } from "./types.ts";
-import { hitInkStroke, ERASER_RADIUS_SCREEN } from "./eraser.ts";
+import { erasedObjects, ERASER_RADIUS_SCREEN } from "./eraser.ts";
 
 function chromeSnapshot(snapshot: EditorSnapshot): EditorChromeSnapshot {
   const {
@@ -1035,26 +1034,12 @@ export class Editor {
     if (this.gesture.kind === "erase") {
       const gesture = this.gesture;
       const next = screenToWorld(screen, this.snapshot.camera);
-      const protectedInk = (shape: InkShape): boolean => {
-        if (shape.locked) return true;
-        if (!shape.groupId) return false;
-        return [...this.snapshot.document.shapes, ...this.snapshot.document.connectors].some(
-          (item) => item.groupId === shape.groupId && item.locked,
-        );
-      };
-      const hits = this.snapshot.document.shapes
-        .filter(
-          (shape): shape is InkShape =>
-            shape.type === "ink" &&
-            !protectedInk(shape) &&
-            hitInkStroke(
-              shape,
-              gesture.last,
-              next,
-              ERASER_RADIUS_SCREEN / this.snapshot.camera.zoom,
-            ),
-        )
-        .map(({ id }) => id);
+      const hits = erasedObjects(
+        this.snapshot.document,
+        gesture.last,
+        next,
+        ERASER_RADIUS_SCREEN / this.snapshot.camera.zoom,
+      );
       const erasedIds = [...new Set([...gesture.erasedIds, ...hits])];
       this.gesture = { kind: "erase", last: next, erasedIds };
       this.publish({ erasedIds, eraserCursor: screen, interacting: true });
@@ -1220,7 +1205,7 @@ export class Editor {
         }
       } else if (gesture?.kind === "erase") {
         const transaction = deleteObjectsTransaction(this.snapshot.document, gesture.erasedIds);
-        if (transaction) this.commit({ ...transaction, label: "Erase strokes" });
+        if (transaction) this.commit({ ...transaction, label: "Erase objects" });
       } else if (
         gesture?.kind === "ink" &&
         preview &&
@@ -1252,7 +1237,10 @@ export class Editor {
       }
     } finally {
       this.lastGestureScreen = null;
-      this.publish(IDLE_GESTURE);
+      this.publish({
+        ...IDLE_GESTURE,
+        eraserCursor: this.snapshot.tool === "eraser" ? this.snapshot.eraserCursor : null,
+      });
     }
   }
 
@@ -1265,6 +1253,7 @@ export class Editor {
     this.lastGestureScreen = null;
     this.publish({
       ...IDLE_GESTURE,
+      eraserCursor: this.snapshot.tool === "eraser" ? this.snapshot.eraserCursor : null,
       camera,
       selectedIds,
     });

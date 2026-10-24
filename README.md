@@ -37,7 +37,7 @@ The Dockerfile builds React and Hono together. The runtime image contains the bu
 
 - Double-click an unlocked image or choose Crop image in its properties/context menu. Drag an edge, or focus a crop handle and use arrows (Shift for larger steps); Apply commits one undoable crop. Cancel/Escape discards the draft. Reopen to adjust it or Reset crop to recover the original picture. Native files and SVG retain the original image; PNG exports and clipboard copies contain the visible crop.
 
-- E selects a whole-stroke eraser. Sweep across freehand marks to remove them together in one undo step. Locked strokes/groups stay protected; Escape cancels an unfinished sweep. Shapes, pictures and text remain untouched.
+- E selects an object eraser. Sweep across ink, shapes, text, pictures or connectors to remove them together in one undo step. Frames erase at their borders. Locked objects/groups stay protected; Escape cancels an unfinished sweep.
 
 - Copy selected objects or a frame directly as a crisp 2× PNG from selection properties or the context menu. Board menu → Copy as image also copies whole boards, with board-style or transparent backgrounds. Clipboard failures are visible and leave document/history unchanged.
 

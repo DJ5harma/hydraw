@@ -1,4 +1,5 @@
-import type { InkShape, Point } from "@hydraw/document";
+import { containsShape, createConnectorResolver, rectangleAppearance } from "@hydraw/document";
+import type { BoardDocument, InkShape, Point, Shape } from "@hydraw/document";
 
 export const ERASER_RADIUS_SCREEN = 12;
 
@@ -57,4 +58,89 @@ export function hitInkStroke(shape: InkShape, from: Point, to: Point, radius: nu
     if (segmentDistance(from, to, path[index - 1]!, path[index]!) <= threshold) return true;
   }
   return false;
+}
+
+/** Match object bodies, while frames erase only at their border. */
+export function hitEraserShape(shape: Shape, from: Point, to: Point, radius: number): boolean {
+  const stroke =
+    shape.type === "ink"
+      ? shape.strokeWidth
+      : shape.type === "rectangle"
+        ? rectangleAppearance(shape).strokeWidth
+        : 0;
+  const padding = radius + stroke / 2;
+  if (
+    Math.max(from.x, to.x) + padding < shape.x ||
+    Math.min(from.x, to.x) - padding > shape.x + shape.width ||
+    Math.max(from.y, to.y) + padding < shape.y ||
+    Math.min(from.y, to.y) - padding > shape.y + shape.height
+  )
+    return false;
+  if (shape.type === "ink") return hitInkStroke(shape, from, to, radius);
+  const frame = shape.type === "rectangle" && shape.kind === "frame";
+  if (!frame && (containsShape(shape, from) || containsShape(shape, to))) return true;
+  const { x, y, width: w, height: h } = shape;
+  let path: Point[];
+  if (shape.type === "rectangle" && shape.kind === "ellipse") {
+    // Bound the polygon's deviation to a fraction of the eraser radius.
+    const count = Math.min(
+      4096,
+      Math.max(32, Math.ceil(Math.PI * Math.sqrt(Math.max(w, h) / Math.max(radius / 4, 0.001)))),
+    );
+    path = Array.from({ length: count }, (_, i) => ({
+      x: x + w / 2 + (Math.cos((i * 2 * Math.PI) / count) * w) / 2,
+      y: y + h / 2 + (Math.sin((i * 2 * Math.PI) / count) * h) / 2,
+    }));
+  } else if (shape.type === "rectangle" && shape.kind === "diamond") {
+    path = [
+      { x: x + w / 2, y },
+      { x: x + w, y: y + h / 2 },
+      { x: x + w / 2, y: y + h },
+      { x, y: y + h / 2 },
+    ];
+  } else {
+    path = [
+      { x, y },
+      { x: x + w, y },
+      { x: x + w, y: y + h },
+      { x, y: y + h },
+    ];
+  }
+  const threshold =
+    radius + (shape.type === "rectangle" ? rectangleAppearance(shape).strokeWidth / 2 : 0);
+  return path.some(
+    (a, i) => segmentDistance(from, to, a, path[(i + 1) % path.length]!) <= threshold,
+  );
+}
+
+/** Collect editable objects crossed by a sweep, independent of input and history. */
+export function erasedObjects(
+  document: BoardDocument,
+  from: Point,
+  to: Point,
+  radius: number,
+): string[] {
+  const objects = [...document.shapes, ...document.connectors];
+  const lockedGroups = new Set(
+    objects.filter((item) => item.locked && item.groupId).map((item) => item.groupId),
+  );
+  const protectedObject = (item: (typeof objects)[number]) =>
+    !!item.locked || !!(item.groupId && lockedGroups.has(item.groupId));
+  // Deleting a node also deletes its bindings; keep protected edges intact.
+  const protectedBindings = new Set(
+    document.connectors
+      .filter(protectedObject)
+      .flatMap((edge) =>
+        [edge.start, edge.end].flatMap((end) => (end.type === "binding" ? [end.shapeId] : [])),
+      ),
+  );
+  const resolve = createConnectorResolver(document.shapes);
+  return objects
+    .filter((item) => {
+      if (protectedObject(item) || protectedBindings.has(item.id)) return false;
+      if (item.type !== "connector") return hitEraserShape(item, from, to, radius);
+      const ends = resolve(item);
+      return segmentDistance(from, to, ends.start, ends.end) <= radius + 1;
+    })
+    .map((item) => item.id);
 }

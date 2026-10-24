@@ -6,7 +6,7 @@ import { useEditorSnapshot } from "./useEditorSnapshot.ts";
 
 const shortcuts = [
   ["Freehand drawing", "P"],
-  ["Whole-stroke eraser", "E · drag"],
+  ["Object eraser", "E · drag"],
   ["Recognize a drawn rectangle / ellipse", "Hold briefly before releasing"],
   ["Select", "V"],
   ["Context actions", "Right-click / Shift F10 / long-press"],

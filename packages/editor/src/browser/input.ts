@@ -51,6 +51,16 @@ export function bindCanvasInput(
     const rect = canvas.getBoundingClientRect();
     return { x: event.clientX - rect.left, y: event.clientY - rect.top };
   }
+  function move(event: PointerEvent): void {
+    const tool = editor.getSnapshot().tool;
+    // Browsers may batch a curved path into one event. Retain those samples
+    // so ink and erasing follow the pointer rather than a shortcut chord.
+    if (tool === "draw" || tool === "eraser") {
+      for (const sample of event.getCoalescedEvents?.() ?? [])
+        editor.move(point(sample), !event.altKey);
+    }
+    editor.move(point(event), !event.altKey);
+  }
   function cancel(): void {
     const pointer = activePointer;
     activePointer = null;
@@ -88,7 +98,7 @@ export function bindCanvasInput(
         editor.setEraserCursor(lastPoint);
       if (activePointer === event.pointerId) {
         try {
-          editor.move(lastPoint, !event.altKey);
+          move(event);
           if (
             editor.getSnapshot().tool === "draw" &&
             recognitionAnchor &&
@@ -110,7 +120,7 @@ export function bindCanvasInput(
     (event) => {
       if (activePointer !== event.pointerId) return;
       try {
-        editor.move(point(event), !event.altKey);
+        move(event);
         editor.finish();
       } catch (error) {
         if (onError) onError(error);
@@ -224,7 +234,7 @@ export function bindCanvasInput(
       const snapshot = editor.getSnapshot();
       if (snapshot.tool === "hand" || spacePressed)
         return snapshot.interacting ? "grabbing" : "grab";
-      if (snapshot.tool === "eraser") return "none";
+      if (snapshot.tool === "eraser") return snapshot.eraserCursor ? "none" : "crosshair";
       if (
         snapshot.tool === "rectangle" ||
         snapshot.tool === "draw" ||

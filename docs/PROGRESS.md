@@ -517,3 +517,16 @@ builds and 131 Chromium browser journeys across development and production. One
 source-module-only concurrency test is intentionally skipped in production; its
 real-UI quota counterpart passes there. Existing clipboard, context menu, keyboard,
 text, recovery and narrow-window workflows pass with the new actions.
+
+## Eraser consistency fix
+
+The eraser now removes shapes (including recognized drawings), text, images and
+connectors as well as ink. Sweeps use object geometry; frame interiors stay clear
+so contents can be erased without removing their container. Locked objects,
+locked groups and shapes bound to protected connectors stay intact. Each sweep
+remains a single undo step, with Escape restoring its preview.
+
+Input consumes batched pointer samples to follow fast curved paths, and the
+eraser cursor remains visible after release or cancellation. Regression coverage
+includes mixed-object deletion and undo, actual ellipse/diamond outlines, frame
+interiors, lock protection and production/development browser sweeps.
