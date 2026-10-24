@@ -131,8 +131,7 @@ export function LibraryPanel({
         <header className="library-panel-heading">
           <div>
             <h2>My library</h2>
-            <p>Save editable selections and reuse them on any board.</p>
-            <p className="library-storage-note">Saved in this browser.</p>
+            <p>Reusable selections · saved in this browser</p>
           </div>
           <button
             className="library-panel-close"
@@ -155,51 +154,44 @@ export function LibraryPanel({
           </p>
         )}
 
-        <form className="library-save-form" onSubmit={(event) => void saveSelection(event)}>
-          <label htmlFor="library-item-name">Save current selection</label>
-          <div className="library-save-row">
-            <input
-              id="library-item-name"
-              autoFocus={mode === "save"}
-              value={name}
-              maxLength={120}
-              placeholder={
-                snapshot.selectedIds.length ? "Name this item" : "Select objects on the board first"
-              }
-              disabled={!snapshot.selectedIds.length || saving}
-              onChange={(event) => setName(event.target.value)}
-            />
-            <button
-              className="library-primary"
-              type="submit"
-              disabled={!snapshot.selectedIds.length || saving}
-            >
-              {saving ? "Saving…" : "Save"}
-            </button>
-          </div>
-          <small>
-            {snapshot.selectedIds.length
-              ? "Objects, groups and internal connectors stay editable."
-              : "Select one or more objects, then save them here."}
-          </small>
-        </form>
+        {snapshot.selectedIds.length > 0 && (
+          <form className="library-save-form" onSubmit={(event) => void saveSelection(event)}>
+            <label htmlFor="library-item-name">Save current selection</label>
+            <div className="library-save-row">
+              <input
+                id="library-item-name"
+                autoFocus={mode === "save"}
+                value={name}
+                maxLength={120}
+                placeholder="Name this item"
+                disabled={saving}
+                onChange={(event) => setName(event.target.value)}
+              />
+              <button className="library-primary" type="submit" disabled={saving}>
+                {saving ? "Saving…" : "Save"}
+              </button>
+            </div>
+          </form>
+        )}
 
         <div className="library-list-heading">
           <h3>Saved items</h3>
           <span>{items.length} / 50</span>
         </div>
-        <label className="library-search-label">
-          <span className="library-search-icon" aria-hidden="true">
-            ⌕
-          </span>
-          <input
-            aria-label="Search library"
-            type="search"
-            value={search}
-            placeholder="Search saved items"
-            onChange={(event) => setSearch(event.target.value)}
-          />
-        </label>
+        {items.length > 0 && (
+          <label className="library-search-label">
+            <span className="library-search-icon" aria-hidden="true">
+              ⌕
+            </span>
+            <input
+              aria-label="Search library"
+              type="search"
+              value={search}
+              placeholder="Search saved items"
+              onChange={(event) => setSearch(event.target.value)}
+            />
+          </label>
+        )}
 
         <div className="library-list" aria-live="polite">
           {loading ? (
@@ -312,7 +304,9 @@ export function LibraryPanel({
             <p className="library-empty">
               {items.length
                 ? "No saved items match your search."
-                : "Your library is empty. Select objects on the board and save a selection to start."}
+                : snapshot.selectedIds.length
+                  ? "No saved items yet."
+                  : "No saved items yet. Select objects and choose “Save to library”."}
             </p>
           )}
         </div>

@@ -80,7 +80,6 @@ export function InsertPanel({
 
         <section className="insert-panel-presets" aria-labelledby="insert-panel-presets-title">
           <h3 id="insert-panel-presets-title">Architecture presets</h3>
-          <p className="insert-panel-subtitle">Editable, grouped nodes and connectors.</p>
           <div className="insert-panel-preset-list">
             {PRESETS.map((preset, index) => (
               <button

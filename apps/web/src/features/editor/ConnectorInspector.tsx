@@ -27,7 +27,6 @@ export function ConnectorInspector({
   const bound = connector.start.type === "binding" || connector.end.type === "binding";
   return (
     <section className="inspector-section connector-controls">
-      <h3>Connector</h3>
       <button className="file-button" onClick={() => editor.editText(connector.id)}>
         <Icon name="text" />
         {connector.label ? "Edit label" : "Add label"}

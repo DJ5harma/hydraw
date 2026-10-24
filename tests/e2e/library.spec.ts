@@ -119,7 +119,7 @@ test("saves a connected selection, inserts fresh editable IDs, undoes, and manag
   await expect(library.getByText("Gateway flow", { exact: true })).toBeVisible();
   await library.getByRole("button", { name: "Delete", exact: true }).click();
   await library.getByRole("button", { name: "Confirm delete", exact: true }).click();
-  await expect(library.getByText("Your library is empty.", { exact: false })).toBeVisible();
+  await expect(library.getByText("No saved items yet.", { exact: false })).toBeVisible();
 });
 
 test("shows quota errors and preserves unreadable library records", async ({ page }) => {

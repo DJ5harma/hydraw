@@ -8,7 +8,6 @@ import { ColorSwatches, inkPalette } from "./ColorSwatches.tsx";
 export function TextStyleControls({ shape, editor }: { shape: TextShape; editor: Editor }) {
   return (
     <section className="inspector-section text-style-controls">
-      <h3>Text</h3>
       <button className="file-button edit-text-button" onClick={() => editor.editText(shape.id)}>
         Edit text
       </button>

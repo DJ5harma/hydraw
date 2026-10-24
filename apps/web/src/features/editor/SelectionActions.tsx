@@ -148,26 +148,20 @@ export function SelectionActions({
         <header className="selection-properties-heading">
           <h2>{title}</h2>
           {oneGroup && <span className="selection-group-badge">Group</span>}
-          <div className="selection-quick-actions">
-            <button
-              className="selection-action"
-              aria-label="Save to library"
-              title="Save to library"
-              onClick={onSaveToLibrary}
-            >
-              <Icon name="library" />
-            </button>
-            <button
-              className="selection-action"
-              aria-label="Copy as image"
-              title="Copy as image"
-              onClick={onCopyImage}
-            >
-              <Icon name="image" />
-            </button>
-          </div>
         </header>
         <div className="selection-properties-content">
+          <div
+            className="selection-quick-actions"
+            role="group"
+            aria-label="Save and copy selection"
+          >
+            <button className="file-button" onClick={onSaveToLibrary}>
+              <Icon name="library" /> Save to library
+            </button>
+            <button className="file-button" onClick={onCopyImage}>
+              <Icon name="image" /> Copy as image
+            </button>
+          </div>
           {commandError && (
             <p className="selection-command-error" role="alert">
               {commandError}

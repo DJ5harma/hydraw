@@ -47,11 +47,6 @@
   line-height: 1.4;
 }
 
-.library-panel-heading .library-storage-note {
-  color: var(--text-muted, #647182);
-  font-size: 12px;
-}
-
 .library-panel-close {
   display: grid;
   width: 28px;
@@ -109,14 +104,6 @@
   height: 34px;
   flex: 1;
   padding: 0 9px;
-}
-
-.library-save-form small {
-  display: block;
-  margin-top: 6px;
-  color: var(--text-muted, #647182);
-  font-size: 12px;
-  line-height: 1.35;
 }
 
 .library-panel button {

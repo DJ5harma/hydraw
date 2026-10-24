@@ -85,7 +85,6 @@ export function ObjectNavigator({
               setQuery(event.target.value);
               setPage(0);
             }}
-            placeholder="Search objects"
           />
         </label>
         {snapshot.document.shapes.some(isFrame) && (

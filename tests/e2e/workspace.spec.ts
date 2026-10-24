@@ -226,6 +226,12 @@ test("selection exposes styling directly, keeps shortcut hints, and saves rectan
   await addRectangle(page);
   const properties = page.getByRole("region", { name: "Selection properties", exact: true });
   await expect(properties).toBeVisible();
+  await expect(properties.getByRole("button", { name: "Save to library", exact: true })).toHaveText(
+    "Save to library",
+  );
+  await expect(properties.getByRole("button", { name: "Copy as image", exact: true })).toHaveText(
+    "Copy as image",
+  );
   await expect(page.locator("canvas")).toBeFocused();
   await expect(
     page.getByRole("button", { name: "Rectangle (R)", exact: true }).locator("kbd"),
@@ -297,6 +303,8 @@ test("image insertion is direct and the floating library restores focus at deskt
     expect(bounds.y).toBeLessThan(20);
     await library.click();
     await expect(page.getByRole("dialog", { name: "My library", exact: true })).toBeVisible();
+    await expect(page.getByLabel("Save current selection")).toHaveCount(0);
+    await expect(page.getByRole("searchbox", { name: "Search library" })).toHaveCount(0);
     await page.keyboard.press("Escape");
     await expect(library).toBeFocused();
   }

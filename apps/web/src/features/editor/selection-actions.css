@@ -510,13 +510,15 @@
   font-size: 13px;
 }
 .selection-quick-actions {
-  display: flex;
-  gap: 2px;
+  display: grid;
+  gap: 6px;
+  margin-bottom: 16px;
 }
-.selection-quick-actions .selection-action {
-  width: 28px;
-  min-height: 28px;
-  padding: 5px;
+.selection-quick-actions .file-button {
+  justify-content: flex-start;
+  gap: 9px;
+}
+.selection-quick-actions svg {
   color: var(--text-muted);
 }
 .selection-properties .selection-shelf {
