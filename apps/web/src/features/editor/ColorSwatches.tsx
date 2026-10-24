@@ -1,9 +1,8 @@
 import { FILLS, TEXT_COLORS } from "@hydraw/document";
-import type { Fill, TextColor } from "@hydraw/document";
 import { Icon } from "../../components/icons.tsx";
 
 // Names live with their palettes rather than being repeated by each inspector.
-const fillNames: Record<Fill, string> = {
+const fillNames: Record<(typeof FILLS)[number], string> = {
   "#e7eefb": "Blue",
   "#e6f2ea": "Sage",
   "#fff0d5": "Sand",
@@ -11,7 +10,7 @@ const fillNames: Record<Fill, string> = {
   "#ffffff": "White",
   transparent: "Transparent",
 };
-const inkNames: Record<TextColor, string> = {
+const inkNames: Record<(typeof TEXT_COLORS)[number], string> = {
   "#243e33": "Forest",
   "#3568db": "Blue",
   "#8d315a": "Rose",

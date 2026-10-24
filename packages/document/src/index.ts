@@ -18,3 +18,5 @@ export * from "./images.ts";
 export * from "./image-crop.ts";
 
 export * from "./ink.ts";
+
+export * from "./colors.ts";

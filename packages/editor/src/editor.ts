@@ -7,6 +7,7 @@ import {
   simplifyInkPoints,
   MAX_INK_POINTS,
   isTextColor,
+  isFill,
   imageCropTransaction,
   boardTheme,
   boardThemeTransaction,
@@ -655,6 +656,8 @@ export class Editor {
   }
 
   setFill(fill: Fill): void {
+    if (!isFill(fill)) throw new Error("Choose a valid fill color.");
+    fill = fill.toLowerCase() as Fill;
     if (this.selectionLocked()) return;
     this.finishTextEditing();
     this.cancelGesture();
@@ -677,7 +680,10 @@ export class Editor {
     this.cancelGesture();
     const shape = this.selectedShape();
     const selectedInk = this.snapshot.tool === "select" && shape?.type === "ink" ? shape : null;
-    const color = style.color ?? selectedInk?.color ?? this.snapshot.inkColor;
+    const color =
+      (style.color?.toLowerCase() as TextColor | undefined) ??
+      selectedInk?.color ??
+      this.snapshot.inkColor;
     const inkWidth = strokeWidth ?? selectedInk?.strokeWidth ?? this.snapshot.inkWidth;
     if (selectedInk)
       this.commitShape("Style ink", selectedInk, { ...selectedInk, color, strokeWidth: inkWidth });

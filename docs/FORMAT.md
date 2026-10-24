@@ -39,3 +39,11 @@ The writer lock is `hydraw-board-v1-writer`. Personal library items live in
 `hydraw-library-v1` (IndexedDB schema 1). Both databases start fresh after the reset.
 The app does not open, migrate or delete the old development databases. Existing
 browser data stays isolated; it cannot reappear through autosave or recovery.
+
+## Colors
+
+Fill accepts `transparent` or an opaque six-digit HEX color. Stroke, text, labels,
+connectors and ink use opaque six-digit HEX. Decoding normalizes hexadecimal
+letters to lowercase and rejects arbitrary CSS, short hex and alpha encodings.
+The UI may expand short hex before committing. Preset palette values follow the
+board theme; colors outside the preset palettes retain their exact values.

@@ -1,3 +1,4 @@
+import { isHexColor } from "./colors.ts";
 import { MAX_INK_POINTS } from "./ink.ts";
 import type { InkShape } from "./ink.ts";
 import type { RectangleAppearance } from "./appearance.ts";
@@ -10,8 +11,6 @@ import {
   MAX_DOCUMENT_BYTES,
   MAX_COORDINATE,
   MAX_SIZE,
-  FILLS,
-  TEXT_COLORS,
   MAX_TEXT_LENGTH,
   MIN_FONT_SIZE,
   MAX_FONT_SIZE,
@@ -42,7 +41,7 @@ function finite(value: unknown, min: number, max: number): value is number {
 }
 
 export function isFill(value: unknown): value is Fill {
-  return FILLS.some((fill) => value === fill);
+  return value === "transparent" || isHexColor(value);
 }
 
 /** Decode into new, known fields so persisted data never leaks arbitrary properties. */
@@ -127,7 +126,7 @@ export function decodeRectangle(shape: unknown): Rectangle {
     y: shape.y,
     width: shape.width,
     height: shape.height,
-    fill: shape.fill,
+    fill: shape.fill.toLowerCase() as Fill,
     ...(shape.kind === undefined ? {} : { kind: shape.kind }),
     ...(shape.label === undefined ? {} : { label: decodeLabel(shape.label) }),
     ...(shape.appearance === undefined ? {} : { appearance: decodeAppearance(shape.appearance) }),
@@ -141,7 +140,7 @@ export function decodeName(name: unknown): string {
 }
 
 export function isTextColor(value: unknown): value is TextColor {
-  return TEXT_COLORS.some((color) => color === value);
+  return isHexColor(value);
 }
 
 export function decodeShape(value: unknown): Shape {
@@ -183,7 +182,7 @@ export function decodeText(shape: unknown): TextShape {
     fontSize: shape.fontSize,
     fontWeight: shape.fontWeight,
     textAlign: shape.textAlign,
-    color: shape.color,
+    color: shape.color.toLowerCase() as TextColor,
   });
 }
 
@@ -251,7 +250,7 @@ export function decodeConnector(value: unknown): Connector {
     ...decodeMetadata(value),
     start,
     end,
-    color: value.color,
+    color: value.color.toLowerCase() as TextColor,
     arrowhead: value.arrowhead,
     ...(value.route === undefined ? {} : { route: decodeRoute(value.route) }),
     ...(value.label === undefined ? {} : { label: decodeLabel(value.label) }),
@@ -325,7 +324,7 @@ export function decodeLabel(value: unknown): ShapeLabel {
     text: value.text,
     fontSize: value.fontSize,
     fontWeight: value.fontWeight,
-    color: value.color,
+    color: value.color.toLowerCase() as TextColor,
   });
 }
 
@@ -424,7 +423,7 @@ export function decodeInk(value: unknown): InkShape {
     y: value.y,
     width: value.width,
     height: value.height,
-    color: value.color,
+    color: value.color.toLowerCase() as TextColor,
     strokeWidth: value.strokeWidth,
     points: Object.freeze(points),
   });

@@ -1,3 +1,4 @@
+import type { HexColor } from "./colors.ts";
 import type { InkShape } from "./ink.ts";
 export type { InkShape } from "./ink.ts";
 import type { RectangleAppearance } from "./appearance.ts";
@@ -11,7 +12,7 @@ export const FILLS = [
   "#ffffff",
   "transparent",
 ] as const;
-export type Fill = (typeof FILLS)[number];
+export type Fill = HexColor | "transparent";
 export type Point = Readonly<{ x: number; y: number }>;
 export type Bounds = Readonly<{
   x: number;
@@ -39,7 +40,7 @@ export type Rectangle = Bounds &
     label?: ShapeLabel;
   }>;
 export const TEXT_COLORS = ["#243e33", "#3568db", "#8d315a", "#805d20", "#202124"] as const;
-export type TextColor = (typeof TEXT_COLORS)[number];
+export type TextColor = HexColor;
 export type TextShape = Bounds &
   ObjectMetadata &
   Readonly<{
