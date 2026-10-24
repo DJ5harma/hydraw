@@ -357,6 +357,8 @@ export function decodeImage(value: unknown): ImageShape {
     !finite(value.height, 1, MAX_SIZE) ||
     typeof value.name !== "string" ||
     value.name.length > 120 ||
+    (value.flipX !== undefined && typeof value.flipX !== "boolean") ||
+    (value.flipY !== undefined && typeof value.flipY !== "boolean") ||
     typeof value.src !== "string" ||
     value.src.length > MAX_IMAGE_DATA_LENGTH ||
     !/^data:image\/png;base64,iVBORw0KGgo[A-Za-z0-9+/]*={0,2}$/u.test(value.src)
@@ -375,6 +377,8 @@ export function decodeImage(value: unknown): ImageShape {
     height: value.height,
     name: value.name,
     src: value.src,
+    ...(value.flipX ? { flipX: true } : {}),
+    ...(value.flipY ? { flipY: true } : {}),
     ...(crop ? { crop } : {}),
   });
   if (crop) assertValidSourceImageBounds(image);

@@ -29,9 +29,25 @@ export function normalizeImageCrop(value: unknown): ImageCrop {
   return Object.freeze({ x, y, width, height });
 }
 
+/** Convert between source-pixel and displayed crop coordinates; reflection is its own inverse. */
+export function reflectedImageCrop(
+  image: Pick<ImageShape, "flipX" | "flipY">,
+  crop: ImageCrop,
+): ImageCrop {
+  return {
+    ...crop,
+    x: image.flipX
+      ? Math.max(0, Math.min(1 - crop.width, Number((1 - crop.x - crop.width).toPrecision(15))))
+      : crop.x,
+    y: image.flipY
+      ? Math.max(0, Math.min(1 - crop.height, Number((1 - crop.y - crop.height).toPrecision(15))))
+      : crop.y,
+  };
+}
+
 /** Recover the original image rectangle from the currently visible bounds and crop. */
 export function sourceImageBounds(image: ImageShape): Bounds {
-  const crop = image.crop ?? FULL_IMAGE_CROP;
+  const crop = reflectedImageCrop(image, image.crop ?? FULL_IMAGE_CROP);
   return {
     x: image.x - (crop.x / crop.width) * image.width,
     y: image.y - (crop.y / crop.height) * image.height,
@@ -42,7 +58,7 @@ export function sourceImageBounds(image: ImageShape): Bounds {
 
 /** Calculate visible board bounds for a source-normalized crop. */
 export function imageBoundsForCrop(image: ImageShape, value: unknown): Bounds {
-  const crop = normalizeImageCrop(value);
+  const crop = reflectedImageCrop(image, normalizeImageCrop(value));
   const source = sourceImageBounds(image);
   return {
     x: source.x + crop.x * source.width,

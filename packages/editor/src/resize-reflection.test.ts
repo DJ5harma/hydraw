@@ -1,6 +1,6 @@
 import { expect, it } from "vite-plus/test";
 import { createDocument, parseDocument, serializeDocument } from "@hydraw/document";
-import type { InkShape } from "@hydraw/document";
+import type { InkShape, ImageShape } from "@hydraw/document";
 import { Editor } from "./editor.ts";
 import { resizeShape, resizedHandle } from "./geometry.ts";
 import { hitSceneObject } from "./connector-interactions.ts";
@@ -88,4 +88,36 @@ it("previews from the original stroke at zoom, flips back continuously and commi
   editor.move({ x: 1000, y: 500 });
   editor.cancelGesture();
   expect(editor.getSnapshot().document).toEqual(after);
+});
+
+it("toggles image reflections without changing pixels or crop metadata, and reflects back", () => {
+  const image: ImageShape = {
+    id: "image",
+    type: "image",
+    x: 400,
+    y: 200,
+    width: 200,
+    height: 100,
+    name: "Image",
+    src: "data:image/png;base64,iVBORw0KGgoAAA",
+    crop: { x: 0.1, y: 0.2, width: 0.8, height: 0.6 },
+  };
+  const flipped = resizeShape(image, "nw", { x: 800, y: 400 }) as ImageShape;
+  expect(flipped).toMatchObject({
+    x: 600,
+    y: 300,
+    width: 200,
+    height: 100,
+    flipX: true,
+    flipY: true,
+    crop: image.crop,
+    src: image.src,
+  });
+  const restored = resizeShape(flipped, "se", { x: 400, y: 200 });
+  expect(restored).toEqual(image);
+  const document = { ...createDocument(), shapes: [flipped] };
+  expect(parseDocument(serializeDocument(document))).toEqual(document);
+  expect(exportSvg(document, { measureText: () => 8 })).toContain(
+    "translate(1400 700) scale(-1 -1)",
+  );
 });

@@ -100,6 +100,8 @@ export function sameShape(a: Shape, b: Shape): boolean {
     const right = b.crop ?? FULL_IMAGE_CROP;
     return (
       a.src === b.src &&
+      Boolean(a.flipX) === Boolean(b.flipX) &&
+      Boolean(a.flipY) === Boolean(b.flipY) &&
       a.name === b.name &&
       left.x === right.x &&
       left.y === right.y &&

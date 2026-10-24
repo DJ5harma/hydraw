@@ -89,6 +89,17 @@ export function resizeShape(shape: Shape, handle: ResizeHandle, point: Point): S
         y: crossed.y ? 1 - point.y : point.y,
       })),
     };
+  if (shape.type === "image") {
+    const { flipX: _x, flipY: _y, ...rest } = bounds as typeof shape;
+    return {
+      ...rest,
+      type: "image",
+      src: shape.src,
+      name: shape.name,
+      ...(Boolean(shape.flipX) !== crossed.x ? { flipX: true } : {}),
+      ...(Boolean(shape.flipY) !== crossed.y ? { flipY: true } : {}),
+    };
+  }
   return bounds;
 }
 

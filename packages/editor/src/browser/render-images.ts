@@ -28,17 +28,21 @@ export function createImagePainter(schedule: () => void) {
     }
     if (image.complete && image.naturalWidth) {
       const crop = shape.crop ?? { x: 0, y: 0, width: 1, height: 1 };
+      ctx.save();
+      ctx.translate(x + (shape.flipX ? width : 0), y + (shape.flipY ? height : 0));
+      ctx.scale(shape.flipX ? -1 : 1, shape.flipY ? -1 : 1);
       ctx.drawImage(
         image,
         crop.x * image.naturalWidth,
         crop.y * image.naturalHeight,
         crop.width * image.naturalWidth,
         crop.height * image.naturalHeight,
-        x,
-        y,
+        0,
+        0,
         width,
         height,
       );
+      ctx.restore();
     } else {
       ctx.fillStyle = "#edf0f4";
       ctx.fillRect(x, y, width, height);

@@ -60,6 +60,8 @@ export type ImageShape = Bounds &
     src: string;
     name: string;
     crop?: ImageCrop;
+    flipX?: boolean;
+    flipY?: boolean;
   }>;
 export const MAX_IMAGE_DATA_LENGTH = 4_000_000;
 export const MAX_BOARD_IMAGE_DATA_LENGTH = 24_000_000;

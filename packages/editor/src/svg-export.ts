@@ -288,8 +288,11 @@ export function exportSvg(document: BoardDocument, options: SvgExportOptions): s
       continue;
     } else if (object.type === "image") {
       const crop = object.crop ?? { x: 0, y: 0, width: 1, height: 1 };
+      const image = `<svg x="${number(object.x)}" y="${number(object.y)}" width="${number(object.width)}" height="${number(object.height)}" viewBox="${number(crop.x)} ${number(crop.y)} ${number(crop.width)} ${number(crop.height)}" preserveAspectRatio="none" overflow="hidden"><image x="0" y="0" width="1" height="1" preserveAspectRatio="none" href="${escapeXml(object.src)}"/></svg>`;
       scene.push(
-        `<svg x="${number(object.x)}" y="${number(object.y)}" width="${number(object.width)}" height="${number(object.height)}" viewBox="${number(crop.x)} ${number(crop.y)} ${number(crop.width)} ${number(crop.height)}" preserveAspectRatio="none" overflow="hidden"><image x="0" y="0" width="1" height="1" preserveAspectRatio="none" href="${escapeXml(object.src)}"/></svg>`,
+        object.flipX || object.flipY
+          ? `<g transform="translate(${number(object.flipX ? 2 * object.x + object.width : 0)} ${number(object.flipY ? 2 * object.y + object.height : 0)}) scale(${object.flipX ? -1 : 1} ${object.flipY ? -1 : 1})">${image}</g>`
+          : image,
       );
       continue;
     } else {

@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import type { KeyboardEvent, PointerEvent } from "react";
 import type { ImageCrop, ImageShape } from "@hydraw/document";
-import { FULL_IMAGE_CROP, sourceImageBounds } from "@hydraw/document";
+import { FULL_IMAGE_CROP, sourceImageBounds, reflectedImageCrop } from "@hydraw/document";
 import type { Camera } from "@hydraw/editor";
 import "./image-crop-overlay.css";
 
@@ -19,7 +19,9 @@ export function ImageCropOverlay({
   onApply: (crop: ImageCrop | null) => void;
   onCancel: () => void;
 }) {
-  const [draft, setDraft] = useState<ImageCrop>(image.crop ?? FULL_IMAGE_CROP);
+  const [draft, setDraft] = useState<ImageCrop>(
+    reflectedImageCrop(image, image.crop ?? FULL_IMAGE_CROP),
+  );
   const [error, setError] = useState("");
   const svgRef = useRef<SVGSVGElement>(null);
   const dragRef = useRef<{ edge: Edge; crop: ImageCrop; x: number; y: number } | null>(null);
@@ -34,7 +36,7 @@ export function ImageCropOverlay({
   function apply(crop: ImageCrop | null) {
     setError("");
     try {
-      onApply(crop);
+      onApply(crop ? reflectedImageCrop(image, crop) : null);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "The image crop could not be applied.");
     }
@@ -144,7 +146,12 @@ export function ImageCropOverlay({
         onKeyDown={handleDialogKeyDown}
       >
         <div className="image-crop-source" style={{ left, top, width, height }}>
-          <img src={image.src} alt="" draggable={false} />
+          <img
+            src={image.src}
+            alt=""
+            draggable={false}
+            style={{ transform: `scale(${image.flipX ? -1 : 1}, ${image.flipY ? -1 : 1})` }}
+          />
           <svg
             ref={svgRef}
             viewBox="0 0 1 1"

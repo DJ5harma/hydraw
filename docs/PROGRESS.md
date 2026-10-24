@@ -34,3 +34,7 @@ Transparency remains a separate fill choice. Invalid CSS never reaches records.
 Resizing freehand ink across its opposite edge reflects its normalized points.
 The fixed edge stays anchored, drag handles follow the crossing, and moving back
 restores the source orientation before committing one undo step.
+
+Images reflect when resizing past their anchored edges, preserving original pixels
+and source-relative crops. Canvas, SVG/PNG, crop editing, reset, reload and history
+use the same orientation. Ordinary text and shape labels remain readable.

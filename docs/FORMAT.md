@@ -51,3 +51,9 @@ board theme; colors outside the preset palettes retain their exact values.
 Recent custom colors are a separate UI preference under localStorage key
 `hydraw-recent-colors-v1`, bounded to eight validated HEX entries. Preference
 storage failures keep recents in memory and do not affect board persistence.
+
+Images may carry boolean `flipX` and `flipY` reflection flags. Missing flags mean
+unreflected pixels; false flags are omitted when decoding. Bounds remain positive.
+Image crops always refer to original source pixels, with display coordinates
+reflected for crop editing and source-bound recovery. Freehand reflections are
+stored directly in normalized stroke points.
