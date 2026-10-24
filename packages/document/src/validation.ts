@@ -29,6 +29,7 @@ import type {
   TextShape,
   TextColor,
   Connector,
+  ConnectorRoute,
   Endpoint,
 } from "./model.ts";
 
@@ -213,6 +214,22 @@ export function decodeEndpoint(value: unknown): Endpoint {
   throw new Error("This board contains an invalid connector endpoint.");
 }
 
+function decodeRoute(value: unknown): ConnectorRoute {
+  if (
+    !record(value) ||
+    value.type !== "elbow" ||
+    (value.axis !== "x" && value.axis !== "y") ||
+    (value.position !== undefined &&
+      !finite(value.position, -MAX_ENDPOINT_COORDINATE, MAX_ENDPOINT_COORDINATE))
+  )
+    throw new Error("This board contains invalid connector routing.");
+  return Object.freeze({
+    type: "elbow",
+    axis: value.axis,
+    ...(value.position === undefined ? {} : { position: value.position }),
+  });
+}
+
 export function decodeConnector(value: unknown): Connector {
   if (
     !record(value) ||
@@ -236,6 +253,7 @@ export function decodeConnector(value: unknown): Connector {
     end,
     color: value.color,
     arrowhead: value.arrowhead,
+    ...(value.route === undefined ? {} : { route: decodeRoute(value.route) }),
     ...(value.label === undefined ? {} : { label: decodeLabel(value.label) }),
   });
 }

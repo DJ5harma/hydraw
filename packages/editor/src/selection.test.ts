@@ -84,7 +84,7 @@ describe("selection state and gestures", () => {
     expect(editor.getSnapshot().document).toBe(original);
     const scene = selectionScene(editor.getSnapshot());
     expect(scene.shapes[0]).toMatchObject({ x: 120, y: 110 });
-    expect(resolveConnector(edge, scene.shapes)).toEqual({
+    expect(resolveConnector(edge, scene.shapes)).toMatchObject({
       start: { x: 220, y: 150 },
       end: { x: 420, y: 150 },
     });

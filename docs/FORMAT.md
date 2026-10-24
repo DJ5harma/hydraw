@@ -10,6 +10,14 @@ Version 1 includes rectangle/ellipse/diamond/frame records, standalone text,
 embedded PNG images with optional crop rectangles, freehand ink, bound or free
 connectors, attached labels, groups, locks and stacking metadata.
 
+Connectors are straight unless `route` is present. An elbow route is
+`{ type: "elbow", axis: "x" | "y", position?: number }`. Axis `x` uses horizontal
+end segments and a vertical middle segment; `y` uses vertical ends. The optional
+position is the middle segment’s world coordinate, bounded like free endpoints.
+Absent position chooses an automatic trunk. Routing keeps the trunk clear of
+endpoint bodies; it does not avoid unrelated objects. Route edits participate in
+transaction preconditions, undo, native round trips and selection reuse.
+
 Optional appearance and organization fields express defaults or absent features;
 they are part of the current schema, not migration fallbacks. The decoder copies
 known fields, validates geometry, identities, bindings, styles and resource limits,

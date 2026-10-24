@@ -5,7 +5,7 @@ import {
   clonedMetadata,
   MAX_SHAPES,
   applyTransaction,
-  createConnectorResolver,
+  detachConnectorBindings,
   createDocument,
   connectorTransaction,
   decodeDocument,
@@ -61,17 +61,9 @@ export function createClipboardFragment(
   );
   if (!shapes.length && !connectors.length) return null;
 
-  const resolve = createConnectorResolver(document.shapes);
-  const detached = connectors.map((connector) => {
-    const ends = resolve(connector);
-    const endpoint = (key: "start" | "end") => {
-      const value = connector[key];
-      return value.type === "binding" && !nodes.has(value.shapeId)
-        ? { type: "point" as const, ...ends[key] }
-        : value;
-    };
-    return { ...connector, start: endpoint("start"), end: endpoint("end") };
-  });
+  const detached = connectors.map((connector) =>
+    detachConnectorBindings(connector, document.shapes, nodes),
+  );
   const fragment = decodeDocument({
     ...createDocument(),
     name: "Clipboard selection",

@@ -58,7 +58,7 @@ describe("connector interactions", () => {
     editor.finish();
     editor.setGeometry({ width: 240 });
     expect(edge(editor)).toBe(original);
-    expect(resolveConnector(original, editor.getSnapshot().document.shapes)).toEqual({
+    expect(resolveConnector(original, editor.getSnapshot().document.shapes)).toMatchObject({
       start: { x: 380, y: 260 },
       end: { x: 550, y: 260 },
     });

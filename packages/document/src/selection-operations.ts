@@ -1,7 +1,7 @@
 import { expandGroups, clonedMetadata } from "./object-scene.ts";
 import { MAX_CONNECTORS, MAX_COORDINATE, MAX_ENDPOINT_COORDINATE, MAX_SHAPES } from "./model.ts";
 import type { BoardDocument, Connector, Endpoint, Point, Shape } from "./model.ts";
-import { createConnectorResolver } from "./connectors.ts";
+import { createConnectorResolver, detachConnectorBindings } from "./connectors.ts";
 import { connectorTransaction, shapeTransaction } from "./transactions.ts";
 import type { DocumentChange, DocumentTransaction } from "./transactions.ts";
 
@@ -32,9 +32,13 @@ export function translateObjects(
     maxY = Math.min(maxY, limit - point.y);
   }
   for (const shape of shapes) constrain(shape, MAX_COORDINATE);
-  for (const connector of connectors)
+  const resolve = createConnectorResolver(document.shapes);
+  for (const connector of connectors) {
     for (const endpoint of [connector.start, connector.end])
       if (endpoint.type === "point") constrain(endpoint, MAX_ENDPOINT_COORDINATE);
+    if (connector.route?.position !== undefined)
+      constrain(resolve(connector).bend!.point, MAX_ENDPOINT_COORDINATE);
+  }
   const dx = Math.max(minX, Math.min(maxX, requested.x));
   const dy = Math.max(minY, Math.min(maxY, requested.y));
   const moveEndpoint = (endpoint: Endpoint): Endpoint =>
@@ -47,6 +51,14 @@ export function translateObjects(
       ...connector,
       start: moveEndpoint(connector.start),
       end: moveEndpoint(connector.end),
+      ...(connector.route?.position === undefined
+        ? {}
+        : {
+            route: {
+              ...connector.route,
+              position: connector.route.position + (connector.route.axis === "x" ? dx : dy),
+            },
+          }),
     })),
   };
 }
@@ -135,17 +147,9 @@ export function duplicateObjects(
     document.connectors.length + edges.length > MAX_CONNECTORS
   )
     throw new Error("There is not enough room to duplicate this selection. Select fewer objects.");
-  const resolveConnector = createConnectorResolver(document.shapes);
-  const detached = edges.map((connector) => {
-    const resolved = resolveConnector(connector);
-    function endpoint(key: "start" | "end"): Endpoint {
-      const endpoint = connector[key];
-      return endpoint.type === "binding" && !nodes.has(endpoint.shapeId)
-        ? { type: "point", ...resolved[key] }
-        : endpoint;
-    }
-    return { ...connector, start: endpoint("start"), end: endpoint("end") };
-  });
+  const detached = edges.map((connector) =>
+    detachConnectorBindings(connector, document.shapes, nodes),
+  );
   const updates = translateObjects(
     { ...document, connectors: detached },
     [...nodes, ...edges.map((edge) => edge.id)],

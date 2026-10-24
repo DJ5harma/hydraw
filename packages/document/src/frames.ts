@@ -46,7 +46,7 @@ export function frameContents(document: BoardDocument, frameId: string): readonl
   const containedConnectors = new Set<string>();
   for (const connector of document.connectors) {
     const geometry = resolver(connector);
-    if (contains(frame, geometry.start) && contains(frame, geometry.end))
+    if (geometry.points.every((point) => contains(frame, point)))
       containedConnectors.add(connector.id);
   }
   const result = new Set(candidates);
@@ -93,7 +93,7 @@ export function createFrameAroundSelection(
     );
   for (const connector of connectors) {
     const geometry = resolver(connector);
-    points.push(geometry.start, geometry.end);
+    points.push(...geometry.points);
   }
   const minX = Math.min(...points.map((point) => point.x)) - 32;
   const minY = Math.min(...points.map((point) => point.y)) - 32;

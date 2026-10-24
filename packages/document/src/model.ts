@@ -66,6 +66,13 @@ export type Shape = Rectangle | TextShape | ImageShape | InkShape;
 export type Endpoint =
   | Readonly<{ type: "point"; x: number; y: number }>
   | Readonly<{ type: "binding"; shapeId: string }>;
+export type ConnectorRoute = Readonly<{
+  type: "elbow";
+  /** x: horizontal ends with a vertical middle segment; y: vertical ends. */
+  axis: "x" | "y";
+  /** World coordinate of the middle segment; absent means automatic routing. */
+  position?: number;
+}>;
 export type Connector = ObjectMetadata &
   Readonly<{
     id: string;
@@ -74,6 +81,7 @@ export type Connector = ObjectMetadata &
     end: Endpoint;
     color: TextColor;
     arrowhead: "arrow" | "none";
+    route?: ConnectorRoute;
     label?: ShapeLabel;
   }>;
 export const MAX_CONNECTORS = 5_000;

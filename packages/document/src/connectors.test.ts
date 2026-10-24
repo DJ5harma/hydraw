@@ -66,16 +66,16 @@ describe("bound connector documents", () => {
     );
   });
   it("derives perimeter attachments after moves, resizing, vertical routing and coincident centers", () => {
-    expect(resolveConnector(connector, [a, b])).toEqual({
+    expect(resolveConnector(connector, [a, b])).toMatchObject({
       start: { x: 100, y: 50 },
       end: { x: 300, y: 50 },
     });
-    expect(resolveConnector(connector, [a, { ...b, x: 0, y: 300 }])).toEqual({
+    expect(resolveConnector(connector, [a, { ...b, x: 0, y: 300 }])).toMatchObject({
       start: { x: 50, y: 100 },
       end: { x: 50, y: 300 },
     });
     expect(resolveConnector(connector, [{ ...a, width: 200 }, b]).start).toEqual({ x: 200, y: 50 });
-    expect(resolveConnector(connector, [a, { ...b, x: 0 }])).toEqual({
+    expect(resolveConnector(connector, [a, { ...b, x: 0 }])).toMatchObject({
       start: { x: 100, y: 50 },
       end: { x: 0, y: 50 },
     });

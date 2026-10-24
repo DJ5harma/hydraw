@@ -177,6 +177,9 @@ export function sameConnector(a: Connector, b: Connector): boolean {
     a.type === b.type &&
     a.color === b.color &&
     a.arrowhead === b.arrowhead &&
+    a.route?.type === b.route?.type &&
+    a.route?.axis === b.route?.axis &&
+    a.route?.position === b.route?.position &&
     sameLabel(a.label, b.label) &&
     sameEndpoint(a.start, b.start) &&
     sameEndpoint(a.end, b.end)
