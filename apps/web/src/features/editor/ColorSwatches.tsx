@@ -44,6 +44,7 @@ export function ColorSwatches<Color extends string>({
           className={`swatch ${value === color ? "is-selected" : ""}`}
           style={{ backgroundColor: color, color: ink ? "white" : undefined }}
           data-transparent={color === "transparent" ? true : undefined}
+          title={`${name} ${suffix}`}
           aria-label={`${name} ${suffix}`}
           aria-pressed={value === color}
           onClick={() => onChange(color)}

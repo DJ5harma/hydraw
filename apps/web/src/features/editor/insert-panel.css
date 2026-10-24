@@ -254,3 +254,41 @@
   font-weight: 400;
   line-height: 1.5;
 }
+
+.insert-panel > .file-button {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  min-height: 64px;
+}
+.insert-panel > .file-button > span:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+}
+.insert-panel > .file-button strong {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 12px;
+}
+.insert-panel > .file-button small {
+  display: block;
+  font-size: 11px;
+}
+.insert-action-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 34px;
+  height: 34px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-radius: 9px;
+}
+.insert-panel > .file-button > svg {
+  width: 14px;
+  color: var(--text-muted);
+}
+.insert-panel-close svg {
+  width: 16px;
+  height: 16px;
+}

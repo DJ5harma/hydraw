@@ -1,3 +1,4 @@
+import { Icon } from "../../components/icons.tsx";
 import { PRESETS } from "@hydraw/document";
 import type { Point } from "@hydraw/document";
 import type { Editor } from "@hydraw/editor";
@@ -48,7 +49,7 @@ export function InsertPanel({
             aria-label="Close insert panel"
             onClick={onClose}
           >
-            ×
+            <Icon name="close" />
           </button>
         </header>
 
@@ -58,12 +59,26 @@ export function InsertPanel({
           </p>
         )}
 
-        <button type="button" className="file-button" onClick={onImage}>
-          Image <small>PNG, JPEG or WebP · also paste or drop onto the canvas</small>
+        <button type="button" className="file-button" aria-label="Insert image" onClick={onImage}>
+          <span className="insert-action-icon">
+            <Icon name="image" />
+          </span>
+          <span>
+            <strong>Image</strong>
+            <small>Upload, paste or drop an image</small>
+          </span>
+          <Icon name="plus" />
         </button>
         {onLibrary && (
           <button type="button" className="file-button" onClick={onLibrary}>
-            My library <small>Reuse saved editable selections</small>
+            <span className="insert-action-icon">
+              <Icon name="library" />
+            </span>
+            <span>
+              <strong>My library</strong>
+              <small>Your saved shapes and diagrams</small>
+            </span>
+            <Icon name="arrow" />
           </button>
         )}
         <div className="insert-panel-frames" aria-label="Frames">

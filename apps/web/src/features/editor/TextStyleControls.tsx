@@ -1,3 +1,4 @@
+import { Icon } from "../../components/icons.tsx";
 import { MAX_FONT_SIZE, MIN_FONT_SIZE } from "@hydraw/document";
 import type { TextShape } from "@hydraw/document";
 import type { Editor } from "@hydraw/editor";
@@ -33,11 +34,12 @@ export function TextStyleControls({ shape, editor }: { shape: TextShape; editor:
           <button
             key={textAlign}
             className="file-button"
+            title={`Align ${textAlign}`}
             aria-label={`Align ${textAlign}`}
             aria-pressed={shape.textAlign === textAlign}
             onClick={() => editor.setTextStyle({ textAlign })}
           >
-            {textAlign === "left" ? "Left" : textAlign === "center" ? "Center" : "Right"}
+            <Icon name={`text-${textAlign}`} />
           </button>
         ))}
       </div>

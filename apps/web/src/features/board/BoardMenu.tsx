@@ -131,6 +131,7 @@ export function BoardMenu({
             </div>
           </div>
           <div className="board-menu-actions">
+            <div className="board-menu-section-label">Board</div>
             <button
               type="button"
               className="board-menu-action"
@@ -157,7 +158,7 @@ export function BoardMenu({
               <span>Restore previous board</span>
             </button>
             <div className="board-menu-divider" />
-            <label className="board-export-area">
+            <label className="board-export-area board-theme-row">
               Board style
               <select
                 aria-label="Board style"
@@ -170,63 +171,70 @@ export function BoardMenu({
               </select>
             </label>
             <div className="board-menu-divider" />
-            <label className="board-export-area">
-              Export image
-              <select
-                aria-label="Export area"
-                value={selectionOnly && selectionCount ? "selection" : "board"}
-                onChange={(event) => setSelectionOnly(event.target.value === "selection")}
-              >
-                <option value="board">Whole board</option>
-                <option value="selection" disabled={!selectionCount}>
-                  Selection ({selectionCount})
-                </option>
-              </select>
-            </label>
-            <label className="board-export-area">
-              Copy background
-              <select
-                aria-label="Copy image background"
-                value={imageBackground}
-                onChange={(event) => setImageBackground(event.target.value as VisualBackground)}
-              >
-                <option value="board">Board style</option>
-                <option value="transparent">Transparent</option>
-              </select>
-            </label>
-            <button
-              type="button"
-              className="file-button"
-              disabled={!hasContent || exporting}
-              onClick={() =>
-                runAndClose(() => onCopyImage(selectionOnly && selectionCount > 0, imageBackground))
-              }
-            >
-              Copy as image
-            </button>
-            <div className="board-export-formats">
-              {(["svg", "png"] as const).map((format) => (
-                <button
-                  key={format}
-                  className="file-button"
-                  disabled={!hasContent || exporting}
-                  onClick={() =>
-                    runAndClose(() => onVisualExport(format, selectionOnly && selectionCount > 0))
-                  }
+            <section className="board-image-section" aria-label="Image export">
+              <div className="board-menu-section-label">Image export</div>
+              <label className="board-export-area">
+                Area
+                <select
+                  aria-label="Export area"
+                  value={selectionOnly && selectionCount ? "selection" : "board"}
+                  onChange={(event) => setSelectionOnly(event.target.value === "selection")}
                 >
-                  Export {format.toUpperCase()}
-                </button>
-              ))}
-            </div>
+                  <option value="board">Whole board</option>
+                  <option value="selection" disabled={!selectionCount}>
+                    Selection ({selectionCount})
+                  </option>
+                </select>
+              </label>
+              <label className="board-export-area">
+                Background
+                <select
+                  aria-label="Copy image background"
+                  value={imageBackground}
+                  onChange={(event) => setImageBackground(event.target.value as VisualBackground)}
+                >
+                  <option value="board">Board style</option>
+                  <option value="transparent">Transparent</option>
+                </select>
+              </label>
+              <button
+                type="button"
+                className="file-button"
+                disabled={!hasContent || exporting}
+                onClick={() =>
+                  runAndClose(() =>
+                    onCopyImage(selectionOnly && selectionCount > 0, imageBackground),
+                  )
+                }
+              >
+                <Icon name="image" /> Copy as image
+              </button>
+              <div className="board-export-formats">
+                {(["svg", "png"] as const).map((format) => (
+                  <button
+                    key={format}
+                    className="file-button"
+                    disabled={!hasContent || exporting}
+                    onClick={() =>
+                      runAndClose(() => onVisualExport(format, selectionOnly && selectionCount > 0))
+                    }
+                  >
+                    <Icon name="download" /> Export {format.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+            </section>
             <div className="board-menu-divider" />
-            <button type="button" className="board-menu-action" onClick={onLibrary}>
-              <Icon name="layers" />
-              <span>My library</span>
-            </button>
-            <button type="button" className="board-menu-action" onClick={onObjects}>
-              <Icon name="layers" />
-              <span>Objects</span>
-            </button>
+            <div className="board-menu-navigation">
+              <button type="button" className="board-menu-action" onClick={onLibrary}>
+                <Icon name="library" />
+                <span>My library</span>
+              </button>
+              <button type="button" className="board-menu-action" onClick={onObjects}>
+                <Icon name="layers" />
+                <span>Objects</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

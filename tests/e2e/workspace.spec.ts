@@ -235,7 +235,9 @@ test("selection exposes styling directly, keeps shortcut hints, and saves rectan
   await page.getByRole("button", { name: "Thick stroke", exact: true }).click();
   await page.getByRole("button", { name: "dashed stroke", exact: true }).click();
   await page.getByRole("button", { name: "Square", exact: true }).click();
-  await page.getByRole("spinbutton", { name: "Shape opacity", exact: true }).fill("60");
+  await page.getByRole("slider", { name: "Shape opacity", exact: true }).focus();
+  await page.keyboard.press("Home");
+  for (let i = 0; i < 6; i++) await page.keyboard.press("PageUp");
   await page.locator("canvas").click({ position: { x: 400, y: 180 } });
   await expect(page.getByRole("status")).toHaveText("Saved in this browser");
   await page.reload();
@@ -250,13 +252,28 @@ test("selection exposes styling directly, keeps shortcut hints, and saves rectan
     "aria-pressed",
     "true",
   );
-  await expect(page.getByRole("spinbutton", { name: "Shape opacity", exact: true })).toHaveValue(
-    "60",
-  );
+  await expect(page.getByRole("slider", { name: "Shape opacity", exact: true })).toHaveValue("60");
   await page.setViewportSize({ width: 390, height: 740 });
   await expect(properties).toBeVisible();
   const bounds = (await properties.boundingBox())!;
   expect(bounds.x).toBeGreaterThanOrEqual(0);
   expect(bounds.x + bounds.width).toBeLessThanOrEqual(390);
   expect(bounds.y + bounds.height).toBeLessThanOrEqual(740);
+});
+
+test("an opacity drag commits once and undo restores the original appearance", async ({ page }) => {
+  await page.goto("/");
+  await addRectangle(page);
+  const slider = page.getByRole("slider", { name: "Shape opacity", exact: true });
+  const bounds = (await slider.boundingBox())!;
+  await page.mouse.move(bounds.x + bounds.width - 8, bounds.y + bounds.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(bounds.x + bounds.width * 0.4, bounds.y + bounds.height / 2, { steps: 12 });
+  await page.mouse.up();
+  expect(Number(await slider.inputValue())).toBeLessThan(60);
+  await page.getByRole("button", { name: "Undo", exact: true }).click();
+  await expect(slider).toHaveValue("100");
+  await expect(
+    page.getByRole("region", { name: "Selection properties", exact: true }),
+  ).toBeVisible();
 });

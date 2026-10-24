@@ -14,7 +14,7 @@ export async function openObjects(page: Page) {
 export async function closeOverlay(page: Page) {
   const close = page
     .locator('[data-workspace-overlay-root] [role="dialog"] button')
-    .filter({ hasText: "×" })
+    .and(page.getByRole("button", { name: /^Close / }))
     .first();
   if (await close.isVisible()) await close.click();
   else if (await page.locator('[data-workspace-overlay-root] [role="dialog"]').count()) {

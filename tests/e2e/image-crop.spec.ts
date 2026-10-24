@@ -55,7 +55,7 @@ const sourcePng = twoColorPng();
 async function addImage(page: Page) {
   await page.goto("/");
   await page.getByRole("button", { name: "Insert", exact: true }).click();
-  await page.getByRole("button", { name: /Image PNG, JPEG or WebP/ }).click();
+  await page.getByRole("button", { name: "Insert image", exact: true }).click();
   await page.getByLabel("Image files").setInputFiles({
     name: "crop-test.png",
     mimeType: "image/png",

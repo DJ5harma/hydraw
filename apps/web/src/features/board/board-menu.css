@@ -258,3 +258,90 @@
 .board-export-formats button {
   flex: 1;
 }
+
+/* Compact file commands, quiet settings rows, and a dedicated export card. */
+.board-menu-popover {
+  width: min(320px, calc(100vw - 28px));
+  padding: 8px;
+  border-radius: 16px;
+  box-shadow:
+    0 4px 12px #203c2d08,
+    0 20px 60px #203c2d1a;
+}
+.board-menu-heading {
+  padding: 10px 8px 16px;
+  margin-bottom: 6px;
+}
+.board-menu-title {
+  font-size: 14px;
+  padding: 4px 5px;
+}
+.board-menu-mark,
+.board-menu-mark svg {
+  width: 32px;
+  height: 32px;
+}
+.board-menu-actions {
+  padding-top: 0;
+  gap: 2px;
+}
+.board-menu-section-label {
+  padding: 7px 9px;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.board-menu-action {
+  min-height: 36px;
+  padding: 0 10px;
+  border-radius: 8px;
+}
+.board-menu-action svg {
+  color: var(--text-muted);
+  width: 16px;
+  height: 16px;
+}
+.board-menu-action span {
+  font-size: 12px;
+}
+.board-menu-divider {
+  margin: 7px 8px;
+}
+.board-export-area {
+  grid-template-columns: 80px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 5px 9px;
+  font-size: 12px;
+}
+.board-export-area select {
+  width: 100%;
+  min-height: 30px;
+  padding: 4px 7px;
+  font-size: 12px;
+  border-radius: 7px;
+}
+.board-image-section {
+  display: grid;
+  gap: 3px;
+  padding: 2px 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-muted);
+}
+.board-image-section > .file-button {
+  margin: 5px 8px 0;
+}
+.board-export-formats {
+  padding: 3px 8px 0;
+}
+.board-export-formats button {
+  font-size: 11px;
+}
+.board-menu-navigation {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}

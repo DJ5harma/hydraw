@@ -1,3 +1,4 @@
+import { Icon } from "../../components/icons.tsx";
 import type { BoardDocument, Connector, Endpoint } from "@hydraw/document";
 import type { Editor } from "@hydraw/editor";
 import { ColorSwatches, inkPalette } from "./ColorSwatches.tsx";
@@ -28,6 +29,7 @@ export function ConnectorInspector({
     <section className="inspector-section connector-controls">
       <h3>Connector</h3>
       <button className="file-button" onClick={() => editor.editText(connector.id)}>
+        <Icon name="text" />
         {connector.label ? "Edit label" : "Add label"}
       </button>
       <dl className="connector-endpoints">

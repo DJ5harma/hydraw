@@ -1,7 +1,7 @@
 import type { TextColor } from "@hydraw/document";
 import type { Editor } from "@hydraw/editor";
 import { ColorSwatches, inkPalette } from "./ColorSwatches.tsx";
-import { NumberField } from "./NumberField.tsx";
+import { RangeField } from "./RangeField.tsx";
 import { useEditorSnapshot } from "./useEditorSnapshot.ts";
 import "./drawing-properties.css";
 
@@ -24,10 +24,11 @@ export function InkStyleControls({
         suffix="drawing"
         ink
       />
-      <NumberField
+      <RangeField
         label="Width"
         name="Drawing width"
-        className="geometry-field"
+        step={0.5}
+        unit=" px"
         min={0.5}
         max={12}
         value={strokeWidth}

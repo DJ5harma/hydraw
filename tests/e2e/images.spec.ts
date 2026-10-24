@@ -82,7 +82,7 @@ test("imports PNG files, paste and drop as embedded board images that survive re
 }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Insert", exact: true }).click();
-  await page.getByRole("button", { name: /Image PNG, JPEG or WebP/ }).click();
+  await page.getByRole("button", { name: "Insert image", exact: true }).click();
   await page.getByLabel("Image files").setInputFiles({
     name: "upload.png",
     mimeType: "image/png",
@@ -116,7 +116,7 @@ test("imports PNG files, paste and drop as embedded board images that survive re
 test("copies embedded PNG data into SVG and renders a downloadable PNG", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Insert", exact: true }).click();
-  await page.getByRole("button", { name: /Image PNG, JPEG or WebP/ }).click();
+  await page.getByRole("button", { name: "Insert image", exact: true }).click();
   await page.getByLabel("Image files").setInputFiles({
     name: "export.png",
     mimeType: "image/png",
@@ -162,7 +162,7 @@ test("does not insert an image into a board that was replaced while decoding", a
   });
   await page.goto("/");
   await page.getByRole("button", { name: "Insert", exact: true }).click();
-  await page.getByRole("button", { name: /Image PNG, JPEG or WebP/ }).click();
+  await page.getByRole("button", { name: "Insert image", exact: true }).click();
   await page.getByLabel("Image files").setInputFiles({
     name: "pending.png",
     mimeType: "image/png",

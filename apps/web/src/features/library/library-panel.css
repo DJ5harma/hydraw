@@ -282,3 +282,55 @@
     width: min(180px, 50vw);
   }
 }
+
+.library-panel {
+  padding: 20px;
+  border-radius: 16px;
+  box-shadow:
+    0 4px 12px #203c2d08,
+    0 20px 60px #203c2d1a;
+}
+.library-panel-heading {
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+.library-save-form {
+  padding: 14px;
+  border-radius: 10px;
+}
+.library-panel button {
+  min-height: 34px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.library-panel .library-panel-close {
+  min-height: 28px;
+  padding: 0;
+  border: 0;
+  font-size: 21px;
+}
+.library-list-heading {
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+.library-list-heading h3 {
+  font-size: 13px;
+}
+.library-search-label {
+  margin-bottom: 12px;
+}
+.library-item {
+  min-height: 70px;
+}
+.library-item-actions button {
+  min-height: 30px;
+  font-size: 11px;
+}
+.library-panel .library-primary:hover:not(:disabled) {
+  background: #105640;
+}
+@media (max-width: 520px) {
+  .library-panel {
+    padding: 16px;
+  }
+}

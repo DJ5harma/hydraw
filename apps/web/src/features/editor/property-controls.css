@@ -260,3 +260,55 @@
 .inspector-section {
   min-width: 0;
 }
+
+.range-field {
+  display: grid;
+  gap: 10px;
+  padding: 4px 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+.range-field > span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.range-field .range-value {
+  color: var(--text);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  background: var(--surface-muted);
+  padding: 3px 7px;
+  border-radius: 5px;
+}
+.range-field input {
+  width: 100%;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.style-preview {
+  width: 40px !important;
+  height: 24px !important;
+}
+.property-options {
+  padding: 3px;
+  gap: 3px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface-muted);
+}
+.property-options .file-button {
+  min-height: 32px;
+  padding: 2px;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+.property-options [aria-pressed="true"] {
+  background: var(--surface);
+  border-color: #c9dbd2;
+  box-shadow: 0 1px 3px #203c2d0d;
+}

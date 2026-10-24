@@ -53,9 +53,10 @@ test("draw style and freehand strokes persist, undo and export", async ({ page }
   await page.goto("/");
   await page.getByRole("button", { name: "Draw (P)", exact: true }).click();
   await page.getByRole("button", { name: "Blue drawing", exact: true }).click();
-  const width = page.getByRole("spinbutton", { name: "Drawing width", exact: true });
-  await width.fill("5");
-  await width.press("Enter");
+  const width = page.getByRole("slider", { name: "Drawing width", exact: true });
+  await width.focus();
+  await width.press("Home");
+  for (let i = 0; i < 9; i++) await width.press("ArrowRight");
   await drawPath(page, [
     { x: 250, y: 250 },
     { x: 280, y: 265 },

@@ -1,4 +1,10 @@
 type IconName =
+  | "image"
+  | "library"
+  | "close"
+  | "text-left"
+  | "text-center"
+  | "text-right"
   | "more"
   | "menu"
   | "settings"
@@ -32,6 +38,22 @@ type IconName =
   | "arrow"
   | "check";
 const paths: Record<IconName, React.ReactNode> = {
+  image: (
+    <>
+      <rect x="3" y="3" width="18" height="18" rx="3" />
+      <circle cx="8" cy="8" r="1.5" />
+      <path d="m3 17 6-6 4 4 3-3 5 5" />
+    </>
+  ),
+  library: (
+    <>
+      <path d="M4 4h5v16H4zM12 4h4v16h-4zM19 5l3 14" />
+    </>
+  ),
+  close: <path d="m6 6 12 12M6 18 18 6" />,
+  "text-left": <path d="M4 5h16M4 10h10M4 15h16M4 20h10" />,
+  "text-center": <path d="M4 5h16M7 10h10M4 15h16M7 20h10" />,
+  "text-right": <path d="M4 5h16M10 10h10M4 15h16M10 20h10" />,
   more: (
     <>
       <circle cx="5" cy="12" r="1" />

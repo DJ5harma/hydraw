@@ -51,6 +51,10 @@ async function importBoard(page: import("@playwright/test").Page) {
     buffer: Buffer.from(JSON.stringify(board)),
   });
   await page.getByRole("button", { name: "Open imported board", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Open imported board", exact: true })).toBeHidden();
+  await expect(page.getByRole("button", { name: "Board menu", exact: true })).toContainText(
+    "Flow board",
+  );
   await page.locator("canvas").focus();
   await page.keyboard.press("Control+a");
   await expect(page.getByRole("button", { name: "Save to library", exact: true })).toBeVisible();

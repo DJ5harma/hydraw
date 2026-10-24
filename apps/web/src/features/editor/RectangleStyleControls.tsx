@@ -2,7 +2,8 @@ import { rectangleAppearance } from "@hydraw/document";
 import type { Rectangle } from "@hydraw/document";
 import type { Editor } from "@hydraw/editor";
 import { ColorSwatches, fillPalette, inkPalette } from "./ColorSwatches.tsx";
-import { NumberField } from "./NumberField.tsx";
+import { RangeField } from "./RangeField.tsx";
+import { Icon } from "../../components/icons.tsx";
 
 const strokePalette = [{ color: "#364152", name: "Slate" }, ...inkPalette.slice(1)];
 
@@ -12,6 +13,7 @@ export function RectangleStyleControls({ shape, editor }: { shape: Rectangle; ed
   return (
     <div className="rectangle-style-controls">
       <button className="file-button" onClick={() => editor.editText(shape.id)}>
+        <Icon name="text" />
         {shape.label ? "Edit label" : "Add label"}
       </button>
       <section>
@@ -42,11 +44,19 @@ export function RectangleStyleControls({ shape, editor }: { shape: Rectangle; ed
             <button
               key={width}
               className="file-button"
+              title={`${["Thin", "Medium", "Thick"][i]} stroke`}
               aria-label={`${["Thin", "Medium", "Thick"][i]} stroke`}
               aria-pressed={style.strokeWidth === width}
               onClick={() => editor.setRectangleStyle({ strokeWidth: width })}
             >
-              {["Thin", "Medium", "Thick"][i]}
+              <svg aria-hidden="true" viewBox="0 0 40 24" className="style-preview">
+                <path
+                  d="M6 12h28"
+                  stroke="currentColor"
+                  strokeWidth={width}
+                  strokeLinecap="round"
+                />
+              </svg>
             </button>
           ))}
         </div>
@@ -58,11 +68,22 @@ export function RectangleStyleControls({ shape, editor }: { shape: Rectangle; ed
             <button
               key={strokeStyle}
               className="file-button"
+              title={`${strokeStyle} stroke`}
               aria-label={`${strokeStyle} stroke`}
               aria-pressed={style.strokeStyle === strokeStyle}
               onClick={() => editor.setRectangleStyle({ strokeStyle })}
             >
-              {strokeStyle}
+              <svg aria-hidden="true" viewBox="0 0 40 24" className="style-preview">
+                <path
+                  d="M4 12h32"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeDasharray={
+                    strokeStyle === "dashed" ? "7 5" : strokeStyle === "dotted" ? "1 5" : undefined
+                  }
+                  strokeLinecap="round"
+                />
+              </svg>
             </button>
           ))}
         </div>
@@ -74,17 +95,26 @@ export function RectangleStyleControls({ shape, editor }: { shape: Rectangle; ed
             <button
               key={cornerRadius}
               className="file-button"
+              aria-label={cornerRadius ? "Rounded" : "Square"}
+              title={cornerRadius ? "Rounded corners" : "Square corners"}
               aria-pressed={style.cornerRadius === cornerRadius}
               onClick={() => editor.setRectangleStyle({ cornerRadius })}
             >
-              {cornerRadius ? "Rounded" : "Square"}
+              <svg aria-hidden="true" viewBox="0 0 40 24" className="style-preview">
+                <path
+                  d={cornerRadius ? "M10 21V11a8 8 0 0 1 8-8h12" : "M10 21V3h20"}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                />
+              </svg>
             </button>
           ))}
         </div>
       </section>
-      <NumberField
-        className="text-size-field"
-        label="Opacity %"
+      <RangeField
+        label="Opacity"
+        unit="%"
         name="Shape opacity"
         min={0}
         max={100}
