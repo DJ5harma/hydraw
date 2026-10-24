@@ -26,8 +26,10 @@ export function SelectionActions({
   onFitFrame,
   onExportFrame,
   onMore,
+  onCopyImage,
 }: {
   onMore: (point: Point) => void;
+  onCopyImage: () => void;
   editor: Editor;
   onFitFrame: () => void;
   onExportFrame: () => void;
@@ -144,6 +146,9 @@ export function SelectionActions({
           {oneGroup && <span className="selection-group-badge">Group</span>}
         </header>
         <div className="selection-properties-content">
+          <button className="file-button" onClick={onCopyImage}>
+            Copy as image
+          </button>
           {commandError && (
             <p className="selection-command-error" role="alert">
               {commandError}

@@ -370,3 +370,13 @@ kbd {
     bottom: 80px;
   }
 }
+
+.copy-notice {
+  padding: 10px 14px;
+  border: 1px solid var(--line, #e0e5eb);
+  border-radius: 8px;
+  background: var(--surface, white);
+  color: var(--text, #202a35);
+  font-size: 12px;
+  pointer-events: none;
+}

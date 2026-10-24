@@ -456,3 +456,17 @@ regression, now fixed; connection handles are separated from the four edge resiz
 handles and remain correctly positioned at different zoom levels. The native
 file envelope is now 200 MB, with a conservative worst-case serialization budget
 including labels, organization metadata, images and ink samples.
+
+## Milestone 21 — copy diagrams as images
+
+Selection properties and context menus now copy selections/frames directly as
+2× PNG clipboard images. Board menu supports board/selection areas and explicit
+board-style or transparent backgrounds. Encoding uses the same semantic SVG and
+PNG path as download, preserving embedded images, text, ink and frame contents.
+Clipboard writes begin during the user gesture and await encoding; unsupported or
+denied clipboard access reports an error without changing document/history.
+
+Six production/development Chromium checks pass using the actual image clipboard:
+selected bounds and crisp dimensions, alpha transparency, frame contents, blueprint
+background pixels, and failure preserving undo. Scoped formatting/lint/types and
+the workspace typecheck pass.

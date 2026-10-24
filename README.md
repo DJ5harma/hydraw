@@ -33,6 +33,8 @@ The Dockerfile builds React and Hono together. The runtime image contains the bu
 
 ## Current slice
 
+- Copy selected objects or a frame directly as a crisp 2× PNG from selection properties or the context menu. Board menu → Copy as image also copies whole boards, with board-style or transparent backgrounds. Clipboard failures are visible and leave document/history unchanged.
+
 - Freehand drawing with P or Draw: choose ink color and width, scribble over images or blank canvas, then select, move, resize, group or lock strokes. Hold a roughly closed rectangle or ellipse for half a second to straighten it; moving again continues the original ink. Escape cancels an unfinished stroke. Dots and straight marks work too. Paths persist and export, with up to 4096 points per stroke and 100,000 per board.
 
 - Insert PNG, JPEG or WebP pictures with Insert → Image, paste with the canvas focused, or drag files onto the canvas. Move/resize images, draw over them and attach connectors. Pictures stay embedded through reload, clipboard and native/SVG/PNG export. Files up to 12 MB/40 megapixels are normalized to PNG at up to 4096 pixels per side; encoded data is limited to 4 million characters per picture and 24 million per board.

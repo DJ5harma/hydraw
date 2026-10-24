@@ -3,6 +3,8 @@ import { boardTheme } from "@hydraw/document";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { BoardTransferDialog } from "../board/BoardTransferDialog.tsx";
 import type { TransferMode } from "../board/BoardTransferDialog.tsx";
+import { copyVisual } from "../board/visual-export.ts";
+import type { VisualBackground } from "../board/visual-export.ts";
 import { downloadVisual } from "../board/visual-export.ts";
 import { downloadBoard } from "../board/files.ts";
 import { BoardMenu } from "../board/BoardMenu.tsx";
@@ -74,6 +76,29 @@ export function Workspace({ session }: { session: BoardSession }) {
     storage,
     session.error,
   );
+  const [copyNotice, setCopyNotice] = useState<string | null>(null);
+  useEffect(() => {
+    if (!copyNotice) return;
+    const timer = window.setTimeout(() => setCopyNotice(null), 3500);
+    return () => window.clearTimeout(timer);
+  }, [copyNotice]);
+  async function copyImage(selectionOnly = true, background: VisualBackground = "board") {
+    try {
+      editor.finishTextEditing();
+      const current = editor.getSnapshot();
+      if (!current.document.shapes.length && !current.document.connectors.length) return;
+      if (selectionOnly && !current.selectedIds.length) return;
+      await copyVisual(
+        current.document,
+        selectionOnly ? current.selectedIds : undefined,
+        background,
+      );
+      setActionError(null);
+      setCopyNotice("Image copied to clipboard");
+    } catch (cause) {
+      setActionError(cause instanceof Error ? cause.message : "Could not copy this image.");
+    }
+  }
   const [exporting, setExporting] = useState(false);
   async function exportImage(format: "svg" | "png", selectionOnly: boolean) {
     setExporting(true);
@@ -149,6 +174,9 @@ export function Workspace({ session }: { session: BoardSession }) {
           onVisualExport={(format, selectionOnly) => {
             void exportImage(format, selectionOnly);
           }}
+          onCopyImage={(selectionOnly, background) => {
+            void copyImage(selectionOnly, background);
+          }}
           selectionCount={snapshot.selectedIds.length}
           hasContent={snapshot.document.shapes.length + snapshot.document.connectors.length > 0}
           exporting={exporting}
@@ -201,6 +229,9 @@ export function Workspace({ session }: { session: BoardSession }) {
         )}
         <SelectionActions
           editor={editor}
+          onCopyImage={() => {
+            void copyImage();
+          }}
           onMore={context.showSelection}
           onFitFrame={fit}
           onExportFrame={() => {
@@ -221,6 +252,7 @@ export function Workspace({ session }: { session: BoardSession }) {
               point: context.anchor.screen,
               fit,
               exportImage: (format) => exportImage(format, true),
+              copyImage: () => copyImage(),
             })}
             onClose={() => overlay.close()}
             onError={setActionError}
@@ -238,6 +270,11 @@ export function Workspace({ session }: { session: BoardSession }) {
           />
         )}
         <div className="workspace-notices">
+          {copyNotice && (
+            <div className="copy-notice" role="status">
+              {copyNotice}
+            </div>
+          )}
           {actionError && (
             <div className="storage-warning selection-warning" role="alert">
               {actionError}

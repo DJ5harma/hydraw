@@ -1,3 +1,4 @@
+import type { VisualBackground } from "./visual-export.ts";
 import { useRef, useState } from "react";
 import { Icon, Mark } from "../../components/icons.tsx";
 import type { SaveState } from "./persistence.ts";
@@ -11,6 +12,7 @@ export function BoardMenu({
   onExport,
   onVisualExport,
   selectionCount,
+  onCopyImage,
   hasContent,
   exporting,
   onImport,
@@ -29,6 +31,7 @@ export function BoardMenu({
   onExport: () => void;
   onVisualExport: (format: "svg" | "png", selectionOnly: boolean) => void;
   selectionCount: number;
+  onCopyImage: (selectionOnly: boolean, background: VisualBackground) => void;
   hasContent: boolean;
   exporting: boolean;
   onImport: () => void;
@@ -43,6 +46,7 @@ export function BoardMenu({
 }) {
   const cancelledEdit = useRef(false);
   const [selectionOnly, setSelectionOnly] = useState(false);
+  const [imageBackground, setImageBackground] = useState<VisualBackground>("board");
   const status =
     saveState === "saving"
       ? "Saving locally…"
@@ -177,6 +181,27 @@ export function BoardMenu({
                 </option>
               </select>
             </label>
+            <label className="board-export-area">
+              Copy background
+              <select
+                aria-label="Copy image background"
+                value={imageBackground}
+                onChange={(event) => setImageBackground(event.target.value as VisualBackground)}
+              >
+                <option value="board">Board style</option>
+                <option value="transparent">Transparent</option>
+              </select>
+            </label>
+            <button
+              type="button"
+              className="file-button"
+              disabled={!hasContent || exporting}
+              onClick={() =>
+                runAndClose(() => onCopyImage(selectionOnly && selectionCount > 0, imageBackground))
+              }
+            >
+              Copy as image
+            </button>
             <div className="board-export-formats">
               {(["svg", "png"] as const).map((format) => (
                 <button

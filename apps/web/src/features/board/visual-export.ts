@@ -1,3 +1,4 @@
+import { boardTheme, themePalette } from "@hydraw/document";
 import type { BoardDocument } from "@hydraw/document";
 import { createTextMeasurer } from "@hydraw/editor/canvas";
 import { exportSvg } from "@hydraw/editor";
@@ -70,4 +71,41 @@ export async function downloadVisual(
   }
   const blob = await pngBlob(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }));
   download(blob, `${fileBase(document.name)}.png`);
+}
+
+export type VisualBackground = "board" | "transparent";
+
+/** Rasterization uses the same semantic export as downloaded PNGs. */
+export async function visualPng(
+  document: BoardDocument,
+  ids?: readonly string[],
+  background: VisualBackground = "board",
+): Promise<Blob> {
+  const svg = exportSvg(document, {
+    ids,
+    measureText: createTextMeasurer(),
+    background:
+      background === "transparent" ? "transparent" : themePalette(boardTheme(document)).background,
+  });
+  return pngBlob(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }));
+}
+
+/** Start the clipboard write during the user gesture; browsers can await image encoding. */
+export async function copyVisual(
+  document: BoardDocument,
+  ids?: readonly string[],
+  background: VisualBackground = "board",
+): Promise<void> {
+  if (
+    !navigator.clipboard?.write ||
+    typeof ClipboardItem === "undefined" ||
+    (typeof ClipboardItem.supports === "function" && !ClipboardItem.supports("image/png"))
+  )
+    throw new Error("This browser cannot copy images to the clipboard. Use Export PNG instead.");
+  const item = new ClipboardItem({ "image/png": visualPng(document, ids, background) });
+  try {
+    await navigator.clipboard.write([item]);
+  } catch {
+    throw new Error("Could not copy the image. Allow clipboard access, or use Export PNG.");
+  }
 }

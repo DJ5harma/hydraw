@@ -9,12 +9,14 @@ type Options = {
   point: Point;
   fit: () => void;
   exportImage: (format: "svg" | "png") => Promise<void>;
+  copyImage?: () => Promise<void>;
 };
 export function contextMenuActions({
   editor,
   point,
   fit,
   exportImage,
+  copyImage,
 }: Options): readonly (readonly ContextMenuItem[])[] {
   const snapshot = editor.getSnapshot();
   const selected = new Set(snapshot.selectedIds);
@@ -27,6 +29,9 @@ export function contextMenuActions({
     shortcut: "Ctrl/⌘ C",
     run: () => copyToClipboard(editor),
   };
+  const imageCopy: ContextMenuItem[] = copyImage
+    ? [{ id: "copy-image", label: "Copy as image", run: copyImage }]
+    : [];
   const paste: ContextMenuItem = {
     id: "paste",
     label: "Paste",
@@ -65,7 +70,7 @@ export function contextMenuActions({
           run: () => editor.setSelectionLocked(false),
         },
       ],
-      [copy],
+      [copy, ...imageCopy],
     ];
   const hasFrames = objects.some((item) => item.type !== "connector" && isFrame(item));
   const frame =
@@ -87,6 +92,7 @@ export function contextMenuActions({
     ]);
   groups.push([
     copy,
+    ...imageCopy,
     ...(canCutSelection(editor)
       ? [
           {
