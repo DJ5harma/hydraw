@@ -18,9 +18,11 @@ const tools = [
 export function EditorToolbar({
   editor,
   selectTool,
+  onImage,
   onInsert,
   insertOpen,
 }: {
+  onImage: () => void;
   onInsert: () => void;
   insertOpen: boolean;
   editor: Editor;
@@ -53,6 +55,14 @@ export function EditorToolbar({
           </button>
         );
       })}
+      <button
+        className="tool-button"
+        aria-label="Insert image"
+        title="Insert image"
+        onClick={onImage}
+      >
+        <Icon name="image" />
+      </button>
       <button
         className="tool-button"
         aria-label="Insert"

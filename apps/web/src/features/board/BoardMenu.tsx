@@ -22,7 +22,6 @@ export function BoardMenu({
   onToggle,
   onClose,
   onObjects,
-  onLibrary,
   theme,
   onThemeChange,
 }: {
@@ -42,7 +41,6 @@ export function BoardMenu({
   onToggle: () => void;
   onClose: () => void;
   onObjects: () => void;
-  onLibrary: () => void;
   theme: BoardTheme;
   onThemeChange: (theme: BoardTheme) => void;
 }) {
@@ -226,10 +224,6 @@ export function BoardMenu({
             </section>
             <div className="board-menu-divider" />
             <div className="board-menu-navigation">
-              <button type="button" className="board-menu-action" onClick={onLibrary}>
-                <Icon name="library" />
-                <span>My library</span>
-              </button>
               <button type="button" className="board-menu-action" onClick={onObjects}>
                 <Icon name="layers" />
                 <span>Objects</span>

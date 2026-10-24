@@ -11,15 +11,11 @@ export function InsertPanel({
   center,
   onClose,
   onInserted,
-  onImage,
-  onLibrary,
 }: {
   editor: Editor;
   center: () => Point;
   onClose: () => void;
   onInserted: () => void;
-  onImage: () => void;
-  onLibrary?: () => void;
 }) {
   const snapshot = useEditorSnapshot(editor);
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +37,7 @@ export function InsertPanel({
         <header className="insert-panel-heading">
           <div>
             <h2>Insert</h2>
-            <p>Add images, frames or a ready-made architecture flow.</p>
+            <p>Add a frame or a ready-made architecture flow.</p>
           </div>
           <button
             className="insert-panel-close"
@@ -59,28 +55,6 @@ export function InsertPanel({
           </p>
         )}
 
-        <button type="button" className="file-button" aria-label="Insert image" onClick={onImage}>
-          <span className="insert-action-icon">
-            <Icon name="image" />
-          </span>
-          <span>
-            <strong>Image</strong>
-            <small>Upload, paste or drop an image</small>
-          </span>
-          <Icon name="plus" />
-        </button>
-        {onLibrary && (
-          <button type="button" className="file-button" onClick={onLibrary}>
-            <span className="insert-action-icon">
-              <Icon name="library" />
-            </span>
-            <span>
-              <strong>My library</strong>
-              <small>Your saved shapes and diagrams</small>
-            </span>
-            <Icon name="arrow" />
-          </button>
-        )}
         <div className="insert-panel-frames" aria-label="Frames">
           {snapshot.selectedIds.length > 0 && (
             <button type="button" onClick={() => run(() => editor.frameSelection())}>

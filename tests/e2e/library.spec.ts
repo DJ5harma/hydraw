@@ -107,7 +107,6 @@ test("saves a connected selection, inserts fresh editable IDs, undoes, and manag
     connectors: board.connectors,
   });
 
-  await openBoardMenu(page);
   await page.getByRole("button", { name: "My library", exact: true }).click();
   const library = page.getByRole("dialog", { name: "My library", exact: true });
   await expect(library.getByText("API path", { exact: true })).toBeVisible();
@@ -247,7 +246,6 @@ test("reports unavailable library storage without changing the board", async ({ 
       },
     });
   });
-  await openBoardMenu(page);
   await page.getByRole("button", { name: "My library", exact: true }).click();
   await expect(page.getByRole("alert")).toContainText("Could not open your local library");
   await expect(page.locator("canvas")).toBeVisible();

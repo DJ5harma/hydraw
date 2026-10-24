@@ -1,3 +1,4 @@
+import { Icon } from "../../components/icons.tsx";
 import type { Alignment, DistributionAxis } from "@hydraw/document";
 import { LibraryPanel } from "../library/LibraryPanel.tsx";
 import type { LibraryPanelMode } from "../library/LibraryPanel.tsx";
@@ -205,7 +206,6 @@ export function Workspace({ session }: { session: BoardSession }) {
           onToggle={() => overlay.open(overlay.active === "board" ? null : "board")}
           onClose={() => overlay.close()}
           onObjects={() => overlay.open("objects")}
-          onLibrary={() => openLibrary()}
           onRename={(name) => editor.rename(name)}
           onExport={() => downloadBoard(editor.getSnapshot().document)}
           onVisualExport={(format, selectionOnly) => {
@@ -229,6 +229,10 @@ export function Workspace({ session }: { session: BoardSession }) {
         />
         <EditorToolbar
           editor={editor}
+          onImage={() => {
+            overlay.close(false);
+            imageInputRef.current?.click();
+          }}
           insertOpen={overlay.active === "insert"}
           onInsert={() => overlay.open(overlay.active === "insert" ? null : "insert")}
           selectTool={(tool) => {
@@ -236,6 +240,18 @@ export function Workspace({ session }: { session: BoardSession }) {
             selectTool(tool);
           }}
         />
+        <button
+          className="library-launcher file-button"
+          aria-label="My library"
+          title="My library"
+          aria-expanded={overlay.active === "library"}
+          aria-haspopup="dialog"
+          data-overlay-trigger="library"
+          onClick={() => (overlay.active === "library" ? overlay.close() : openLibrary())}
+        >
+          <Icon name="library" />
+          <span>Library</span>
+        </button>
         <DrawingProperties editor={editor} hidden={overlay.active !== null} />
         {snapshot.document.shapes.length === 0 &&
           snapshot.document.connectors.length === 0 &&
@@ -258,11 +274,6 @@ export function Workspace({ session }: { session: BoardSession }) {
             editor={editor}
             center={center}
             onInserted={fit}
-            onLibrary={() => openLibrary()}
-            onImage={() => {
-              imageInputRef.current?.click();
-              overlay.close(false);
-            }}
             onClose={() => overlay.close()}
           />
         )}

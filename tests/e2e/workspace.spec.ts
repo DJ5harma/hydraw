@@ -277,3 +277,27 @@ test("an opacity drag commits once and undo restores the original appearance", a
     page.getByRole("region", { name: "Selection properties", exact: true }),
   ).toBeVisible();
 });
+
+test("image insertion is direct and the floating library restores focus at desktop and mobile widths", async ({
+  page,
+}) => {
+  await page.goto("/");
+  for (const width of [1440, 390, 320]) {
+    await page.setViewportSize({ width, height: 844 });
+    const image = page
+      .getByRole("toolbar", { name: "Drawing tools" })
+      .getByRole("button", { name: "Insert image", exact: true });
+    await expect(image).toBeInViewport();
+    const chooser = page.waitForEvent("filechooser");
+    await image.click();
+    await chooser;
+    const library = page.getByRole("button", { name: "My library", exact: true });
+    const bounds = (await library.boundingBox())!;
+    expect(bounds.x).toBeGreaterThan(width / 2);
+    expect(bounds.y).toBeLessThan(20);
+    await library.click();
+    await expect(page.getByRole("dialog", { name: "My library", exact: true })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(library).toBeFocused();
+  }
+});
