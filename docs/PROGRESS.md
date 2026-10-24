@@ -30,3 +30,7 @@ Custom HEX colors are available beside preset swatches for fills, strokes, text,
 connectors and freehand ink. A shared picker stages edits until Apply, accepts
 short HEX input and keeps eight recent colors in browser-local preferences.
 Transparency remains a separate fill choice. Invalid CSS never reaches records.
+
+Resizing freehand ink across its opposite edge reflects its normalized points.
+The fixed edge stays anchored, drag handles follow the crossing, and moving back
+restores the source orientation before committing one undo step.

@@ -11,7 +11,14 @@ import {
 } from "@hydraw/document";
 import { makeInkShape } from "@hydraw/document";
 import type { Fill, InkShape, Point, Shape, ShapeKind } from "@hydraw/document";
-import { clamp, handlePoint, hitResizeHandle, resizeRectangle, screenToWorld } from "./geometry.ts";
+import {
+  clamp,
+  handlePoint,
+  hitResizeHandle,
+  resizeShape,
+  resizedHandle,
+  screenToWorld,
+} from "./geometry.ts";
 import type { ResizeHandle } from "./geometry.ts";
 import type { Camera, EditorSnapshot } from "./types.ts";
 
@@ -73,11 +80,10 @@ export function previewGesture(
   const raw = screenToWorld(screen, camera);
   if (gesture.kind === "resize") {
     const start = handlePoint(gesture.shape, gesture.handle);
+    const point = { x: start.x + raw.x - gesture.start.x, y: start.y + raw.y - gesture.start.y };
     return {
-      preview: resizeRectangle(gesture.shape, gesture.handle, {
-        x: start.x + raw.x - gesture.start.x,
-        y: start.y + raw.y - gesture.start.y,
-      }),
+      preview: resizeShape(gesture.shape, gesture.handle, point),
+      activeHandle: resizedHandle(gesture.shape, gesture.handle, point),
     };
   }
   const point = {
