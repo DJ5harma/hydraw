@@ -17,7 +17,8 @@ export type ConnectorEnd = "start" | "end";
 export type ConnectorGesture =
   | { kind: "connect"; id: string; start: Endpoint }
   | { kind: "create-connected"; id: string; shapeId: string; source: Rectangle; start: Endpoint }
-  | { kind: "reconnect"; connector: Connector; endpoint: ConnectorEnd };
+  | { kind: "reconnect"; connector: Connector; endpoint: ConnectorEnd }
+  | { kind: "bend-connector"; connector: Connector; start: Point; position: number };
 
 export type ConnectionHandle = "north" | "east" | "south" | "west";
 
@@ -70,8 +71,13 @@ export function hitConnector(
   return document.connectors
     .toSorted((a, b) => (a.zIndex ?? 0) - (b.zIndex ?? 0))
     .findLast((connector) => {
-      const { start, end } = resolve(connector);
-      if (distanceToSegment(point, start, end) <= tolerance) return true;
+      const geometry = resolve(connector);
+      if (
+        geometry.points
+          .slice(1)
+          .some((end, i) => distanceToSegment(point, geometry.points[i]!, end) <= tolerance)
+      )
+        return true;
       if (!connector.label?.text.trim()) return false;
       const bounds = labelClipBounds(connector, document.shapes);
       return (
@@ -106,6 +112,22 @@ export function hitConnectorEnd(
   return closest;
 }
 
+export function hitConnectorBend(
+  connector: Connector,
+  shapes: readonly Shape[],
+  screen: Point,
+  camera: Camera,
+): "x" | "y" | null {
+  const bend = resolveConnector(connector, shapes).bend;
+  if (!bend) return null;
+  return Math.hypot(
+    bend.point.x * camera.zoom + camera.x - screen.x,
+    bend.point.y * camera.zoom + camera.y - screen.y,
+  ) <= 9
+    ? bend.axis
+    : null;
+}
+
 export function previewConnectorGesture(
   gesture: ConnectorGesture,
   screen: Point,
@@ -117,6 +139,26 @@ export function previewConnectorGesture(
     x: clamp(raw.x, -MAX_ENDPOINT_COORDINATE, MAX_ENDPOINT_COORDINATE),
     y: clamp(raw.y, -MAX_ENDPOINT_COORDINATE, MAX_ENDPOINT_COORDINATE),
   };
+  if (gesture.kind === "bend-connector" && gesture.connector.route) {
+    const route = gesture.connector.route;
+    const delta = raw[route.axis] - gesture.start[route.axis];
+    return {
+      connectorPreview:
+        Math.abs(delta) < 0.000001
+          ? gesture.connector
+          : {
+              ...gesture.connector,
+              route: {
+                ...route,
+                position: clamp(
+                  gesture.position + delta,
+                  -MAX_ENDPOINT_COORDINATE,
+                  MAX_ENDPOINT_COORDINATE,
+                ),
+              },
+            },
+    };
+  }
   const endpoint = endpointAt(shapes, point, 10 / camera.zoom);
   return {
     connectorPreview:
@@ -173,7 +215,12 @@ export function hitSceneObject(
       return containsShape(object, point);
     }
     const ends = resolve(object);
-    if (distanceToSegment(point, ends.start, ends.end) <= tolerance) return true;
+    if (
+      ends.points
+        .slice(1)
+        .some((end, i) => distanceToSegment(point, ends.points[i]!, end) <= tolerance)
+    )
+      return true;
     if (!object.label?.text.trim()) return false;
     const box = labelClipBounds(object, document.shapes, ends);
     return (

@@ -10,7 +10,7 @@ without rebuilding them elsewhere. Finish that workflow before expanding into a
 general whiteboard, workshop platform or design suite.
 
 Today rectangles/ellipses/diamonds, attached node and connector labels, standalone
-text, bound straight connectors, multiselection, alignment, duplication, native
+text, bound straight/elbow connectors, multiselection, alignment, duplication, native
 clipboard, SVG/PNG export, smart translation guides, flat groups, locks, stacking, named frames, three editable presets,
 history, JSON and local recovery work. The local
 named-diagram workflow is implemented; interaction quality and larger-board
@@ -26,7 +26,7 @@ organization are the next focus.
 | Done  | Selection clipboard                       | Copy/cut/paste connected selections with fresh identities and one undo step. Internal bindings survive; external references detach safely. Native input clipboard remains untouched.                                  |
 | Done  | Smart placement and organization          | Edge/center and neighboring-gap guides during translation, Alt bypass, flat groups, direct-edit locks and cross-type ordering with atomic history.                                                                    |
 | Done  | Named frames and reusable presets         | Name and navigate logical diagram regions; reuse useful technical arrangements without expanding the permanent toolbar.                                                                                               |
-| Next  | Connector routing                         | Specify elbow routes and explicit bend edits; movement, bindings, history and exports must agree.                                                                                                                     |
+| Done  | Connector routing                         | Elbow routes and explicit bend edits share geometry across movement, bindings, history and exports.                                                                                                                   |
 | Gate  | Local alpha evaluation                    | Fresh users finish the workflow; latency, text input, persistence, keyboard and browser evidence support the release claim.                                                                                           |
 
 Fit moves into the workspace increment because a canvas without a permanent object

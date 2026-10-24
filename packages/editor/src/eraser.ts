@@ -140,7 +140,9 @@ export function erasedObjects(
       if (protectedObject(item) || protectedBindings.has(item.id)) return false;
       if (item.type !== "connector") return hitEraserShape(item, from, to, radius);
       const ends = resolve(item);
-      return segmentDistance(from, to, ends.start, ends.end) <= radius + 1;
+      return ends.points
+        .slice(1)
+        .some((point, i) => segmentDistance(from, to, ends.points[i]!, point) <= radius + 1);
     })
     .map((item) => item.id);
 }

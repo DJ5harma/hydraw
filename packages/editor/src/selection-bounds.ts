@@ -15,7 +15,7 @@ export function selectionBounds(
   for (const connector of connectors)
     if (selected.has(connector.id)) {
       const ends = resolveConnector(connector);
-      points.push(ends.start, ends.end);
+      points.push(...ends.points);
     }
   if (!points.length) return null;
   let left = Infinity,

@@ -1,4 +1,4 @@
-import { resolveConnector } from "@hydraw/document";
+import { resolveConnector, connectorMidpoint } from "@hydraw/document";
 import type {
   Bounds,
   Connector,
@@ -17,11 +17,19 @@ export function labelClipBounds(
   resolved?: ConnectorGeometry,
 ): Bounds {
   if (owner.type === "connector") {
-    const { start, end } = resolved ?? resolveConnector(owner, shapes);
-    const width = Math.min(220, Math.max(80, Math.hypot(end.x - start.x, end.y - start.y) * 0.8));
+    const geometry = resolved ?? resolveConnector(owner, shapes);
+    const middle = connectorMidpoint(geometry);
+    const length = geometry.points
+      .slice(1)
+      .reduce(
+        (sum, point, i) =>
+          sum + Math.hypot(point.x - geometry.points[i]!.x, point.y - geometry.points[i]!.y),
+        0,
+      );
+    const width = Math.min(220, Math.max(80, length * 0.8));
     return {
-      x: (start.x + end.x) / 2 - width / 2,
-      y: (start.y + end.y) / 2 - 40,
+      x: middle.x - width / 2,
+      y: middle.y - 40,
       width,
       height: 80,
     };

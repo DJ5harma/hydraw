@@ -52,7 +52,7 @@ export function enclosedObjects(document: BoardDocument, bounds: Bounds): readon
     ...document.connectors
       .filter((connector) => {
         const ends = resolveConnector(connector);
-        return editable(connector) && contains(bounds, ends.start) && contains(bounds, ends.end);
+        return editable(connector) && ends.points.every((point) => contains(bounds, point));
       })
       .map((connector) => connector.id),
   ]);

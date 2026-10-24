@@ -1,5 +1,6 @@
 import {
   decodeDocument,
+  detachConnectorBindings,
   insertImages,
   makeInkShape,
   recognizeInk,
@@ -62,7 +63,12 @@ import type {
   TextShape,
 } from "@hydraw/document";
 import { labelTextShape } from "./labels.ts";
-import { hitSceneObject, hitConnectorEnd, connectionHandleAt } from "./connector-interactions.ts";
+import {
+  hitSceneObject,
+  hitConnectorEnd,
+  hitConnectorBend,
+  connectionHandleAt,
+} from "./connector-interactions.ts";
 import type { ConnectorEnd } from "./connector-interactions.ts";
 import { clamp, hitResizeHandle, screenToWorld } from "./geometry.ts";
 import type { ResizeHandle } from "./geometry.ts";
@@ -145,6 +151,7 @@ export class Editor {
       connectorPreview: null,
       bindingTargetId: null,
       activeEndpoint: null,
+      activeConnectorBend: null,
       preview: null,
       selectionPreview: null,
       marquee: null,
@@ -398,6 +405,7 @@ export class Editor {
       connectorPreview: null,
       bindingTargetId: null,
       activeEndpoint: null,
+      activeConnectorBend: null,
       preview: null,
       selectionPreview: null,
       marquee: null,
@@ -459,7 +467,7 @@ export class Editor {
     this.publish({ selectedIds: [connector.id], tool: "select" });
   }
 
-  setConnectorStyle(style: Partial<Pick<Connector, "color" | "arrowhead">>): void {
+  setConnectorStyle(style: Partial<Pick<Connector, "color" | "arrowhead" | "route">>): void {
     if (this.selectionLocked()) return;
     this.cancelGesture();
     const connector = this.selectedConnector();
@@ -483,18 +491,24 @@ export class Editor {
     this.cancelGesture();
     const connector = this.selectedConnector();
     if (!connector) return;
-    const ends = resolveConnector(connector, this.snapshot.document.shapes);
-    this.commitConnector("Detach connector", connector, {
-      ...connector,
-      start: { type: "point", ...ends.start },
-      end: { type: "point", ...ends.end },
-    });
+    this.commitConnector(
+      "Detach connector",
+      connector,
+      detachConnectorBindings(connector, this.snapshot.document.shapes),
+    );
   }
 
   getConnectorEndpointAt(screen: Point): ConnectorEnd | null {
     const connector = this.selectionLocked() ? undefined : this.selectedConnector();
     return connector && this.snapshot.tool === "select"
       ? hitConnectorEnd(connector, this.snapshot.document.shapes, screen, this.snapshot.camera)
+      : null;
+  }
+
+  getConnectorBendAt(screen: Point): "x" | "y" | null {
+    const connector = this.selectionLocked() ? undefined : this.selectedConnector();
+    return connector && this.snapshot.tool === "select"
+      ? hitConnectorBend(connector, this.snapshot.document.shapes, screen, this.snapshot.camera)
       : null;
   }
 
@@ -1126,6 +1140,8 @@ export class Editor {
         this.commit(
           updateObjectsTransaction(this.snapshot.document, "Move selection", selectionPreview),
         );
+      } else if (gesture?.kind === "bend-connector" && connectorPreview) {
+        this.commitConnector("Move connector bend", gesture.connector, connectorPreview);
       } else if (
         (gesture?.kind === "connect" ||
           gesture?.kind === "reconnect" ||

@@ -7,6 +7,7 @@ import {
   MAX_SHAPES,
   MAX_SIZE,
   rectangleBetween,
+  resolveConnector,
 } from "@hydraw/document";
 import { makeInkShape } from "@hydraw/document";
 import type { Fill, InkShape, Point, Shape, ShapeKind } from "@hydraw/document";
@@ -22,6 +23,7 @@ import {
   connectionHandleAt,
   hitSceneObject,
   hitConnectorEnd,
+  hitConnectorBend,
   previewConnectorGesture,
 } from "./connector-interactions.ts";
 
@@ -55,6 +57,7 @@ export function previewGesture(
   if (
     gesture.kind === "connect" ||
     gesture.kind === "reconnect" ||
+    gesture.kind === "bend-connector" ||
     gesture.kind === "create-connected"
   )
     return previewConnectorGesture(gesture, screen, camera, document.shapes);
@@ -96,6 +99,7 @@ export const IDLE_GESTURE = Object.freeze({
   connectorPreview: null,
   bindingTargetId: null,
   activeEndpoint: null,
+  activeConnectorBend: null,
   interacting: false,
   activeHandle: null,
   erasedIds: Object.freeze([]),
@@ -220,6 +224,18 @@ export function startGesture(
     ? undefined
     : document.connectors.find((edge) => edge.id === selectedId);
   const endpoint = connector ? hitConnectorEnd(connector, document.shapes, screen, camera) : null;
+  const bend =
+    connector && !endpoint ? hitConnectorBend(connector, document.shapes, screen, camera) : null;
+  if (bend && connector)
+    return {
+      gesture: {
+        kind: "bend-connector",
+        connector,
+        start: raw,
+        position: resolveConnector(connector, document.shapes).bend!.point[bend],
+      },
+      patch: { interacting: true, activeConnectorBend: bend, connectorPreview: connector },
+    };
   const handle = selectedShape ? hitResizeHandle(selectedShape, screen, camera) : null;
   const connectionHandle =
     selectedShape && tool === "select" && !lockedSelection

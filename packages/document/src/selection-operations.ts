@@ -1,7 +1,7 @@
 import { expandGroups, clonedMetadata } from "./object-scene.ts";
 import { MAX_CONNECTORS, MAX_COORDINATE, MAX_ENDPOINT_COORDINATE, MAX_SHAPES } from "./model.ts";
 import type { BoardDocument, Connector, Endpoint, Point, Shape } from "./model.ts";
-import { createConnectorResolver, detachConnectorBindings } from "./connectors.ts";
+import { detachConnectorBindings } from "./connectors.ts";
 import { connectorTransaction, shapeTransaction } from "./transactions.ts";
 import type { DocumentChange, DocumentTransaction } from "./transactions.ts";
 
@@ -32,12 +32,18 @@ export function translateObjects(
     maxY = Math.min(maxY, limit - point.y);
   }
   for (const shape of shapes) constrain(shape, MAX_COORDINATE);
-  const resolve = createConnectorResolver(document.shapes);
   for (const connector of connectors) {
     for (const endpoint of [connector.start, connector.end])
       if (endpoint.type === "point") constrain(endpoint, MAX_ENDPOINT_COORDINATE);
-    if (connector.route?.position !== undefined)
-      constrain(resolve(connector).bend!.point, MAX_ENDPOINT_COORDINATE);
+    if (connector.route?.position !== undefined) {
+      const axis = connector.route.axis;
+      constrain(
+        axis === "x"
+          ? { x: connector.route.position, y: 0 }
+          : { x: 0, y: connector.route.position },
+        MAX_ENDPOINT_COORDINATE,
+      );
+    }
   }
   const dx = Math.max(minX, Math.min(maxX, requested.x));
   const dy = Math.max(minY, Math.min(maxY, requested.y));

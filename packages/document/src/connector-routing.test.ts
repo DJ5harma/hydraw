@@ -151,3 +151,19 @@ it("excludes a route that leaves a frame even when both endpoints are enclosed",
   };
   expect(frameContents(scene, "frame")).toEqual(["a", "b"]);
 });
+
+it("clamps manual route movement using stored coordinates even when the displayed trunk is displaced", () => {
+  const scene = {
+    ...document(),
+    shapes: [
+      { ...a, x: 1_000_000 },
+      { ...b, x: 1_000_000 },
+    ],
+    connectors: [
+      { ...edge, route: { type: "elbow" as const, axis: "x" as const, position: 1_000_000 } },
+    ],
+  };
+  const moved = translateObjects(scene, ["edge"], { x: 2_000_000, y: 0 });
+  expect(moved.connectors[0]!.route!.position).toBe(2_000_000);
+  expect(() => decodeDocument({ ...scene, connectors: moved.connectors })).not.toThrow();
+});

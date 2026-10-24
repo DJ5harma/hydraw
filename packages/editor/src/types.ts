@@ -36,6 +36,7 @@ export type EditorSnapshot = Readonly<{
   connectorPreview: Connector | null;
   bindingTargetId: string | null;
   activeEndpoint: ConnectorEnd | null;
+  activeConnectorBend: "x" | "y" | null;
   textEditing: Readonly<{ before: TextShape | null; draft: TextShape; ownerId?: string }> | null;
   guides: readonly SnapGuide[];
   interacting: boolean;
@@ -55,6 +56,7 @@ export type EditorChromeSnapshot = Omit<
   | "connectorPreview"
   | "bindingTargetId"
   | "activeEndpoint"
+  | "activeConnectorBend"
   | "erasedIds"
   | "eraserCursor"
 > &

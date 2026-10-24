@@ -159,12 +159,16 @@ function labelElements(
 }
 
 function connectorElement(connector: Connector, shapes: readonly Shape[]): string {
-  const { start, end } = resolveConnector(connector, shapes);
-  const line = `<path d="M ${number(start.x)} ${number(start.y)} L ${number(end.x)} ${number(end.y)}" fill="none" stroke="${escapeXml(connector.color)}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+  const { points, end } = resolveConnector(connector, shapes);
+  const path = points
+    .map((point, i) => `${i ? "L" : "M"} ${number(point.x)} ${number(point.y)}`)
+    .join(" ");
+  const line = `<path d="${path}" fill="none" stroke="${escapeXml(connector.color)}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
   if (connector.arrowhead !== "arrow") return line;
-  const length = Math.hypot(end.x - start.x, end.y - start.y);
+  const beforeEnd = points.at(-2)!;
+  const length = Math.hypot(end.x - beforeEnd.x, end.y - beforeEnd.y);
   if (length <= 0) return line;
-  const angle = Math.atan2(end.y - start.y, end.x - start.x);
+  const angle = Math.atan2(end.y - beforeEnd.y, end.x - beforeEnd.x);
   const size = Math.min(11, length / 2);
   const point = (theta: number) => ({
     x: end.x - Math.cos(theta) * size,
@@ -177,15 +181,17 @@ function connectorElement(connector: Connector, shapes: readonly Shape[]): strin
 }
 
 function connectorBounds(connector: Connector, shapes: readonly Shape[]): Bounds {
-  const { start, end } = resolveConnector(connector, shapes);
+  const { points } = resolveConnector(connector, shapes);
   const radius = connector.arrowhead === "arrow" ? 12 : 1;
-  const left = Math.min(start.x, end.x) - radius;
-  const top = Math.min(start.y, end.y) - radius;
+  const xs = points.map((point) => point.x),
+    ys = points.map((point) => point.y);
+  const left = Math.min(...xs),
+    top = Math.min(...ys);
   return {
-    x: left,
-    y: top,
-    width: Math.max(1, Math.abs(end.x - start.x) + radius * 2),
-    height: Math.max(1, Math.abs(end.y - start.y) + radius * 2),
+    x: left - radius,
+    y: top - radius,
+    width: Math.max(1, Math.max(...xs) - left + radius * 2),
+    height: Math.max(1, Math.max(...ys) - top + radius * 2),
   };
 }
 

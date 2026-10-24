@@ -312,3 +312,28 @@
   border-color: #c9dbd2;
   box-shadow: 0 1px 3px #203c2d0d;
 }
+
+.connector-routing {
+  display: grid;
+  gap: 8px;
+}
+.connector-routing h3 {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+.connector-routing .property-options .file-button {
+  gap: 6px;
+  background: transparent;
+  border-color: transparent;
+}
+.connector-routing .property-options [aria-pressed="true"] {
+  background: var(--surface);
+  border-color: #c9dbd2;
+}
+.connector-routing-help {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}

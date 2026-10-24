@@ -9,12 +9,14 @@ export function drawConnector(
   selected: boolean,
 ): void {
   const ends = resolve(connector);
-  const start = {
-    x: ends.start.x * camera.zoom + camera.x,
-    y: ends.start.y * camera.zoom + camera.y,
-  };
-  const end = { x: ends.end.x * camera.zoom + camera.x, y: ends.end.y * camera.zoom + camera.y };
-  const length = Math.hypot(end.x - start.x, end.y - start.y);
+  const points = ends.points.map((point) => ({
+    x: point.x * camera.zoom + camera.x,
+    y: point.y * camera.zoom + camera.y,
+  }));
+  const start = points[0]!,
+    end = points.at(-1)!,
+    beforeEnd = points.at(-2)!;
+  const length = Math.hypot(end.x - beforeEnd.x, end.y - beforeEnd.y);
   ctx.save();
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
@@ -22,10 +24,10 @@ export function drawConnector(
   ctx.lineWidth = selected ? 2.5 : 2;
   ctx.beginPath();
   ctx.moveTo(start.x, start.y);
-  ctx.lineTo(end.x, end.y);
+  for (const point of points.slice(1)) ctx.lineTo(point.x, point.y);
   ctx.stroke();
   if (connector.arrowhead === "arrow" && length > 0) {
-    const angle = Math.atan2(end.y - start.y, end.x - start.x);
+    const angle = Math.atan2(end.y - beforeEnd.y, end.x - beforeEnd.x);
     const size = Math.min(11, length / 2);
     ctx.beginPath();
     ctx.moveTo(
@@ -59,6 +61,13 @@ export function drawConnectorHandles(
     ctx.fillStyle = connector[key].type === "binding" ? "#dcebd4" : "#ffffff";
     ctx.fill();
     ctx.stroke();
+  }
+  if (ends.bend) {
+    const x = ends.bend.point.x * camera.zoom + camera.x;
+    const y = ends.bend.point.y * camera.zoom + camera.y;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(x - 4, y - 4, 8, 8);
+    ctx.strokeRect(x - 4, y - 4, 8, 8);
   }
   ctx.restore();
 }

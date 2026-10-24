@@ -19,6 +19,7 @@ type IconName =
   | "distribute-y"
   | "duplicate"
   | "connector"
+  | "elbow"
   | "rectangle"
   | "ellipse"
   | "diamond"
@@ -143,6 +144,7 @@ const paths: Record<IconName, React.ReactNode> = {
       <path d="M16 8V4H4v12h4" />
     </>
   ),
+  elbow: <path d="M4 20h8V5h8m-4 4 4-4-4-4" />,
   connector: <path d="M4 20 20 4M9 4h11v11" />,
   rectangle: <rect x="4" y="4" width="16" height="16" rx="3" />,
   ellipse: <ellipse cx="12" cy="12" rx="8" ry="6" />,

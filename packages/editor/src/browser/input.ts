@@ -244,6 +244,9 @@ export function bindCanvasInput(
       if (snapshot.tool === "text") return "text";
       if (snapshot.activeEndpoint || (lastPoint && editor.getConnectorEndpointAt(lastPoint)))
         return "crosshair";
+      const bend =
+        snapshot.activeConnectorBend ?? (lastPoint && editor.getConnectorBendAt(lastPoint));
+      if (bend) return bend === "x" ? "ew-resize" : "ns-resize";
       if (lastPoint && editor.getConnectionHandleAt(lastPoint)) return "crosshair";
       const handle =
         snapshot.activeHandle ?? (lastPoint ? editor.getResizeHandleAt(lastPoint) : null);
