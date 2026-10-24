@@ -10,7 +10,7 @@ export type LocalBoard = {
   close: () => void;
 };
 
-/** One local board for milestone 1. Resolve writes only after the IDB transaction commits. */
+/** One local board in the current storage namespace. Resolve writes only after the IDB transaction commits. */
 async function acquireWriter(signal: AbortSignal): Promise<() => void> {
   if (!navigator.locks)
     throw new Error("This browser cannot safely coordinate local editing across tabs.");
@@ -21,7 +21,7 @@ async function acquireWriter(signal: AbortSignal): Promise<() => void> {
     const timeout = window.setTimeout(() => acquisition.abort(), 350);
     void navigator.locks
       .request(
-        "hydraw-local-writer",
+        "hydraw-board-v1-writer",
         { signal: AbortSignal.any([signal, acquisition.signal]) },
         async () => {
           clearTimeout(timeout);
@@ -58,7 +58,7 @@ export async function openLocalBoard(signal: AbortSignal): Promise<LocalBoard> {
   let database: IDBDatabase;
   try {
     database = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open("hydraw-local", 1);
+      const request = indexedDB.open("hydraw-board-v1", 1);
       let expired = false;
       const timeout = window.setTimeout(() => {
         expired = true;

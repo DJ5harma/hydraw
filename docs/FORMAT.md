@@ -23,3 +23,11 @@ remain current product features.
 
 Package versions remain `0.0.0` until a release. Document, clipboard, IndexedDB and
 package versions describe different contracts; they are not release counters.
+
+## Local storage
+
+The board and its recovery copy live in `hydraw-board-v1` (IndexedDB schema 1).
+The writer lock is `hydraw-board-v1-writer`. Personal library items live in
+`hydraw-library-v1` (IndexedDB schema 1). Both databases start fresh after the reset.
+The app does not open, migrate or delete the old development databases. Existing
+browser data stays isolated; it cannot reappear through autosave or recovery.

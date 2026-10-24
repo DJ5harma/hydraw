@@ -36,7 +36,7 @@ async function stored(page: Page) {
   return page.evaluate(
     () =>
       new Promise<unknown>((resolve, reject) => {
-        const request = indexedDB.open("hydraw-local", 1);
+        const request = indexedDB.open("hydraw-board-v1", 1);
         request.onsuccess = () => {
           const database = request.result;
           const transaction = database.transaction("boards", "readonly");
@@ -223,7 +223,7 @@ test("an unreadable recovery copy does not strand or overwrite a valid current b
   await page.evaluate(
     () =>
       new Promise<void>((resolve, reject) => {
-        const request = indexedDB.open("hydraw-local", 1);
+        const request = indexedDB.open("hydraw-board-v1", 1);
         request.onsuccess = () => {
           const database = request.result;
           const transaction = database.transaction("boards", "readwrite");

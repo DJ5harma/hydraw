@@ -8,7 +8,7 @@ opens it for the current selection from properties or the context menu. Search,
 rename, explicit delete confirmation and empty/error states belong to the panel.
 The interface states that items are saved in this browser.
 
-Storage lives in the library feature module using a separate `hydraw-library`
+Storage lives in the library feature module using a separate `hydraw-library-v1`
 IndexedDB database at schema version 1. Board storage/session lifecycles are not
 changed. Every mutation reads the current collection and applies quotas within one
 readwrite transaction, resolving only on commit; concurrent tabs cannot overwrite

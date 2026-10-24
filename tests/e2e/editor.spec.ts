@@ -127,7 +127,7 @@ test("a future stored document is preserved instead of overwritten", async ({ pa
   await expect(page.locator("canvas")).toBeVisible();
   await page.evaluate(async () => {
     await new Promise<void>((resolve, reject) => {
-      const request = indexedDB.open("hydraw-local", 1);
+      const request = indexedDB.open("hydraw-board-v1", 1);
       request.onsuccess = () => {
         const database = request.result;
         const transaction = database.transaction("boards", "readwrite");
@@ -153,7 +153,7 @@ test("a future stored document is preserved instead of overwritten", async ({ pa
   const stored = await page.evaluate(
     async () =>
       new Promise<unknown>((resolve, reject) => {
-        const request = indexedDB.open("hydraw-local", 1);
+        const request = indexedDB.open("hydraw-board-v1", 1);
         request.onsuccess = () => {
           const database = request.result;
           const transaction = database.transaction("boards", "readonly");

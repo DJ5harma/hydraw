@@ -7,7 +7,7 @@ const MAX_CLIPBOARD_BYTES = 28_000_000;
 export const MAX_LIBRARY_ITEMS = 50;
 export const MAX_LIBRARY_BYTES = 50_000_000;
 export const MAX_LIBRARY_NAME_LENGTH = 120;
-const DATABASE = "hydraw-library";
+const DATABASE = "hydraw-library-v1";
 const STORE = "items";
 
 export type LibraryItem = Readonly<{

@@ -139,7 +139,7 @@ test("shows quota errors and preserves unreadable library records", async ({ pag
   await page.evaluate(
     async ({ fragment }) => {
       const database = await new Promise<IDBDatabase>((resolve, reject) => {
-        const request = indexedDB.open("hydraw-library", 1);
+        const request = indexedDB.open("hydraw-library-v1", 1);
         request.onupgradeneeded = () =>
           request.result.createObjectStore("items", { keyPath: "id" });
         request.onsuccess = () => resolve(request.result);
@@ -175,7 +175,7 @@ test("shows quota errors and preserves unreadable library records", async ({ pag
   await expect(library.getByRole("alert")).toContainText("holds up to 50 items");
   const intact = await page.evaluate(async () => {
     const database = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open("hydraw-library", 1);
+      const request = indexedDB.open("hydraw-library-v1", 1);
       request.onupgradeneeded = () => request.result.createObjectStore("items", { keyPath: "id" });
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
