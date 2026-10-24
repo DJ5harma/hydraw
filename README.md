@@ -33,6 +33,8 @@ The Dockerfile builds React and Hono together. The runtime image contains the bu
 
 ## Current slice
 
+- Save editable selections through Save to library in properties/context actions. Open My library from Board menu or Insert to search, rename, delete or reinsert them with fresh identities and internal bindings preserved. The local library survives board replacement/reload, holds up to 50 items and 50 MB total, and reports storage/quota errors without changing the board.
+
 - Double-click an unlocked image or choose Crop image in its properties/context menu. Drag an edge, or focus a crop handle and use arrows (Shift for larger steps); Apply commits one undoable crop. Cancel/Escape discards the draft. Reopen to adjust it or Reset crop to recover the original picture. Native files and SVG retain the original image; PNG exports and clipboard copies contain the visible crop.
 
 - E selects a whole-stroke eraser. Sweep across freehand marks to remove them together in one undo step. Locked strokes/groups stay protected; Escape cancels an unfinished sweep. Shapes, pictures and text remain untouched.

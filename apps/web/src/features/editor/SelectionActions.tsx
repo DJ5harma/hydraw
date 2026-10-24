@@ -27,10 +27,12 @@ export function SelectionActions({
   onExportFrame,
   onMore,
   onCopyImage,
+  onSaveToLibrary,
   onCropImage,
 }: {
   onMore: (point: Point) => void;
   onCopyImage: () => void;
+  onSaveToLibrary: () => void;
   onCropImage: (id: string) => void;
   editor: Editor;
   onFitFrame: () => void;
@@ -89,7 +91,7 @@ export function SelectionActions({
     snapshot.interacting ||
     snapshot.textEditing ||
     snapshot.tool !== "select" ||
-    ["board", "objects", "help", "insert", "context", "crop"].includes(overlay ?? "")
+    ["board", "objects", "help", "insert", "context", "crop", "library"].includes(overlay ?? "")
   )
     return null;
 
@@ -148,6 +150,9 @@ export function SelectionActions({
           {oneGroup && <span className="selection-group-badge">Group</span>}
         </header>
         <div className="selection-properties-content">
+          <button className="file-button" onClick={onSaveToLibrary}>
+            Save to library
+          </button>
           <button className="file-button" onClick={onCopyImage}>
             Copy as image
           </button>

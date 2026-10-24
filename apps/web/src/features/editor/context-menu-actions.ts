@@ -10,6 +10,7 @@ type Options = {
   fit: () => void;
   exportImage: (format: "svg" | "png") => Promise<void>;
   copyImage?: () => Promise<void>;
+  saveToLibrary?: () => void;
   cropImage?: (id: string) => void;
 };
 export function contextMenuActions({
@@ -18,6 +19,7 @@ export function contextMenuActions({
   fit,
   exportImage,
   copyImage,
+  saveToLibrary,
   cropImage,
 }: Options): readonly (readonly ContextMenuItem[])[] {
   const snapshot = editor.getSnapshot();
@@ -34,6 +36,8 @@ export function contextMenuActions({
   const imageCopy: ContextMenuItem[] = copyImage
     ? [{ id: "copy-image", label: "Copy as image", run: copyImage }]
     : [];
+  if (saveToLibrary)
+    imageCopy.push({ id: "save-library", label: "Save to library", run: saveToLibrary });
   const paste: ContextMenuItem = {
     id: "paste",
     label: "Paste",

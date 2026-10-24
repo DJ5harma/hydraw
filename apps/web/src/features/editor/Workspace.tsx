@@ -1,4 +1,6 @@
 import type { Alignment, DistributionAxis } from "@hydraw/document";
+import { LibraryPanel } from "../library/LibraryPanel.tsx";
+import type { LibraryPanelMode } from "../library/LibraryPanel.tsx";
 import { ImageCropOverlay } from "./ImageCropOverlay.tsx";
 import { boardTheme, expandGroups } from "@hydraw/document";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -45,11 +47,18 @@ export function Workspace({ session }: { session: BoardSession }) {
   useEffect(() => {
     if (snapshot.interacting || editing) close(false);
   }, [snapshot.interacting, editing, close]);
+  const [libraryMode, setLibraryMode] = useState<LibraryPanelMode>("browse");
   const [cropId, setCropId] = useState<string | null>(null);
   const croppingImage =
     overlay.active === "crop"
       ? snapshot.document.shapes.find((shape) => shape.id === cropId && shape.type === "image")
       : undefined;
+  function openLibrary(mode: LibraryPanelMode = "browse") {
+    editor.finishTextEditing();
+    editor.cancelGesture();
+    setLibraryMode(mode);
+    overlay.open("library");
+  }
   function startCrop(id: string) {
     const current = editor.getSnapshot();
     const image = current.document.shapes.find((shape) => shape.id === id);
@@ -196,6 +205,7 @@ export function Workspace({ session }: { session: BoardSession }) {
           onToggle={() => overlay.open(overlay.active === "board" ? null : "board")}
           onClose={() => overlay.close()}
           onObjects={() => overlay.open("objects")}
+          onLibrary={() => openLibrary()}
           onRename={(name) => editor.rename(name)}
           onExport={() => downloadBoard(editor.getSnapshot().document)}
           onVisualExport={(format, selectionOnly) => {
@@ -248,6 +258,7 @@ export function Workspace({ session }: { session: BoardSession }) {
             editor={editor}
             center={center}
             onInserted={fit}
+            onLibrary={() => openLibrary()}
             onImage={() => {
               imageInputRef.current?.click();
               overlay.close(false);
@@ -261,6 +272,7 @@ export function Workspace({ session }: { session: BoardSession }) {
             void copyImage();
           }}
           onMore={context.showSelection}
+          onSaveToLibrary={() => openLibrary("save")}
           onCropImage={startCrop}
           onFitFrame={fit}
           onExportFrame={() => {
@@ -282,10 +294,20 @@ export function Workspace({ session }: { session: BoardSession }) {
               fit,
               exportImage: (format) => exportImage(format, true),
               copyImage: () => copyImage(),
+              saveToLibrary: () => openLibrary("save"),
               cropImage: startCrop,
             })}
             onClose={() => overlay.close()}
             onError={setActionError}
+          />
+        )}
+        {overlay.active === "library" && (
+          <LibraryPanel
+            editor={editor}
+            center={center}
+            mode={libraryMode}
+            onClose={() => overlay.close()}
+            onInserted={fit}
           />
         )}
         {overlay.active === "crop" && croppingImage?.type === "image" && (

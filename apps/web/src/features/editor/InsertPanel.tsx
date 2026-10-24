@@ -11,12 +11,14 @@ export function InsertPanel({
   onClose,
   onInserted,
   onImage,
+  onLibrary,
 }: {
   editor: Editor;
   center: () => Point;
   onClose: () => void;
   onInserted: () => void;
   onImage: () => void;
+  onLibrary?: () => void;
 }) {
   const snapshot = useEditorSnapshot(editor);
   const [error, setError] = useState<string | null>(null);
@@ -59,6 +61,11 @@ export function InsertPanel({
         <button type="button" className="file-button" onClick={onImage}>
           Image <small>PNG, JPEG or WebP · also paste or drop onto the canvas</small>
         </button>
+        {onLibrary && (
+          <button type="button" className="file-button" onClick={onLibrary}>
+            My library <small>Reuse saved editable selections</small>
+          </button>
+        )}
         <div className="insert-panel-frames" aria-label="Frames">
           {snapshot.selectedIds.length > 0 && (
             <button type="button" onClick={() => run(() => editor.frameSelection())}>

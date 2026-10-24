@@ -91,3 +91,12 @@ rectangle/ellipse recognition, and Clean/Notebook/Blueprint styles are implement
 See ADR 0012 for native v9, image/sample budgets, undo, export and font contracts.
 These additions broaden the local board; backend persistence and collaboration
 remain separate later milestones.
+
+## Annotation and reuse follow-up — 24 October 2026
+
+Copy as image completes direct PNG handoff with transparent or board-style
+backgrounds. Whole-stroke erasing supports correction with gesture-scoped undo.
+Native v10 adds non-destructive image crops, keyboard/drag handles, reset and
+matching Canvas/SVG/PNG views. A browser-local personal library stores and reuses
+named editable selections independently of board persistence. ADRs 0013 and 0014
+record cropping and library contracts. Backend collaboration remains separate.

@@ -495,3 +495,25 @@ pass, including keyboard-native Cancel behavior, reset, undo/redo, reload and
 pixel-level PNG verification. Desktop and 320 px layouts are inspected. ADR 0013
 records the geometry/export contract. Context menus retain Copy/Cut adjacency as
 new actions are added.
+
+## Milestone 24 — browser-local personal library
+
+Save any selection from properties/context actions, or open My library through
+Board menu/Insert. Named items preserve editable graphs, images/crops and ink.
+Insertion remaps IDs and internal bindings in one undo step. Search, rename,
+confirmed delete and useful empty/error states are implemented.
+
+A separate IndexedDB module owns library storage. Limits are 50 items and 50 MB;
+readwrite transactions check current data atomically across tabs. Invalid records
+are preserved with a warning; storage failures do not alter the board. Validated
+fragments are cached per immutable item. The UI explains browser-local ownership.
+Seven focused browser checks pass, with one intentional production skip for a
+development-only direct-module concurrency check. Both projects retain real UI
+quota/storage checks. Desktop and 320 px layouts are inspected. See ADR 0014.
+
+Integrated verification on 24 October: `pnpm run ready` passes formatting/lint,
+strict workspace types, package boundaries, 180 unit/server checks, production
+builds and 131 Chromium browser journeys across development and production. One
+source-module-only concurrency test is intentionally skipped in production; its
+real-UI quota counterpart passes there. Existing clipboard, context menu, keyboard,
+text, recovery and narrow-window workflows pass with the new actions.
