@@ -14,7 +14,7 @@
   max-height: calc(100dvh - 112px);
   flex-direction: column;
   overflow: auto;
-  padding: 12px;
+  padding: 16px;
   border: 1px solid var(--line, #e0e5eb);
   border-radius: 12px;
   background: var(--surface, #fff);
@@ -28,12 +28,14 @@
   min-height: 24px;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 8px;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
 }
 
 .selection-properties-heading h2 {
   margin: 0;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 650;
   line-height: 1.3;
 }
@@ -57,7 +59,10 @@
 }
 
 .selection-properties .inspector-section h3 {
-  display: none;
+  margin: 0 0 10px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .selection-properties .text-style-controls,
@@ -367,15 +372,15 @@
 
 .rectangle-style-controls {
   display: grid;
-  gap: 12px;
+  gap: 16px;
 }
 .rectangle-style-controls section {
   min-width: 0;
 }
 .rectangle-style-controls h3 {
-  margin: 0 0 7px;
-  font-size: 11px;
-  font-weight: 500;
+  margin: 0 0 9px;
+  font-size: 12px;
+  font-weight: 600;
   color: var(--text-muted);
 }
 .rectangle-style-controls .swatches {
@@ -487,4 +492,9 @@
   gap: 6px;
   margin: 10px 0;
   font-size: 12px;
+}
+
+.selection-properties .arrange-button:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
 }

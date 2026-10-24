@@ -15,7 +15,7 @@
   max-height: calc(100dvh - 88px);
   flex-direction: column;
   overflow: hidden;
-  padding: 15px;
+  padding: 18px;
   border: 1px solid var(--line, #e0e5eb);
   border-radius: 12px;
   background: var(--surface, #fff);
@@ -35,7 +35,7 @@
 .library-panel-heading h2,
 .library-list-heading h3 {
   margin: 0;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 650;
   line-height: 1.35;
 }
@@ -43,13 +43,13 @@
 .library-panel-heading p {
   margin: 3px 0 0;
   color: var(--text-muted, #647182);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.4;
 }
 
 .library-panel-heading .library-storage-note {
   color: var(--text-muted, #647182);
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .library-panel-close {
@@ -83,7 +83,7 @@
 .library-save-form > label {
   display: block;
   margin-bottom: 6px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 650;
 }
 
@@ -115,7 +115,7 @@
   display: block;
   margin-top: 6px;
   color: var(--text-muted, #647182);
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.35;
 }
 
@@ -127,7 +127,7 @@
   background: var(--surface, #fff);
   color: var(--text, #202a35);
   font: inherit;
-  font-size: 11px;
+  font-size: 12px;
   cursor: pointer;
 }
 
@@ -155,7 +155,7 @@
 
 .library-list-heading span {
   color: var(--text-muted, #647182);
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .library-search-label {
@@ -214,7 +214,7 @@
   display: block;
   margin-top: 3px;
   color: var(--text-muted, #647182);
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .library-item-actions {
@@ -240,7 +240,7 @@
 .library-message {
   margin: 8px 0;
   color: var(--text-muted, #647182);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.45;
 }
 

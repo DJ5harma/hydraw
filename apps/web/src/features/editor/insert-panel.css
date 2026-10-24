@@ -16,7 +16,7 @@
   max-height: min(calc(100dvh - 100px), 570px);
   flex-direction: column;
   overflow: auto;
-  padding: 13px;
+  padding: 18px;
   border: 1px solid var(--line, #e0e5eb);
   border-radius: 12px;
   background: var(--surface, #fff);
@@ -35,7 +35,7 @@
 
 .insert-panel-heading h2 {
   margin: 0;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 650;
   line-height: 1.35;
 }
@@ -44,7 +44,7 @@
 .insert-panel-subtitle {
   margin: 3px 0 0;
   color: var(--text-muted, #647182);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.4;
 }
 
@@ -112,7 +112,7 @@
 .insert-panel-preset strong {
   display: block;
   overflow: hidden;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 620;
   line-height: 1.35;
   text-overflow: ellipsis;
@@ -125,7 +125,7 @@
   overflow: hidden;
   margin-top: 2px;
   color: var(--text-muted, #647182);
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.3;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -138,7 +138,7 @@
 
 .insert-panel-presets h3 {
   margin: 0;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 650;
 }
 
@@ -205,7 +205,7 @@
   flex: 0 0 auto;
   padding: 0 5px;
   color: var(--text-muted, #647182);
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .insert-panel-error {
@@ -214,7 +214,7 @@
   border-radius: 7px;
   background: color-mix(in srgb, var(--danger, #b84b40) 10%, transparent);
   color: var(--danger, #b84b40);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.4;
 }
 
@@ -236,4 +236,21 @@
     max-height: min(calc(100dvh - 112px - env(safe-area-inset-bottom, 0px)), 570px);
     padding: 11px;
   }
+}
+
+.insert-panel > .file-button {
+  flex: 0 0 auto;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+  padding: 12px;
+  text-align: left;
+}
+
+.insert-panel > .file-button small {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
 }
