@@ -27,6 +27,7 @@ export type ShapeLabel = Readonly<{
   color: TextColor;
 }>;
 export type ObjectMetadata = Readonly<{ groupId?: string; locked?: boolean; zIndex?: number }>;
+export type ImageCrop = Readonly<{ x: number; y: number; width: number; height: number }>;
 export type Rectangle = Bounds &
   ObjectMetadata &
   Readonly<{
@@ -57,6 +58,7 @@ export type ImageShape = Bounds &
     type: "image";
     src: string;
     name: string;
+    crop?: ImageCrop;
   }>;
 export const MAX_IMAGE_DATA_LENGTH = 4_000_000;
 export const MAX_BOARD_IMAGE_DATA_LENGTH = 24_000_000;
@@ -81,7 +83,7 @@ export const MAX_FONT_SIZE = 96;
 
 export type BoardDocument = Readonly<{
   format: "hydraw";
-  version: 9;
+  version: 10;
   theme?: BoardTheme;
   name: string;
   shapes: readonly Shape[];
@@ -100,7 +102,7 @@ export const MAX_SIZE = 100_000;
 export function createDocument(): BoardDocument {
   return {
     format: "hydraw",
-    version: 9,
+    version: 10,
     theme: "clean",
     name: "Untitled board",
     shapes: [],

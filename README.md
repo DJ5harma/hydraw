@@ -33,6 +33,8 @@ The Dockerfile builds React and Hono together. The runtime image contains the bu
 
 ## Current slice
 
+- Double-click an unlocked image or choose Crop image in its properties/context menu. Drag an edge, or focus a crop handle and use arrows (Shift for larger steps); Apply commits one undoable crop. Cancel/Escape discards the draft. Reopen to adjust it or Reset crop to recover the original picture. Native files and SVG retain the original image; PNG exports and clipboard copies contain the visible crop.
+
 - E selects a whole-stroke eraser. Sweep across freehand marks to remove them together in one undo step. Locked strokes/groups stay protected; Escape cancels an unfinished sweep. Shapes, pictures and text remain untouched.
 
 - Copy selected objects or a frame directly as a crisp 2× PNG from selection properties or the context menu. Board menu → Copy as image also copies whole boards, with board-style or transparent backgrounds. Clipboard failures are visible and leave document/history unchanged.
@@ -68,22 +70,22 @@ The Dockerfile builds React and Hono together. The runtime image contains the bu
 - Draw straight connectors with C + drag between objects or canvas points. Bound endpoints follow rectangle movement/resizing and text reflow. Select the line or its object-list entry, then drag endpoint handles to reconnect.
 - Change connector ink, toggle arrowheads, reverse direction or detach endpoints in the selected connector’s properties. Free arrows move by dragging or arrow keys; bound arrows move through their endpoints or attached objects. C + Enter creates a centered free arrow.
 - Deleting a shape removes its attached connectors in one undoable action. Clearing an existing text object follows the same rule.
-- Rename the board and export version 9 semantic JSON as `.hydraw.json`. Existing version 0–8 boards migrate when opened.
+- Rename the board and export version 10 semantic JSON as `.hydraw.json`. Existing version 0–9 boards migrate when opened.
 - Recover the current board from IndexedDB after reload. Save status changes only after the storage transaction commits.
-- Import version 0–9 `.hydraw.json` files up to 200 MB, with validation and a name/object-count preview before opening. Export the current board directly from the review dialog.
+- Import version 0–10 `.hydraw.json` files up to 200 MB, with validation and a name/object-count preview before opening. Export the current board directly from the review dialog.
 - Keep one previous board when importing or restoring. The current board and recovery copy change in one storage transaction; failed imports preserve both. Restore is reversible by restoring again.
 
 One tab owns the local writer lock. Additional tabs enter an explicitly unsaved session instead of overwriting that board. If storage fails or saved data cannot be decoded, the app preserves existing storage and offers in-memory editing/export. Browser storage can still be cleared or evicted; export valuable work.
 
 ## Workspace
 
-| Package                 | Responsibility                                                                                                                                                                       |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `@hydraw/document`      | Version 9 shape/image/ink/connector/label/frame/group/lock/order/theme records, earlier-version migration, validation, geometry and reversible transactions; no runtime dependencies |
-| `@hydraw/editor`        | Local editor state, gestures, hit testing, transaction history and camera; depends only on the document package                                                                      |
-| `@hydraw/editor/canvas` | Explicit browser adapter for Canvas rendering and pointer input                                                                                                                      |
-| `@hydraw/web`           | React controls, contextual properties and object navigation, keyboard shortcuts, inline text input, IndexedDB and file transfer                                                      |
-| `@hydraw/server`        | Hono API, static assets and SPA navigation fallback                                                                                                                                  |
+| Package                 | Responsibility                                                                                                                                                                        |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@hydraw/document`      | Version 10 shape/image/ink/connector/label/frame/group/lock/order/theme records, earlier-version migration, validation, geometry and reversible transactions; no runtime dependencies |
+| `@hydraw/editor`        | Local editor state, gestures, hit testing, transaction history and camera; depends only on the document package                                                                       |
+| `@hydraw/editor/canvas` | Explicit browser adapter for Canvas rendering and pointer input                                                                                                                       |
+| `@hydraw/web`           | React controls, contextual properties and object navigation, keyboard shortcuts, inline text input, IndexedDB and file transfer                                                       |
+| `@hydraw/server`        | Hono API, static assets and SPA navigation fallback                                                                                                                                   |
 
 Internal packages expose TypeScript source to the toolchain. They are private workspace packages, not published libraries. The web build bundles them; Vite+ `pack` bundles Hono and its adapter into the backend output.
 

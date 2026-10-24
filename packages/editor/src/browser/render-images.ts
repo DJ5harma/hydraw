@@ -26,8 +26,20 @@ export function createImagePainter(schedule: () => void) {
       image.src = shape.src;
       cache.set(shape.src, image);
     }
-    if (image.complete && image.naturalWidth) ctx.drawImage(image, x, y, width, height);
-    else {
+    if (image.complete && image.naturalWidth) {
+      const crop = shape.crop ?? { x: 0, y: 0, width: 1, height: 1 };
+      ctx.drawImage(
+        image,
+        crop.x * image.naturalWidth,
+        crop.y * image.naturalHeight,
+        crop.width * image.naturalWidth,
+        crop.height * image.naturalHeight,
+        x,
+        y,
+        width,
+        height,
+      );
+    } else {
       ctx.fillStyle = "#edf0f4";
       ctx.fillRect(x, y, width, height);
       ctx.strokeStyle = "#8b96a5";

@@ -6,6 +6,7 @@ import {
   simplifyInkPoints,
   MAX_INK_POINTS,
   isTextColor,
+  imageCropTransaction,
   boardTheme,
   boardThemeTransaction,
   themePalette,
@@ -58,6 +59,7 @@ import type {
   Shape,
   TextColor,
   InkShape,
+  ImageCrop,
   TextShape,
 } from "@hydraw/document";
 import { labelTextShape } from "./labels.ts";
@@ -667,6 +669,13 @@ export class Editor {
     if (selectedInk)
       this.commitShape("Style ink", selectedInk, { ...selectedInk, color, strokeWidth: inkWidth });
     this.publish({ inkColor: color, inkWidth });
+  }
+
+  setImageCrop(id: string, crop: ImageCrop | null): void {
+    if (this.selectionLocked([id])) return;
+    this.finishTextEditing();
+    this.cancelGesture();
+    this.commit(imageCropTransaction(this.snapshot.document, id, crop));
   }
 
   setEraserCursor(point: Point | null): void {

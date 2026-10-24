@@ -15,5 +15,6 @@ export { clonedMetadata } from "./object-scene.ts";
 export * from "./frames.ts";
 
 export * from "./images.ts";
+export * from "./image-crop.ts";
 
 export * from "./ink.ts";

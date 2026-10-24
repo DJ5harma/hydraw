@@ -17,6 +17,7 @@ import {
   MAX_FONT_SIZE,
 } from "./model.ts";
 import { isBoardTheme } from "./theme.ts";
+import { assertValidSourceImageBounds, normalizeImageCrop } from "./image-crop.ts";
 import type {
   Fill,
   ImageShape,
@@ -57,7 +58,8 @@ export function decodeDocument(value: unknown): BoardDocument {
       value.version !== 6 &&
       value.version !== 7 &&
       value.version !== 8 &&
-      value.version !== 9)
+      value.version !== 9 &&
+      value.version !== 10)
   ) {
     throw new Error("This board uses an unsupported Hydraw format.");
   }
@@ -93,6 +95,8 @@ export function decodeDocument(value: unknown): BoardDocument {
       throw new Error("Freehand ink requires Hydraw version 9.");
     if (valueVersion < 8 && record(value) && value.type === "image")
       throw new Error("Images require Hydraw version 8.");
+    if (valueVersion < 10 && record(value) && value.type === "image" && value.crop !== undefined)
+      throw new Error("Image cropping requires Hydraw version 10.");
     const shape = valueVersion === 0 ? decodeRectangle(value) : decodeShape(value);
     if (ids.has(shape.id)) throw new Error("This board contains invalid duplicate shape IDs.");
     ids.add(shape.id);
@@ -122,7 +126,7 @@ export function decodeDocument(value: unknown): BoardDocument {
   assertConnectorGraph(shapes, connectors);
   return Object.freeze({
     format: "hydraw",
-    version: 9,
+    version: 10,
     theme: value.theme ?? "clean",
     name,
     shapes: Object.freeze(shapes),
@@ -404,7 +408,8 @@ export function decodeImage(value: unknown): ImageShape {
     throw new Error(
       "This board contains an invalid image. Images must be embedded PNGs under 3 MB.",
     );
-  return Object.freeze({
+  const crop = value.crop === undefined ? undefined : normalizeImageCrop(value.crop);
+  const image = Object.freeze({
     id: value.id,
     type: "image",
     ...decodeMetadata(value),
@@ -414,7 +419,10 @@ export function decodeImage(value: unknown): ImageShape {
     height: value.height,
     name: value.name,
     src: value.src,
+    ...(crop ? { crop } : {}),
   });
+  if (crop) assertValidSourceImageBounds(image);
+  return image;
 }
 
 export function assertImageBudget(shapes: readonly Shape[]): void {

@@ -10,6 +10,7 @@ type Options = {
   fit: () => void;
   exportImage: (format: "svg" | "png") => Promise<void>;
   copyImage?: () => Promise<void>;
+  cropImage?: (id: string) => void;
 };
 export function contextMenuActions({
   editor,
@@ -17,6 +18,7 @@ export function contextMenuActions({
   fit,
   exportImage,
   copyImage,
+  cropImage,
 }: Options): readonly (readonly ContextMenuItem[])[] {
   const snapshot = editor.getSnapshot();
   const selected = new Set(snapshot.selectedIds);
@@ -78,6 +80,9 @@ export function contextMenuActions({
       ? objects[0]
       : undefined;
   const groups: ContextMenuItem[][] = [];
+  const singleImage = objects.length === 1 && objects[0]?.type === "image" ? objects[0] : undefined;
+  if (singleImage && cropImage)
+    groups.push([{ id: "crop-image", label: "Crop image", run: () => cropImage(singleImage.id) }]);
   if (frame)
     groups.push([
       {
@@ -92,7 +97,6 @@ export function contextMenuActions({
     ]);
   groups.push([
     copy,
-    ...imageCopy,
     ...(canCutSelection(editor)
       ? [
           {
@@ -111,6 +115,7 @@ export function contextMenuActions({
       run: () => editor.duplicateSelection(),
     },
   ]);
+  if (imageCopy.length) groups.push(imageCopy);
   const organize: ContextMenuItem[] = [];
   if (!hasFrames) {
     const oneGroup = objects.every((item) => item.groupId && item.groupId === objects[0]!.groupId);

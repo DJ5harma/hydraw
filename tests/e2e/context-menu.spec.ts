@@ -67,7 +67,8 @@ test("context actions preserve selection, support locks, clipboard, keyboard and
   await canvas.click({ button: "right", position: { x: 350, y: 240 } });
   await action("Lock").click();
   await canvas.click({ button: "right", position: { x: 350, y: 240 } });
-  await expect(menu.getByRole("menuitem")).toHaveCount(2);
+  await expect(menu.getByRole("menuitem")).toHaveCount(3);
+  await expect(action("Copy as image")).toBeVisible();
   await action("Unlock").click();
   await canvas.click({ button: "right", position: { x: 350, y: 240 } });
   await action("Copy").click();

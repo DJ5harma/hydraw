@@ -7,10 +7,12 @@ export function CanvasSurface({
   editor,
   canvasRef,
   onError,
+  onImageCrop,
 }: {
   editor: Editor;
   canvasRef: RefObject<HTMLCanvasElement | null>;
   onError: (message: string) => void;
+  onImageCrop?: (id: string) => void;
 }) {
   useEffect(() => {
     if (canvasRef.current)
@@ -19,6 +21,16 @@ export function CanvasSurface({
       );
   }, [editor, canvasRef, onError]);
   return (
-    <canvas ref={canvasRef} className="drawing-canvas" tabIndex={0} aria-label="Drawing canvas" />
+    <canvas
+      onDoubleClick={() => {
+        const snapshot = editor.getSnapshot();
+        const image = snapshot.document.shapes.find((shape) => shape.id === snapshot.selectedId);
+        if (image?.type === "image") onImageCrop?.(image.id);
+      }}
+      ref={canvasRef}
+      className="drawing-canvas"
+      tabIndex={0}
+      aria-label="Drawing canvas"
+    />
   );
 }

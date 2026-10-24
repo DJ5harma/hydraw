@@ -26,7 +26,7 @@ test("insert, name, move, navigate and export a frame of editable preset nodes",
   await name.fill("Public API");
   await name.press("Enter");
   const framed = await exported(page);
-  expect(framed.version).toBe(9);
+  expect(framed.version).toBe(10);
   expect(
     framed.shapes.filter((shape) => shape.type === "rectangle" && shape.kind === "frame"),
   ).toHaveLength(1);

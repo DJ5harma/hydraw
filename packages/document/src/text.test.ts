@@ -32,7 +32,7 @@ describe("version 1 text documents", () => {
     };
     expect(decodeDocument(legacy)).toEqual({
       ...legacy,
-      version: 9,
+      version: 10,
       theme: "clean",
       connectors: [],
     });

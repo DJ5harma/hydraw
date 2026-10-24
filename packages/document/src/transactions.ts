@@ -18,6 +18,13 @@ import {
 } from "./validation.ts";
 import { isBoardTheme } from "./theme.ts";
 import type { BoardTheme } from "./theme.ts";
+import {
+  FULL_IMAGE_CROP,
+  imageBoundsForCrop,
+  normalizeImageCrop,
+  sourceImageBounds,
+} from "./image-crop.ts";
+import type { ImageCrop, ImageShape } from "./model.ts";
 
 type ShapeChange = Readonly<{
   type: "shape";
@@ -88,7 +95,18 @@ export function sameShape(a: Shape, b: Shape): boolean {
       a.points.length === b.points.length &&
       a.points.every((p, i) => p.x === b.points[i]!.x && p.y === b.points[i]!.y)
     );
-  if (a.type === "image" && b.type === "image") return a.src === b.src && a.name === b.name;
+  if (a.type === "image" && b.type === "image") {
+    const left = a.crop ?? FULL_IMAGE_CROP;
+    const right = b.crop ?? FULL_IMAGE_CROP;
+    return (
+      a.src === b.src &&
+      a.name === b.name &&
+      left.x === right.x &&
+      left.y === right.y &&
+      left.width === right.width &&
+      left.height === right.height
+    );
+  }
   return (
     a.type === "text" &&
     b.type === "text" &&
@@ -114,6 +132,36 @@ export function shapeTransaction(
     after: after ? decodeShape(after) : null,
   });
   return Object.freeze({ label, changes: Object.freeze([change]) });
+}
+
+/** Create a reversible non-destructive crop edit; null restores the original source bounds. */
+export function imageCropTransaction(
+  document: BoardDocument,
+  id: string,
+  crop: ImageCrop | null,
+): DocumentTransaction | null {
+  const index = document.shapes.findIndex((shape) => shape.id === id);
+  const image = document.shapes[index];
+  if (!image || image.type !== "image") throw new Error("The selected image no longer exists.");
+  let after: ImageShape;
+  if (crop === null) {
+    const { crop: _crop, ...rest } = image;
+    after = { ...rest, ...sourceImageBounds(image) };
+  } else {
+    const normalized = normalizeImageCrop(crop);
+    if (
+      normalized.x === 0 &&
+      normalized.y === 0 &&
+      normalized.width === 1 &&
+      normalized.height === 1
+    ) {
+      const { crop: _crop, ...rest } = image;
+      after = { ...rest, ...sourceImageBounds(image) };
+    } else {
+      after = { ...image, ...imageBoundsForCrop(image, normalized), crop: normalized };
+    }
+  }
+  return shapeTransaction("Crop image", index, image, after);
 }
 
 function sameEndpoint(a: Endpoint, b: Endpoint): boolean {

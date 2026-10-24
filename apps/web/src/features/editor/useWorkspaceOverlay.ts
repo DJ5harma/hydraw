@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import type { KeyboardEvent, RefObject } from "react";
 
 export type WorkspaceOverlay =
+  | "crop"
   | "context"
   | "insert"
   | "board"

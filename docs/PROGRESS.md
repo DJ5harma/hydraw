@@ -481,3 +481,17 @@ and ordinary shapes/images/text are not erased. Ten direct tools fit at 320 px.
 
 Five focused geometry/editor checks and two production/development browser journeys
 pass. Coverage includes fast sweeps, atomic undo, cancellation and lock protection.
+
+## Milestone 23 — non-destructive image cropping
+
+Double-click images or use visible Crop image actions. Edge handles support drag
+and keyboard arrows; Apply commits one edit, while Cancel/Escape discard the draft.
+Reset restores full-source extents without replacing pixels. Original data survives
+native/SVG export, clipboard and reload; PNG output renders only the visible crop.
+
+Native v10 validates normalized source rectangles and implied source bounds.
+Six document/editor crop checks and four production/development browser journeys
+pass, including keyboard-native Cancel behavior, reset, undo/redo, reload and
+pixel-level PNG verification. Desktop and 320 px layouts are inspected. ADR 0013
+records the geometry/export contract. Context menus retain Copy/Cut adjacency as
+new actions are added.

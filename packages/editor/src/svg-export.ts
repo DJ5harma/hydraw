@@ -281,8 +281,9 @@ export function exportSvg(document: BoardDocument, options: SvgExportOptions): s
       }
       continue;
     } else if (object.type === "image") {
+      const crop = object.crop ?? { x: 0, y: 0, width: 1, height: 1 };
       scene.push(
-        `<image x="${number(object.x)}" y="${number(object.y)}" width="${number(object.width)}" height="${number(object.height)}" preserveAspectRatio="none" href="${escapeXml(object.src)}"/>`,
+        `<svg x="${number(object.x)}" y="${number(object.y)}" width="${number(object.width)}" height="${number(object.height)}" viewBox="${number(crop.x)} ${number(crop.y)} ${number(crop.width)} ${number(crop.height)}" preserveAspectRatio="none" overflow="hidden"><image x="0" y="0" width="1" height="1" preserveAspectRatio="none" href="${escapeXml(object.src)}"/></svg>`,
       );
       continue;
     } else {

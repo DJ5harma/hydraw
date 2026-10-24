@@ -1,0 +1,127 @@
+.image-crop-overlay-root {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+}
+
+.image-crop-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.image-crop-source {
+  position: absolute;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.image-crop-source > img,
+.image-crop-source > svg {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.image-crop-source > img {
+  user-select: none;
+  pointer-events: none;
+}
+
+.image-crop-source > svg {
+  overflow: visible;
+  touch-action: none;
+}
+
+.image-crop-dim {
+  fill: rgb(12 18 27 / 54%);
+  pointer-events: none;
+}
+
+.image-crop-frame {
+  fill: transparent;
+  stroke: white;
+  stroke-width: 2px;
+  vector-effect: non-scaling-stroke;
+  cursor: move;
+}
+
+.image-crop-handle {
+  fill: white;
+  stroke: #2563eb;
+  stroke-width: 2px;
+  vector-effect: non-scaling-stroke;
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+.image-crop-handle[data-edge="top"],
+.image-crop-handle[data-edge="bottom"] {
+  cursor: ns-resize;
+}
+
+.image-crop-handle:focus-visible {
+  outline: none;
+  stroke: #111827;
+  stroke-width: 3px;
+}
+
+.image-crop-toolbar {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid #d8dee9;
+  border-radius: 10px;
+  background: white;
+  box-shadow: 0 8px 28px rgb(15 23 42 / 18%);
+  pointer-events: auto;
+  transform: translateX(-50%);
+}
+
+.image-crop-toolbar button {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid #d8dee9;
+  border-radius: 6px;
+  color: #1f2937;
+  background: white;
+  font: inherit;
+  cursor: pointer;
+}
+
+.image-crop-toolbar button:last-child {
+  border-color: #2563eb;
+  color: white;
+  background: #2563eb;
+}
+
+.image-crop-toolbar p {
+  max-width: 320px;
+  margin: 0 4px;
+  color: #b42318;
+  font-size: 12px;
+}
+
+.image-crop-toolbar {
+  box-sizing: border-box;
+  max-width: calc(100% - 16px);
+  flex-wrap: wrap;
+  justify-content: center;
+  font-size: 12px;
+}
+.image-crop-toolbar p {
+  flex-basis: 100%;
+  max-width: 100%;
+}
+@media (max-width: 660px) {
+  .image-crop-toolbar {
+    bottom: 80px;
+  }
+}

@@ -100,7 +100,7 @@ test("named shapes and connectors survive clipboard history and export as SVG an
   const exportedBoard = JSON.parse(
     (await download(page, "Export board")).toString(),
   ) as BoardDocument;
-  expect(exportedBoard.version).toBe(9);
+  expect(exportedBoard.version).toBe(10);
   expect(exportedBoard.shapes).toHaveLength(2);
   expect(exportedBoard.shapes[0]).toMatchObject({
     kind: "ellipse",

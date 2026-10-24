@@ -1,5 +1,6 @@
 import type { Alignment, DistributionAxis } from "@hydraw/document";
-import { boardTheme } from "@hydraw/document";
+import { ImageCropOverlay } from "./ImageCropOverlay.tsx";
+import { boardTheme, expandGroups } from "@hydraw/document";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { BoardTransferDialog } from "../board/BoardTransferDialog.tsx";
 import type { TransferMode } from "../board/BoardTransferDialog.tsx";
@@ -44,6 +45,27 @@ export function Workspace({ session }: { session: BoardSession }) {
   useEffect(() => {
     if (snapshot.interacting || editing) close(false);
   }, [snapshot.interacting, editing, close]);
+  const [cropId, setCropId] = useState<string | null>(null);
+  const croppingImage =
+    overlay.active === "crop"
+      ? snapshot.document.shapes.find((shape) => shape.id === cropId && shape.type === "image")
+      : undefined;
+  function startCrop(id: string) {
+    const current = editor.getSnapshot();
+    const image = current.document.shapes.find((shape) => shape.id === id);
+    if (image?.type !== "image") return;
+    const ids = new Set(expandGroups(current.document, [id]));
+    if (
+      [...current.document.shapes, ...current.document.connectors].some(
+        (object) => ids.has(object.id) && object.locked,
+      )
+    )
+      return;
+    editor.finishTextEditing();
+    editor.cancelGesture();
+    setCropId(id);
+    overlay.open("crop");
+  }
   const [actionError, setActionError] = useState<string | null>(null);
   function runSelectionAction(action: () => void) {
     try {
@@ -146,7 +168,12 @@ export function Workspace({ session }: { session: BoardSession }) {
       }}
     >
       <section className="stage" aria-label="Drawing workspace">
-        <CanvasSurface editor={editor} canvasRef={canvasRef} onError={setActionError} />
+        <CanvasSurface
+          editor={editor}
+          canvasRef={canvasRef}
+          onError={setActionError}
+          onImageCrop={startCrop}
+        />
         <input
           ref={imageInputRef}
           type="file"
@@ -234,6 +261,7 @@ export function Workspace({ session }: { session: BoardSession }) {
             void copyImage();
           }}
           onMore={context.showSelection}
+          onCropImage={startCrop}
           onFitFrame={fit}
           onExportFrame={() => {
             void exportImage("svg", true);
@@ -254,9 +282,22 @@ export function Workspace({ session }: { session: BoardSession }) {
               fit,
               exportImage: (format) => exportImage(format, true),
               copyImage: () => copyImage(),
+              cropImage: startCrop,
             })}
             onClose={() => overlay.close()}
             onError={setActionError}
+          />
+        )}
+        {overlay.active === "crop" && croppingImage?.type === "image" && (
+          <ImageCropOverlay
+            key={croppingImage.id}
+            image={croppingImage}
+            camera={editor.getSnapshot().camera}
+            onApply={(crop) => {
+              editor.setImageCrop(croppingImage.id, crop);
+              overlay.close();
+            }}
+            onCancel={() => overlay.close()}
           />
         )}
         {overlay.active === "objects" && (

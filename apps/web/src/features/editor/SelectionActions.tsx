@@ -27,9 +27,11 @@ export function SelectionActions({
   onExportFrame,
   onMore,
   onCopyImage,
+  onCropImage,
 }: {
   onMore: (point: Point) => void;
   onCopyImage: () => void;
+  onCropImage: (id: string) => void;
   editor: Editor;
   onFitFrame: () => void;
   onExportFrame: () => void;
@@ -87,7 +89,7 @@ export function SelectionActions({
     snapshot.interacting ||
     snapshot.textEditing ||
     snapshot.tool !== "select" ||
-    ["board", "objects", "help", "insert", "context"].includes(overlay ?? "")
+    ["board", "objects", "help", "insert", "context", "crop"].includes(overlay ?? "")
   )
     return null;
 
@@ -190,9 +192,26 @@ export function SelectionActions({
               strokeWidth={selectedShape.strokeWidth}
             />
           ) : selectedShape?.type === "image" ? (
-            <p className="locked-selection-message">
-              {selectedShape.name} · Drag to move; use handles to resize.
-            </p>
+            <>
+              <p className="locked-selection-message">
+                {selectedShape.name} · Drag to move; use handles to resize.
+              </p>
+              <button
+                className="file-button"
+                data-overlay-trigger="crop"
+                onClick={() => onCropImage(selectedShape.id)}
+              >
+                Crop image
+              </button>
+              {selectedShape.crop && (
+                <button
+                  className="file-button"
+                  onClick={() => runCommand(() => editor.setImageCrop(selectedShape.id, null))}
+                >
+                  Reset crop
+                </button>
+              )}
+            </>
           ) : selectedShape?.type === "rectangle" ? (
             <RectangleStyleControls shape={selectedShape} editor={editor} />
           ) : null}
