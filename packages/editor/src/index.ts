@@ -1,6 +1,6 @@
 export { Editor } from "./editor.ts";
 export { DocumentSession } from "./document-session.ts";
-export type { DocumentCommit, CommitOrigin } from "./document-session.ts";
+export type { DocumentCommit, CommitOrigin, SessionOperation } from "./document-session.ts";
 export { screenToWorld } from "./geometry.ts";
 export type { ResizeHandle } from "./geometry.ts";
 export type { Tool, Camera, EditorSnapshot, EditorChromeSnapshot } from "./types.ts";

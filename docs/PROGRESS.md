@@ -4,6 +4,10 @@ Architecture refactor, 26 October 2026: a framework-independent `DocumentSession
 owns committed state and history. Editor tools submit transactions to that session;
 persistence observes explicit commit events rather than camera/gesture updates.
 Commit origins distinguish local edits, undo, redo and board replacement.
+ID-addressed operations now resolve positions against the current document, with
+record/relationship versions, atomic graph validation, remote application and
+conditional personal history. Two-session tests cover concurrent proposals,
+duplicates and connector/deletion races. See ADR 0016 for the in-process contract.
 
 Updated 25 October 2026. Git history records the development milestones.
 

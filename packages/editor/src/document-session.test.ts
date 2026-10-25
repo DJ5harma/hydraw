@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vite-plus/test";
-import { createDocument, nameTransaction } from "@hydraw/document";
+import {
+  createDocument,
+  nameTransaction,
+  shapeTransaction,
+  deleteObjectsTransaction,
+  connectorTransaction,
+  groupObjectsTransaction,
+} from "@hydraw/document";
 import { DocumentSession } from "./document-session.ts";
 import type { DocumentCommit } from "./document-session.ts";
 import { Editor } from "./editor.ts";
@@ -36,5 +43,156 @@ describe("committed document session", () => {
     editor.finish();
     expect(events).toHaveLength(1);
     expect(editor.getSnapshot().document).toBe(events[0]!.document);
+  });
+});
+
+const a = {
+  id: "a",
+  type: "rectangle" as const,
+  x: 0,
+  y: 0,
+  width: 100,
+  height: 80,
+  fill: "#e7eefb" as const,
+};
+const b = { ...a, id: "b", x: 200 };
+const board = () => ({ ...createDocument(), shapes: [a, b] });
+
+describe("two sessions through a local ordered relay", () => {
+  it("combines independent proposals, deduplicates delivery, and undoes only local work", () => {
+    const left = new DocumentSession(board());
+    const right = new DocumentSession(board());
+    const moveA = left.prepare(shapeTransaction("Move A", 0, a, { ...a, x: 50 })!);
+    const moveB = right.prepare(shapeTransaction("Move B", 1, b, { ...b, y: 50 })!);
+    left.apply(moveA, "local");
+    right.apply(moveA);
+    right.apply(moveB, "local");
+    left.apply(moveB);
+    expect(left.apply(moveB)).toBe(false);
+    expect(left.getSnapshot().document).toEqual(right.getSnapshot().document);
+    const undoEvents: DocumentCommit[] = [];
+    left.subscribe((event) => undoEvents.push(event));
+    left.restore("undo");
+    right.apply(undoEvents[0]!.operation!);
+    expect(left.getSnapshot().document.shapes).toEqual([a, { ...b, y: 50 }]);
+    expect(right.getSnapshot().document).toEqual(left.getSnapshot().document);
+    left.restore("redo");
+    expect(left.getSnapshot().document.shapes[0]?.x).toBe(50);
+  });
+
+  it("rejects conflicting proposals and preserves the rejected proposal for review", () => {
+    const left = new DocumentSession(board());
+    const right = new DocumentSession(board());
+    const first = left.prepare(shapeTransaction("Move A", 0, a, { ...a, x: 50 })!);
+    const stale = right.prepare(shapeTransaction("Move A", 0, a, { ...a, x: 100 })!);
+    left.apply(first, "local");
+    right.apply(first);
+    expect(() => right.apply(stale, "local")).toThrow("changed");
+    expect(stale.edit.changes[0]).toMatchObject({ after: { x: 100 } });
+    expect(right.getSnapshot().revision).toBe(1);
+    expect(right.getSnapshot().document).toEqual(left.getSnapshot().document);
+  });
+
+  it("blocks ABA stale edits even when a record returns to its previous value", () => {
+    const session = new DocumentSession(board());
+    const stale = session.prepare(shapeTransaction("Old proposal", 0, a, { ...a, y: 99 })!);
+    session.execute(shapeTransaction("Move", 0, a, { ...a, x: 50 }));
+    session.restore("undo");
+    expect(session.getSnapshot().document.shapes[0]).toEqual(a);
+    expect(() => session.apply(stale)).toThrow("changed");
+  });
+
+  it("invalidates conflicting personal history without undoing remote work", () => {
+    const left = new DocumentSession(board());
+    const right = new DocumentSession(board());
+    const local = left.prepare(shapeTransaction("Move A", 0, a, { ...a, x: 50 })!);
+    left.apply(local, "local");
+    right.apply(local);
+    const remote = right.prepare(
+      shapeTransaction("Move A again", 0, { ...a, x: 50 }, { ...a, x: 80 })!,
+    );
+    right.apply(remote, "local");
+    left.apply(remote);
+    expect(left.getSnapshot()).toMatchObject({ canUndo: false });
+    expect(left.getSnapshot().historyWarning).toContain("another session");
+    left.restore("undo");
+    expect(left.getSnapshot().document.shapes[0]?.x).toBe(80);
+  });
+
+  it("keeps unrelated object insertion from invalidating personal creation undo", () => {
+    const left = new DocumentSession(createDocument());
+    const right = new DocumentSession(createDocument());
+    const first = left.prepare(shapeTransaction("Add A", 0, null, a)!);
+    left.apply(first, "local");
+    right.apply(first);
+    const second = right.prepare(shapeTransaction("Add B", 1, null, b)!);
+    right.apply(second, "local");
+    left.apply(second);
+    left.restore("undo");
+    expect(left.getSnapshot().document.shapes).toEqual([b]);
+  });
+
+  it("rejects node deletion prepared before a concurrent bound connector was accepted", () => {
+    const left = new DocumentSession(board());
+    const right = new DocumentSession(board());
+    const deletion = left.prepare(deleteObjectsTransaction(board(), [a.id])!);
+    const connector = {
+      id: "edge",
+      type: "connector" as const,
+      start: { type: "binding" as const, shapeId: a.id },
+      end: { type: "binding" as const, shapeId: b.id },
+      color: "#243e33" as const,
+      arrowhead: "arrow" as const,
+    };
+    const creation = right.prepare(connectorTransaction("Connect", 0, null, connector)!);
+    left.apply(creation);
+    right.apply(creation, "local");
+    expect(() => left.apply(deletion, "local")).toThrow("changed");
+    const fresh = left.prepare(deleteObjectsTransaction(left.getSnapshot().document, [a.id])!);
+    left.apply(fresh, "local");
+    right.apply(fresh);
+    expect(left.getSnapshot().document.connectors).toEqual([]);
+    expect(left.getSnapshot().document).toEqual(right.getSnapshot().document);
+  });
+
+  it("rejects a pending connector when its target was deleted first", () => {
+    const session = new DocumentSession(board());
+    const connector = {
+      id: "edge",
+      type: "connector" as const,
+      start: { type: "binding" as const, shapeId: a.id },
+      end: { type: "point" as const, x: 500, y: 200 },
+      color: "#243e33" as const,
+      arrowhead: "arrow" as const,
+    };
+    const pending = session.prepare(connectorTransaction("Connect", 0, null, connector)!);
+    session.execute(deleteObjectsTransaction(session.getSnapshot().document, [a.id]));
+    expect(() => session.apply(pending)).toThrow("changed");
+    expect(session.getSnapshot().document.connectors).toEqual([]);
+  });
+
+  it("checks group membership dependencies and rejects pre-replacement operations", () => {
+    const session = new DocumentSession(board());
+    const pending = session.prepare(groupObjectsTransaction(board(), [a.id, b.id], "g")!);
+    session.replace(board());
+    expect(() => session.apply(pending)).toThrow("changed");
+    const fresh = session.prepare(groupObjectsTransaction(board(), [a.id, b.id], "g")!);
+    session.apply(fresh, "local");
+    const doc = session.getSnapshot().document;
+    const moved = session.prepare(
+      shapeTransaction("Move grouped A", 0, doc.shapes[0]!, { ...doc.shapes[0]!, x: 40 })!,
+    );
+    session.execute(shapeTransaction("Leave group", 1, doc.shapes[1]!, { ...b, groupId: "other" }));
+    expect(() => session.apply(moved)).toThrow("changed");
+  });
+
+  it("rejects operation ID reuse without advancing state", () => {
+    const session = new DocumentSession(board());
+    const operation = session.prepare(nameTransaction("Untitled board", "First")!);
+    session.apply(operation);
+    expect(() =>
+      session.apply({ ...operation, edit: { ...operation.edit, label: "Tampered" } }),
+    ).toThrow("reused");
+    expect(session.getSnapshot().revision).toBe(1);
   });
 });
