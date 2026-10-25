@@ -1,7 +1,10 @@
 # Editor architecture before cloud implementation
 
-Proposed, 26 October 2026. This is the next architectural milestone. Cloud
-implementation follows its acceptance gate; no hosting provider is selected.
+Implemented locally, 26 October 2026. The document/session, external-edit, history,
+text-geometry, asset-codec and per-board repository boundaries are in place. Cloud
+identity, durable remote sequencing and networking remain later work; no hosting
+provider is selected. The product UI still opens one default local board; repository
+and session APIs support independent board identities without adding a board-list UI.
 
 ## Assessment
 
@@ -11,13 +14,13 @@ browser input is an adapter, and gestures preview before committing. Preserve
 geometry, hit testing, connector routing, Canvas rendering, exports and the existing
 interaction behavior.
 
-The current state-management architecture assumes one local writer. That is fine
+Before this refactor, state management assumed one local writer. That was fine
 for local editing and could support cloud snapshot backup, but is insufficient for
 reliable collaborative editing. Address these assumptions before implementing
 accounts, remote storage or live transport. This does not establish that current
 rendering performance is optimal; measure it independently.
 
-| Current behavior                                                      | Problem for collaboration                                                 | Required change                                                                                      |
+| Starting behavior                                                     | Problem for collaboration                                                 | Implemented change                                                                                   |
 | --------------------------------------------------------------------- | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | `Editor.commit()` directly executes `TransactionHistory`              | Every edit is implicitly local and history-producing                      | One document session owns committed changes; distinguish local, remote, undo and replacement origins |
 | Transactions require array indices and complete before-record matches | Unrelated insertion shifts indices; all fields of one record conflict     | ID-addressed operations with explicit dependencies; compile local transactions against current state |
@@ -118,10 +121,10 @@ import/export and missing pixels. Choose between retaining version-1 embedded
 records behind a codec or introducing a versioned reference model based on actual
 cost and complexity; do not require remote URLs in the core model.
 
-## Implementation order and gate
+## Implementation sequence and gate
 
-Land each cohesive step separately with focused regressions and the applicable
-repository checks. Keep the existing application usable after every step.
+The refactor landed in cohesive commits with focused regressions and repository
+checks, keeping the existing application usable throughout.
 
 1. Add a document session with explicit commit events and origin. Route local
    edits/undo through it; preserve all existing editor behavior.
@@ -144,6 +147,17 @@ geometry. Import/export, local persistence/recovery and assets must still work.
 The session/rules tests must run without React, Hono, DOM or external services;
 browser adapter behavior retains browser tests. Performance evidence must show no
 material regression on recorded hardware, rather than claim an unmeasured target.
+
+The two-session tests now cover ID resolution after unrelated deletions, concurrent
+proposals, stale conflicts, duplicate and dependent out-of-order delivery, personal
+undo, group dependencies, and both connector/deletion race orderings. Editor tests
+cover camera/selection preservation, unrelated and conflicting gestures, recovered
+text drafts, and unchanged geometry across different font metrics. Browser tests
+exercise repository isolation, writer locks, atomic asset/recovery writes and
+missing/corrupt image preservation.
+See [the verification record](EDITOR_BENCHMARK.md) for suite counts, reproducible
+before/after measurements and their limits. Technical local readiness does not
+establish production network behavior or validate the conflict UX with real users.
 
 Only after this gate should cloud identity, database persistence, asset uploads
 and WebSockets be implemented. The [cloud plan](CLOUD_PLAN.md) describes that later

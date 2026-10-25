@@ -92,6 +92,15 @@ One tab owns the local writer lock. Additional tabs enter an explicitly unsaved 
 
 Internal packages expose TypeScript source to the toolchain. They are private workspace packages, not published libraries. The web build bundles them; Vite+ `pack` bundles Hono and its adapter into the backend output.
 
+`DocumentSession` owns committed state, ID-addressed operations and personal history;
+the editor owns tools, camera, selection and drafts. External operations preserve
+unrelated interactions and retain conflicting text drafts for recovery. Board
+repositories own storage leases and per-board writer locks. A separate asset codec
+stores deduplicated image pixels while native files stay self-contained. See the
+[architecture](docs/EDITOR_ARCHITECTURE.md) and [ADR 0016](docs/adr/0016-document-sessions.md).
+These are local collaboration boundaries; accounts and live network sync are not
+implemented.
+
 Within packages, code is separated by responsibility: document model/validation/graph geometry/transactions; editor coordination/geometry/gestures/connector interactions/history; browser input/rendering/lifecycle; and React board persistence/components/editor controls. `App.tsx` only composes the session and workspace. Source and manifest checks enforce package direction, and editor core modules cannot import browser adapters.
 
 Runtime dependencies are limited to the chosen React/Hono foundations and the Hono Node adapter. There is no editor, drawing, state-store, geometry or history library. Oxc is used only by a development-time dependency-boundary check; Playwright is used only for browser verification.
@@ -106,6 +115,10 @@ pnpm run ready
 `ready` runs Vite+ formatting/lint checks, strict TypeScript checks, package-boundary checks, unit/server tests, a production build, and Chromium browser journeys. On Linux CI, install Chromium with `--with-deps`. Browser tests start a dedicated Hono server on port 4173 and a Vite server on port 4174, then exercise both production and development builds, including React StrictMode storage lifecycles and the development API proxy.
 
 Individual commands: `pnpm run check`, `pnpm test`, `pnpm run build`, and `pnpm run test:e2e`. The e2e command builds before running; unit tests and browser tests have separate discovery configuration. `pnpm run test:docker` builds and runs the actual image, verifies backend routes, React deep links, built assets and a non-root runtime, and removes its test container. CI runs both suites and is defined in `.github/workflows/ci.yml`.
+
+`node tooling/benchmark-editor.mjs` measures core previews and commits at representative
+record counts. An optional baseline-checkout path enables comparison. See the
+[architecture verification record](docs/EDITOR_BENCHMARK.md) for results and limits.
 
 ## Current limits
 

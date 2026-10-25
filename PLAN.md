@@ -5,8 +5,8 @@ packaged application. See [the milestone log](docs/PROGRESS.md) for implemented
 work and [the next-step plan](docs/NEXT.md) for the current focus. The proposed
 [cloud and collaboration plan](docs/CLOUD_PLAN.md) extends this local foundation
 with accounts, cloud boards, sharing, live editing and an ordered rollout.
-First complete the [editor architecture redesign](docs/EDITOR_ARCHITECTURE.md)
-and its local two-session acceptance gate before implementing cloud services.
+The [editor architecture redesign](docs/EDITOR_ARCHITECTURE.md) and its local
+two-session tests are implemented. Cloud services remain a separate next stage.
 
 ## Product direction
 

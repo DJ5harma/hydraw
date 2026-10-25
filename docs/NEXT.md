@@ -9,10 +9,12 @@ the next expansion into cloud boards, sharing and collaboration. Its milestone
 sequence covers the cloud work; the local alpha checks below remain release-quality
 requirements. Cloud features are planned, not implemented.
 
-Architecture-first update: [EDITOR_ARCHITECTURE.md](EDITOR_ARCHITECTURE.md) is the
-next milestone. Separate committed document state from editor interaction, validate
-the collaboration model with two local sessions, and complete its acceptance gate
-before implementing cloud services.
+Architecture-first milestone completed, 26 October 2026:
+[EDITOR_ARCHITECTURE.md](EDITOR_ARCHITECTURE.md) records the implemented document
+session, ID operations, external-edit reconciliation, personal history, stable text
+geometry, asset codec and per-board repository boundaries. Two-session tests run
+locally without cloud services. The next stage is to settle budget and offline /
+conflict expectations before implementing the cloud foundation. No host is selected.
 
 ## Product focus
 

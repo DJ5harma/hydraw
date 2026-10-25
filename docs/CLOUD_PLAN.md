@@ -48,21 +48,23 @@ outages. Distinguish local boards from account-owned boards visibly. Keep export
 available in both. Library upload is a separate explicit action; signing in must
 not silently upload the browser's board, images or personal library.
 
-## What the current code implies
+## Local foundation after the architecture refactor
 
 - `@hydraw/document` already owns immutable semantic records, limits, graph
   validation and atomic reversible transactions. Reuse these rules on the server.
-- Transactions currently compare whole before-records and array indices. They
-  are local stale-state protection, not a multiplayer wire protocol.
-- `Editor.commit()` is private, history is local, and remote document replacement
-  clears history. Add explicit committed-edit and remote-apply seams rather than
-  treating remote changes as imports or diffing every React render.
-- Gestures already preview locally and commit once. Keep that distinction;
-  cursors and optional drag ghosts belong to ephemeral presence.
-- IndexedDB currently holds one board plus a recovery copy, guarded by a global
-  writer lock. Cloud requires per-board caches and account isolation.
-- Image records embed PNG data in `src`; repeated image-bearing updates would be
-  expensive. Introduce an asset storage codec before cloud image support.
+- Local transaction builders feed ID-addressed operations with record and
+  relationship dependencies. `DocumentSession` owns committed state and personal
+  history. It supports incremental external application and explicit commit events.
+  This in-process contract still needs authenticated durable network sequencing.
+- Gestures preview locally and commit once. External changes preserve unrelated
+  interactions and cancel conflicting gestures, retaining conflicting text drafts.
+  Cursors and optional drag ghosts remain future ephemeral presence.
+- The board repository uses stable board identities, per-board IndexedDB writer
+  locks and atomic recovery. The UI still opens the default local board. Cloud
+  requires account-scoped caches and an account/board list.
+- Portable semantic image records retain embedded PNG sources. A storage codec
+  extracts immutable assets into reference manifests and hydrates them on read.
+  Cloud transport must use that boundary rather than transmit pixels on movement.
 - One Dockerfile already packages Hono and React. Retain that deployment contract.
   The API currently exposes health only; auth, storage and collaboration are new.
 
@@ -335,6 +337,7 @@ step. Before shared live editing, retire that write path or route it through the
 same canonical revision mechanism; old clients must never bypass operation checks.
 Do not ship two independent writers for one board.
 
-First implementation increment: extract the document session and explicit commit
-events while preserving current local behavior. Complete the architecture-first
-sequence and its local two-session gate before starting cloud implementation.
+The architecture-first sequence is implemented locally; see EDITOR_ARCHITECTURE.md
+and ADR 0016 for its contract and test coverage. The next implementation stage is
+cloud foundation only after reviewing the remaining product constraints, including
+budget, offline expectations and conservative same-record conflict behavior.

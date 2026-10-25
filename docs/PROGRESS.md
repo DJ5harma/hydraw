@@ -3,7 +3,7 @@
 Architecture refactor, 26 October 2026: a framework-independent `DocumentSession`
 owns committed state and history. Editor tools submit transactions to that session;
 persistence observes explicit commit events rather than camera/gesture updates.
-Commit origins distinguish local edits, undo, redo and board replacement.
+Commit origins distinguish local edits, external edits, undo, redo and board replacement.
 ID-addressed operations now resolve positions against the current document, with
 record/relationship versions, atomic graph validation, remote application and
 conditional personal history. Two-session tests cover concurrent proposals,
@@ -17,8 +17,17 @@ IndexedDB uses per-board writer locks and atomically stores asset-reference
 manifests, deduplicated image bytes and recovery. Native files, clipboard and
 library fragments retain embedded portable images. The storage refactor starts
 a fresh board namespace without a legacy-data migration.
+Operations are scoped to board identity; nested commit notifications retain revision
+order. Recovered text drafts accumulate until explicitly dismissed. Stored image
+checksums are verified on read, and geometry saves reuse verified pixels.
+Verification: `pnpm run ready` passes 233 unit/server tests and 157 browser journeys,
+with five intentional production skips for development source-module scenarios.
+The final Docker smoke check also passes API, frontend routes/assets and non-root runtime.
+[The benchmark record](EDITOR_BENCHMARK.md) compares the original editor with the
+refactor at 100, 1,000 and 5,000 shapes plus bound connectors, including image/ink
+fixtures, and documents the measurement limits.
 
-Updated 25 October 2026. Git history records the development milestones.
+Updated 26 October 2026. Git history records the development milestones.
 
 Hydraw is a local canvas editor for architecture diagrams. It supports geometric
 shapes, attached labels, standalone text, bound straight and elbow connectors, embedded
