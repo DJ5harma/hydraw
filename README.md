@@ -113,7 +113,7 @@ Hydraw supports one local board with rectangles, ellipses, diamonds, attached la
 
 An already loaded page can edit without network access. Offline application startup is not supported yet. Desktop Chromium is verified; other browsers, pen/touch behavior and accessibility need further testing. The responsive layout is an early shell, not a claim of full mobile editor support.
 
-Text uses the board style’s system font family; custom fonts, rich text and automatic camera scrolling during long edits are future work. Whitespace-only text drafts are discarded; clearing standalone text removes it as an undoable edit; clearing an attached label retains its owner. Font metrics can vary across platforms, so text height is recalculated on opening/import.
+Text uses the board style’s system font family; custom fonts, rich text and automatic camera scrolling during long edits are future work. Whitespace-only text drafts are discarded; clearing standalone text removes it as an undoable edit; clearing an attached label retains its owner. Opening/import preserves canonical text geometry. Text, style and width edits explicitly update bounds using the local measurement adapter; font rendering may vary across platforms.
 
 Connector routing supports straight and elbow routes with automatic perimeter attachments. Custom ports and self-loops are future work. Shapes and connectors share an explicit stack. Current limits are 5,000 shapes, 5,000 connectors and 200 MB native files.
 

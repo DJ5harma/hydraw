@@ -12,6 +12,7 @@ export function useBoardSession(): SessionState {
     void openBoardSession(controller.signal).then(
       (session) => {
         if (controller.signal.aborted) {
+          session.editor.dispose();
           session.storage?.close();
           return;
         }
@@ -28,6 +29,7 @@ export function useBoardSession(): SessionState {
     );
     return () => {
       controller.abort();
+      local?.editor.dispose();
       local?.storage?.close();
     };
   }, []);

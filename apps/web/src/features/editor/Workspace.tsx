@@ -345,6 +345,24 @@ export function Workspace({ session }: { session: BoardSession }) {
           />
         )}
         <div className="workspace-notices">
+          {snapshot.historyWarning && (
+            <div className="storage-warning" role="status">
+              {snapshot.historyWarning}
+            </div>
+          )}
+          {snapshot.interactionNotice && (
+            <div className="storage-warning" role="status">
+              {snapshot.interactionNotice}
+              {snapshot.recoveredTextDraft !== null && (
+                <textarea
+                  aria-label="Recovered text draft"
+                  readOnly
+                  value={snapshot.recoveredTextDraft}
+                />
+              )}
+              <button onClick={() => editor.dismissInteractionNotice()}>Dismiss</button>
+            </div>
+          )}
           {copyNotice && (
             <div className="copy-notice" role="status">
               {copyNotice}

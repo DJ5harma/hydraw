@@ -1,5 +1,4 @@
 import {
-  decodeDocument,
   detachConnectorBindings,
   insertImages,
   makeInkShape,
@@ -81,6 +80,8 @@ import { fittedCamera, MIN_ZOOM, MAX_ZOOM } from "./viewport.ts";
 import { layoutText } from "./text-layout.ts";
 import type { TextMeasurer } from "./text-layout.ts";
 import { DocumentSession } from "./document-session.ts";
+import type { DocumentCommit, SessionOperation } from "./document-session.ts";
+import { reconcileExternalChange } from "./reconciliation.ts";
 import type { EditorChromeSnapshot, EditorSnapshot, Tool } from "./types.ts";
 import { erasedObjects, ERASER_RADIUS_SCREEN } from "./eraser.ts";
 
@@ -98,6 +99,9 @@ function chromeSnapshot(snapshot: EditorSnapshot): EditorChromeSnapshot {
     textEditing,
     canUndo,
     canRedo,
+    historyWarning,
+    interactionNotice,
+    recoveredTextDraft,
   } = snapshot;
   return {
     document,
@@ -112,6 +116,9 @@ function chromeSnapshot(snapshot: EditorSnapshot): EditorChromeSnapshot {
     textEditing,
     canUndo,
     canRedo,
+    historyWarning,
+    interactionNotice,
+    recoveredTextDraft,
     zoom: snapshot.camera.zoom,
   };
 }
@@ -122,6 +129,7 @@ export class Editor {
   private chrome: EditorChromeSnapshot;
   private listeners = new Set<() => void>();
   readonly documentSession: DocumentSession;
+  private readonly disconnectSession: () => void;
   private gesture: Gesture | null = null;
   private documentLocked = false;
   private documentEpoch = 0;
@@ -136,7 +144,7 @@ export class Editor {
   ) {
     this.makeId = makeId;
     this.measureText = measureText;
-    this.documentSession = new DocumentSession(this.prepareDocument(document));
+    this.documentSession = new DocumentSession(document);
     this.snapshot = {
       document: this.documentSession.getSnapshot().document,
       revision: 0,
@@ -163,11 +171,57 @@ export class Editor {
       activeHandle: null,
       canUndo: false,
       canRedo: false,
+      historyWarning: null,
+      interactionNotice: null,
+      recoveredTextDraft: null,
     };
     this.chrome = chromeSnapshot(this.snapshot);
-    this.documentSession.subscribe(({ document, revision, origin }) => {
-      if (origin !== "replacement") this.publish({ document, revision });
-    });
+    this.disconnectSession = this.documentSession.subscribe((event) =>
+      this.onDocumentCommit(event),
+    );
+  }
+
+  dispose(): void {
+    this.disconnectSession();
+    this.listeners.clear();
+  }
+
+  applyExternal(operation: SessionOperation): boolean {
+    this.assertWritable();
+    return this.documentSession.apply(operation);
+  }
+
+  dismissInteractionNotice(): void {
+    this.publish({ interactionNotice: null, recoveredTextDraft: null });
+  }
+
+  private onDocumentCommit(event: DocumentCommit): void {
+    if (event.origin === "replacement") {
+      this.documentEpoch++;
+      this.gesture = null;
+      this.lastGestureScreen = null;
+      this.publish({
+        ...IDLE_GESTURE,
+        document: event.document,
+        revision: event.revision,
+        selectedIds: [],
+        tool: "select",
+        camera: { x: 0, y: 0, zoom: 1 },
+        textEditing: null,
+        interactionNotice: null,
+        recoveredTextDraft: null,
+      });
+      return;
+    }
+    const reconciliation =
+      event.origin === "remote"
+        ? reconcileExternalChange(this.snapshot, this.gesture, event)
+        : null;
+    if (reconciliation?.cancelGesture) {
+      this.gesture = null;
+      this.lastGestureScreen = null;
+    }
+    this.publish({ ...reconciliation?.patch, document: event.document, revision: event.revision });
   }
 
   getSnapshot = (): EditorSnapshot => this.snapshot;
@@ -205,6 +259,7 @@ export class Editor {
       selectedId: selectedIds.length === 1 ? selectedIds[0]! : null,
       canUndo: this.documentSession.getSnapshot().canUndo,
       canRedo: this.documentSession.getSnapshot().canRedo,
+      historyWarning: this.documentSession.getSnapshot().historyWarning,
     };
     const next = chromeSnapshot(this.snapshot);
     if (
@@ -367,58 +422,21 @@ export class Editor {
     this.assertWritable();
     this.finishTextEditing();
     this.cancelGesture();
+    const lease = this.documentSession.lockReplacement();
     this.documentLocked = true;
     let active = true;
     return {
       replace: (document) => {
         if (!active) throw new Error("This replacement lock has been released.");
-        this.replaceDocument(document);
+        lease.replace(document);
       },
       release: () => {
         if (!active) return;
         active = false;
         this.documentLocked = false;
+        lease.release();
       },
     };
-  }
-
-  /** Canonicalize imported text bounds using this editor's injected font metrics before saving. */
-  prepareDocument(value: unknown): BoardDocument {
-    const document = decodeDocument(value);
-    const fontFamily = themePalette(boardTheme(document)).fontFamily;
-    return Object.freeze({
-      ...document,
-      shapes: Object.freeze(
-        document.shapes.map((shape) =>
-          shape.type === "text" ? this.fitText(shape, fontFamily) : shape,
-        ),
-      ),
-    });
-  }
-
-  private replaceDocument(next: BoardDocument): void {
-    const document = this.prepareDocument(next);
-    this.documentEpoch++;
-    this.cancelGesture();
-    this.documentSession.replace(document);
-    this.publish({
-      document,
-      revision: this.documentSession.getSnapshot().revision,
-      selectedIds: [],
-      tool: "select",
-      camera: { x: 0, y: 0, zoom: 1 },
-      connectorPreview: null,
-      bindingTargetId: null,
-      activeEndpoint: null,
-      activeConnectorBend: null,
-      preview: null,
-      selectionPreview: null,
-      marquee: null,
-      textEditing: null,
-      guides: [],
-      interacting: false,
-      activeHandle: null,
-    });
   }
 
   private commit(transaction: DocumentTransaction | null): void {

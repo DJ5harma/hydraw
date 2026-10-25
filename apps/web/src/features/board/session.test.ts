@@ -33,7 +33,7 @@ it("keeps acquired storage with a successfully initialized editor", async () => 
   expect(local.close).not.toHaveBeenCalled();
 });
 
-it("releases acquired storage when text initialization fails and opens an unsaved board", async () => {
+it("opens stored text without rewriting geometry or measuring fonts", async () => {
   const local = storage();
   local.document = {
     ...createDocument(),
@@ -58,10 +58,10 @@ it("releases acquired storage when text initialization fails and opens an unsave
     throw new Error("Font measurement failed");
   });
   const session = await openBoardSession(new AbortController().signal);
-  expect(local.close).toHaveBeenCalledOnce();
-  expect(session.storage).toBeNull();
-  expect(session.error).toBe("Font measurement failed");
-  expect(session.editor.getSnapshot().document.shapes).toEqual([]);
+  expect(local.close).not.toHaveBeenCalled();
+  expect(session.storage).toBe(local);
+  expect(session.error).toBeNull();
+  expect(session.editor.getSnapshot().document).toEqual(local.document);
 });
 
 it("closes a late storage result after cancellation without creating a fallback session", async () => {

@@ -43,6 +43,9 @@ export type EditorSnapshot = Readonly<{
   activeHandle: ResizeHandle | null;
   canUndo: boolean;
   canRedo: boolean;
+  historyWarning: string | null;
+  interactionNotice: string | null;
+  recoveredTextDraft: string | null;
 }>;
 export type EditorChromeSnapshot = Omit<
   EditorSnapshot,

@@ -8,6 +8,10 @@ ID-addressed operations now resolve positions against the current document, with
 record/relationship versions, atomic graph validation, remote application and
 conditional personal history. Two-session tests cover concurrent proposals,
 duplicates and connector/deletion races. See ADR 0016 for the in-process contract.
+External edits preserve camera, valid selection and unrelated gestures. Conflicting
+gestures cancel with feedback; conflicting text drafts remain recoverable. Opening
+or importing documents preserves text geometry instead of remeasuring it. Durable
+replacement locks also protect the document session from incoming edits.
 
 Updated 25 October 2026. Git history records the development milestones.
 

@@ -37,6 +37,7 @@ export class DocumentSession {
   private future: HistoryEntry[] = [];
   private historyWarning: string | null = null;
   private listeners = new Set<(event: DocumentCommit) => void>();
+  private replacementLocked = false;
 
   constructor(document: BoardDocument) {
     this.document = decodeDocument(document);
@@ -58,6 +59,7 @@ export class DocumentSession {
 
   /** Prepare without mutating; a local relay can order competing proposals. */
   prepare(transaction: DocumentTransaction): SessionOperation {
+    this.assertWritable();
     return this.envelope(operationFromTransaction(this.document, transaction));
   }
 
@@ -77,6 +79,32 @@ export class DocumentSession {
   }
 
   replace(document: BoardDocument): void {
+    this.assertWritable();
+    this.replaceDocument(document);
+  }
+
+  lockReplacement(): Readonly<{ replace: (document: BoardDocument) => void; release: () => void }> {
+    this.assertWritable();
+    this.replacementLocked = true;
+    let active = true;
+    return {
+      replace: (document) => {
+        if (!active) throw new Error("This replacement lock has been released.");
+        this.replaceDocument(document);
+      },
+      release: () => {
+        if (!active) return;
+        active = false;
+        this.replacementLocked = false;
+      },
+    };
+  }
+
+  private assertWritable(): void {
+    if (this.replacementLocked) throw new Error("A board replacement is in progress.");
+  }
+
+  private replaceDocument(document: BoardDocument): void {
     const next = decodeDocument(document);
     const changedIds = [
       ...this.document.shapes,
@@ -107,6 +135,7 @@ export class DocumentSession {
   }
 
   private accept(operation: SessionOperation, origin: CommitOrigin): boolean {
+    this.assertWritable();
     const previous = this.recent.get(operation.id);
     if (previous) {
       if (JSON.stringify(previous) !== JSON.stringify(operation))

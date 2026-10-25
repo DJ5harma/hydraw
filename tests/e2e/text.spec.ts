@@ -159,7 +159,13 @@ test("styles text, reflows width, moves at zoom, and preserves semantics through
   await expect(page.getByRole("dialog")).toContainText("1 text object");
   await page.getByRole("button", { name: "Open imported board" }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
-  expect(await exported(page)).toEqual(document);
+  const canonicalImport = {
+    ...document,
+    shapes: document.shapes.map((shape) => ({ ...shape, height: 1 })),
+  };
+  expect(await exported(page)).toEqual(canonicalImport);
+  await page.reload();
+  expect(await exported(page)).toEqual(canonicalImport);
 });
 
 test("blank creation is discarded; blur saves and clearing existing text can be undone", async ({

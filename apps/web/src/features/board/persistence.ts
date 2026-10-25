@@ -1,3 +1,4 @@
+import { decodeDocument } from "@hydraw/document";
 import type { BoardDocument } from "@hydraw/document";
 import type { Editor } from "@hydraw/editor";
 import type { LocalBoard } from "./storage.ts";
@@ -81,7 +82,7 @@ export class BoardPersistence {
   }
 
   async replace(next: BoardDocument): Promise<void> {
-    const document = this.editor.prepareDocument(next);
+    const document = decodeDocument(next);
     const storage = this.storage;
     if (!storage)
       throw new Error(

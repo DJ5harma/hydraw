@@ -149,15 +149,18 @@ describe("owned text layout and editing", () => {
     editor.cancelTextEditing();
   });
 
-  it("recomputes imported text bounds before persistence and requires a measurement adapter", () => {
-    const editor = setup();
+  it("preserves canonical text geometry when opening with any measurement adapter", () => {
     const imported = { ...createDocument(), shapes: [{ ...text, height: 1 }] };
-    const prepared = editor.prepareDocument(imported);
-    expect(prepared.shapes[0]?.height).toBe(layoutText(text, measure).height);
-    expect(imported.shapes[0]?.height).toBe(1);
-    const opened = new Editor(prepared, undefined, measure);
-    expect(opened.getSnapshot().document).toEqual(prepared);
-    expect(() => new Editor(prepared)).toThrow("measurement adapter");
+    const opened = new Editor(imported, undefined, measure);
+    const other = new Editor(imported, undefined, () => {
+      throw new Error("Must not measure while loading");
+    });
+    expect(opened.getSnapshot().document).toEqual(imported);
+    expect(other.getSnapshot().document).toEqual(imported);
+    expect(new Editor(imported).getSnapshot().document).toEqual(imported);
+    opened.select(text.id);
+    opened.setGeometry({ width: 60 });
+    expect(opened.getSnapshot().document.shapes[0]?.height).toBeGreaterThan(1);
   });
 
   it("commits a current draft before acquiring the replacement lease", () => {

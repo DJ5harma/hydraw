@@ -57,3 +57,8 @@ unreflected pixels; false flags are omitted when decoding. Bounds remain positiv
 Image crops always refer to original source pixels, with display coordinates
 reflected for crop editing and source-bound recovery. Freehand reflections are
 stored directly in normalized stroke points.
+
+Text bounds are canonical semantic geometry. Opening, importing or receiving a
+document validates those bounds without recalculating them from local font metrics.
+User text/style/width changes explicitly commit updated bounds through the editor's
+measurement adapter. Font rendering may still differ between platforms.
