@@ -2,7 +2,9 @@
 
 Updated 26 October 2026. This plan covers the browser-local editor and its
 packaged application. See [the milestone log](docs/PROGRESS.md) for implemented
-work and [the next-step plan](docs/NEXT.md) for the current focus.
+work and [the next-step plan](docs/NEXT.md) for the current focus. The proposed
+[cloud and collaboration plan](docs/CLOUD_PLAN.md) extends this local foundation
+with accounts, cloud boards, sharing, live editing and an ordered rollout.
 
 ## Product direction
 
@@ -46,13 +48,13 @@ Hydraw uses TypeScript, React, Hono, Vite+ and a pnpm workspace. One Hono proces
 serves `/api` and the built React application. Docker packages the server and web
 build into a non-root Node runtime image.
 
-| Package | Responsibility |
-| --- | --- |
-| `@hydraw/document` | Portable records, validation, geometry and reversible transactions |
-| `@hydraw/editor` | Local editor state, gestures, hit testing, history and camera |
-| `@hydraw/editor/canvas` | Browser Canvas rendering and pointer input |
-| `@hydraw/web` | React controls, browser persistence, file transfer and workspace UI |
-| `@hydraw/server` | Hono API, static assets and application navigation fallback |
+| Package                 | Responsibility                                                      |
+| ----------------------- | ------------------------------------------------------------------- |
+| `@hydraw/document`      | Portable records, validation, geometry and reversible transactions  |
+| `@hydraw/editor`        | Local editor state, gestures, hit testing, history and camera       |
+| `@hydraw/editor/canvas` | Browser Canvas rendering and pointer input                          |
+| `@hydraw/web`           | React controls, browser persistence, file transfer and workspace UI |
+| `@hydraw/server`        | Hono API, static assets and application navigation fallback         |
 
 Keep document rules and transactions independent of React, Hono and browser
 adapters. Keep editor coordination, geometry, gestures, history, rendering and

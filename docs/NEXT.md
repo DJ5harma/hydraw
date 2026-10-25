@@ -4,6 +4,11 @@ Updated 25 October 2026 after completing connector routing, image reflection fix
 custom colors, image crops and the personal library. This refines
 PLAN.md; the owned-engine boundaries and broader direction remain in force.
 
+Cloud planning follow-up, 26 October 2026: [CLOUD_PLAN.md](CLOUD_PLAN.md) proposes
+the next expansion into cloud boards, sharing and collaboration. Its milestone
+sequence covers the cloud work; the local alpha checks below remain release-quality
+requirements. Cloud features are planned, not implemented.
+
 ## Product focus
 
 Make architecture diagrams easy to sketch, name, tidy and put into documentation
