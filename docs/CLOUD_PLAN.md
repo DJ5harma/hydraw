@@ -3,6 +3,11 @@
 Proposed, 26 October 2026. This is a design and implementation sequence, not a
 description of shipped functionality. It extends [PLAN.md](../PLAN.md).
 
+Architecture-first update: [EDITOR_ARCHITECTURE.md](EDITOR_ARCHITECTURE.md) defines
+the prerequisite redesign and local two-session acceptance gate. Complete it before
+implementing cloud identity, persistence or transport. The operation model below
+is a proposal to validate at that gate, not a settled protocol.
+
 ## Recommendation and assumptions
 
 Keep the instant, account-free local canvas. Add optional cloud boards with
@@ -313,23 +318,23 @@ Each row should be split further when it cannot land as one cohesive, verified
 commit. Add accepted ADRs when decisions are implemented; this proposal alone does
 not change existing document or deployment contracts.
 
-| Order | Milestone                                          | Exit evidence                                                                                                                                           |
-| ----- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0     | Set constraints and spike collaboration            | Agree offline/conflict UX; two-editor prototype verifies bound connectors, node deletion, undo and concurrent text; record provider/budget choice       |
-| 1     | Multiple local boards and repository/session seams | Per-board storage/locks, explicit board switching and atomic recovery; existing local data preserved; no cloud dependency                               |
-| 2     | Identity, tenancy and database foundation          | Reproducible migrations, sign-in/out, personal workspace; cross-user access and account-cache isolation tests                                           |
-| 3     | Cloud boards and verified assets                   | Explicit upload, board list, revision-conditional saves, asset codec and native round trips; retry/crash tests; no silent concurrent snapshot overwrite |
-| 4     | Sharing and recovery                               | Viewer/editor invitations, view links, revocation, trash, checkpoints/restore; unauthorized HTTP/socket/asset/history tests                             |
-| 5     | Durable operations and collaborative history       | Commit seam, ID/version protocol, optimistic queue, remote apply and personal undo; duplicate/lost acknowledgements, conflicts and compaction tested    |
-| 6     | Live rooms and reconnect                           | Presence, ordered stream, catch-up, reconnect and draft recovery; multi-client races and restart/deployment overlap tested                              |
-| 7     | Production release gate                            | Staging/load evidence, restore drill, alerts, spend controls, quotas and rollback/kill-switch exercise                                                  |
-| Later | Teams, comments, cloud library, PWA                | Separate proposals justified by usage; explicit migration of local library                                                                              |
+| Order | Milestone                                        | Exit evidence                                                                                                                                                 |
+| ----- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0     | Editor architecture and local collaboration gate | Complete EDITOR_ARCHITECTURE.md: document session, ID operations, external apply, conditional history, stable text geometry and two-session conflict evidence |
+| 1     | Assets and multiple local boards                 | Complete the architecture gate's asset/repository seams, per-board storage/locks and recovery; existing local data preserved; no cloud dependency             |
+| 2     | Identity, tenancy and database foundation        | Reproducible migrations, sign-in/out, personal workspace; cross-user access and account-cache isolation tests                                                 |
+| 3     | Cloud boards and verified assets                 | Explicit upload, board list, revision-conditional saves, asset codec and native round trips; retry/crash tests; no silent concurrent snapshot overwrite       |
+| 4     | Sharing and recovery                             | Viewer/editor invitations, view links, revocation, trash, checkpoints/restore; unauthorized HTTP/socket/asset/history tests                                   |
+| 5     | Durable operations and collaborative history     | Commit seam, ID/version protocol, optimistic queue, remote apply and personal undo; duplicate/lost acknowledgements, conflicts and compaction tested          |
+| 6     | Live rooms and reconnect                         | Presence, ordered stream, catch-up, reconnect and draft recovery; multi-client races and restart/deployment overlap tested                                    |
+| 7     | Production release gate                          | Staging/load evidence, restore drill, alerts, spend controls, quotas and rollback/kill-switch exercise                                                        |
+| Later | Teams, comments, cloud library, PWA              | Separate proposals justified by usage; explicit migration of local library                                                                                    |
 
 Milestone 3 may use conditional whole-snapshot writes as a temporary private-board
 step. Before shared live editing, retire that write path or route it through the
 same canonical revision mechanism; old clients must never bypass operation checks.
 Do not ship two independent writers for one board.
 
-First implementation increment: multiple local boards and the board repository /
-session boundary, preceded by the small collaboration spike. This removes the
-single-board assumption and tests the risky sync choice before hosting work grows.
+First implementation increment: extract the document session and explicit commit
+events while preserving current local behavior. Complete the architecture-first
+sequence and its local two-session gate before starting cloud implementation.

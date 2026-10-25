@@ -9,6 +9,11 @@ the next expansion into cloud boards, sharing and collaboration. Its milestone
 sequence covers the cloud work; the local alpha checks below remain release-quality
 requirements. Cloud features are planned, not implemented.
 
+Architecture-first update: [EDITOR_ARCHITECTURE.md](EDITOR_ARCHITECTURE.md) is the
+next milestone. Separate committed document state from editor interaction, validate
+the collaboration model with two local sessions, and complete its acceptance gate
+before implementing cloud services.
+
 ## Product focus
 
 Make architecture diagrams easy to sketch, name, tidy and put into documentation
