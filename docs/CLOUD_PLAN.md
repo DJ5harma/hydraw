@@ -14,6 +14,8 @@ Assume a small team building for individuals and small engineering teams, one
 initial region, and an initial live-room target of 10 editors plus 20 viewers.
 These are planning targets to test, not established capacity. Provider, budget,
 data residency and the need for automatic offline merging remain open decisions.
+Hosting must be cost-conscious. No paid provider is selected; choose deployment
+only after agreeing a budget and comparing total running and maintenance costs.
 
 The important product choice: the first collaboration release supports responsive
 online editing and recoverable disconnected work. It does not promise automatic
@@ -85,13 +87,13 @@ Postgres jobs table and scheduled worker invocation are sufficient; use the same
 image with a different entry point when work needs a separate process. No Redis,
 Kafka, Kubernetes or independent collaboration service is needed initially.
 
-Railway is a reasonable first hosting candidate because it can run the existing
-Docker application, PostgreSQL and S3-compatible buckets. This is a proposed fit,
-not a completed provider comparison or deployment. Its documented WebSocket support
-fits live connections; its lack of sticky sessions means room state cannot be
-scaled just by increasing replicas. See [network specifications](https://docs.railway.com/networking/public-networking/specs-and-limits),
-[replica behavior](https://docs.railway.com/deployments/optimize-performance) and
-[buckets](https://docs.railway.com/storage-buckets).
+Hosting remains undecided. Keep the Docker application, PostgreSQL and asset-store
+interfaces portable. Compare existing infrastructure, a self-hosted deployment and
+hosted services against an agreed budget before selecting anything. Include compute,
+database, storage, backups, bandwidth, identity and maintenance in that comparison.
+Develop and validate locally first; no paid service is a prerequisite for the
+collaboration prototype. Validate WebSocket support and reconnect behavior on the
+eventual host, and design multi-replica rooms without relying on sticky sessions.
 
 Keep deployment configuration in the repository, staging isolated from production,
 and local cloud development reproducible with PostgreSQL, an S3-compatible test
@@ -294,8 +296,8 @@ state; database disaster recovery is a separate procedure.
 - Enable and verify database backups/PITR and an independent export path; preserve
   matching asset versions. Proposed launch goals are RPO at most 15 minutes and RTO
   at most 4 hours, contingent on a successful restore drill. History is not backup.
-  Railway's [backup guide](https://docs.railway.com/guides/postgres-backups-restores)
-  describes separate volume, PITR and logical backup layers.
+  Select and cost the backup approach with the eventual deployment; verify database
+  and asset recovery together rather than assuming the host provides it.
 
 Scale only after measuring. Multiple app replicas require cross-instance durable
 revision catch-up, authorization invalidation and presence fan-out. Add a broker
