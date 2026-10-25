@@ -12,6 +12,7 @@ import {
   boardThemeTransaction,
   themePalette,
   createFrameAroundSelection,
+  createFrame,
   frameSelectionContents,
   isFrame,
   insertPreset,
@@ -310,40 +311,14 @@ export class Editor {
     if (this.snapshot.document.shapes.length >= MAX_SHAPES)
       throw new Error("This board has no room for another frame.");
     const point = screenToWorld(screen, this.snapshot.camera);
-    const frame = this.frameDraft({
-      id: this.makeId(),
-      type: "rectangle",
-      kind: "frame",
+    const frame = createFrame(this.snapshot.document, this.makeId(), {
       x: clamp(point.x - 320, -MAX_COORDINATE, MAX_COORDINATE),
       y: clamp(point.y - 200, -MAX_COORDINATE, MAX_COORDINATE),
       width: 640,
       height: 400,
-      fill: "transparent",
     });
     this.commitShape("Create frame", null, frame);
     this.publish({ selectedIds: [frame.id], tool: "select" });
-  }
-
-  private frameDraft(shape: Rectangle): Rectangle {
-    return {
-      ...shape,
-      kind: "frame",
-      fill: "transparent",
-      zIndex: this.creationRank(false),
-      appearance: {
-        stroke: "#3568db",
-        strokeWidth: 1.5,
-        strokeStyle: "solid",
-        opacity: 100,
-        cornerRadius: 4,
-      },
-      label: {
-        text: `Frame ${this.snapshot.document.shapes.filter(isFrame).length + 1}`,
-        fontSize: 20,
-        fontWeight: 700,
-        color: "#202124",
-      },
-    };
   }
 
   renameFrame(name: string): void {
@@ -1013,7 +988,7 @@ export class Editor {
         ...patch,
         preview:
           patch.preview.kind === "frame"
-            ? this.frameDraft(patch.preview)
+            ? createFrame(this.snapshot.document, patch.preview.id, patch.preview)
             : { ...patch.preview, zIndex: this.creationRank(true) },
       };
     if (

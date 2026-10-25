@@ -1,7 +1,6 @@
-import { rectangleAppearance } from "./appearance.ts";
 import { createConnectorResolver } from "./connectors.ts";
 import { MAX_COORDINATE, MAX_SHAPES, MAX_SIZE } from "./model.ts";
-import type { BoardDocument, Point, Rectangle, Shape } from "./model.ts";
+import type { BoardDocument, Bounds, Point, Rectangle, Shape } from "./model.ts";
 import { shapeTransaction } from "./transactions.ts";
 import type { DocumentTransaction } from "./transactions.ts";
 
@@ -118,32 +117,45 @@ export function createFrameAroundSelection(
     )
   )
     throw new Error("Could not create a unique frame identity.");
-  const zIndex = Math.max(
-    -1_000_000_000,
-    Math.min(0, ...[...document.shapes, ...document.connectors].map((item) => item.zIndex ?? 0)) -
-      1,
-  );
-  const labelNumber = document.shapes.filter(isFrame).length + 1;
-  const frame: Rectangle = {
-    id,
-    type: "rectangle",
-    kind: "frame",
+  const frame = createFrame(document, id, {
     x: minX,
     y: minY,
     width: maxX - minX,
     height: maxY - minY,
+  });
+  const change = shapeTransaction("Create frame", null, frame)!;
+  return { transaction: change, id };
+}
+
+/** Common semantic defaults for dragged, command-created and selection frames. */
+export function createFrame(document: BoardDocument, id: string, bounds: Bounds): Rectangle {
+  const { x, y, width, height } = bounds;
+  const bottom = [...document.shapes, ...document.connectors].reduce(
+    (rank, object) => Math.min(rank, object.zIndex ?? 0),
+    0,
+  );
+  return {
+    id,
+    type: "rectangle",
+    kind: "frame",
+    x,
+    y,
+    width,
+    height,
     fill: "transparent",
-    zIndex,
+    zIndex: Math.max(-1_000_000_000, bottom - 1),
     appearance: {
-      ...rectangleAppearance({}),
       stroke: "#3568db",
       strokeWidth: 1.5,
       strokeStyle: "solid",
       opacity: 100,
       cornerRadius: 4,
     },
-    label: { text: `Frame ${labelNumber}`, fontSize: 20, fontWeight: 700, color: "#202124" },
+    label: {
+      text: `Frame ${document.shapes.filter(isFrame).length + 1}`,
+      fontSize: 20,
+      fontWeight: 700,
+      color: "#202124",
+    },
   };
-  const change = shapeTransaction("Create frame", null, frame)!;
-  return { transaction: change, id };
 }

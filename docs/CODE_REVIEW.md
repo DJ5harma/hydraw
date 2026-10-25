@@ -23,6 +23,10 @@ limit and a UUID fallback inconsistent with the editor's existing platform contr
 The obsolete development-namespace browser journey was removed. Storage now retains
 one recovery asset-root state instead of a raw manifest, a boolean and repeated
 revalidation of the same root.
+Frame appearance, naming and stacking defaults now live in one document factory
+used by drag creation, command creation and framing a selection. A browser image
+test now waits for replacement completion before releasing its decoder gate,
+removing a timing-dependent assertion.
 
 The server remains one small Hono composition. Renderer and SVG output share
 semantic geometry while keeping their distinct output code. Native input/focus

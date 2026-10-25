@@ -205,6 +205,7 @@ test("does not insert an image into a board that was replaced while decoding", a
     buffer: Buffer.from(JSON.stringify(replacement)),
   });
   await page.getByRole("button", { name: "Open imported board", exact: true }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
   await page.evaluate(() => {
     const gate = (
       window as Window & {
