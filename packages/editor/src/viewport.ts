@@ -1,6 +1,6 @@
 import type { Bounds } from "@hydraw/document";
 import type { Camera } from "./types.ts";
-import { clamp } from "./geometry.ts";
+import { clamp } from "@hydraw/document";
 
 // Includes an overview of documents spanning the portable coordinate limits.
 export const MIN_ZOOM = 0.00001;

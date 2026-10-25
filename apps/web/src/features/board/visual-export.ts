@@ -1,24 +1,12 @@
-import { boardTheme, themePalette } from "@hydraw/document";
+import { themePalette } from "@hydraw/document";
 import type { BoardDocument } from "@hydraw/document";
 import { createTextMeasurer } from "@hydraw/editor/canvas";
 import { exportSvg } from "@hydraw/editor";
+import { boardFileName, downloadBlob } from "./files.ts";
 
 const PNG_SCALE = 2;
 const MAX_PNG_SIDE = 16_384;
 const MAX_PNG_PIXELS = 100_000_000;
-
-function fileBase(name: string): string {
-  return name.replace(/[^a-z0-9_-]/gi, "-").slice(0, 80) || "board";
-}
-
-function download(blob: Blob, name: string): void {
-  const url = URL.createObjectURL(blob);
-  const anchor = window.document.createElement("a");
-  anchor.href = url;
-  anchor.download = name;
-  anchor.click();
-  window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
-}
 
 async function pngBlob(svgBlob: Blob): Promise<Blob> {
   const url = URL.createObjectURL(svgBlob);
@@ -61,33 +49,19 @@ export async function downloadVisual(
   format: "svg" | "png",
   ids?: readonly string[],
 ): Promise<void> {
-  const svg = exportSvg(document, { ids, measureText: createTextMeasurer() });
-  if (format === "svg") {
-    download(
-      new Blob([svg], { type: "image/svg+xml;charset=utf-8" }),
-      `${fileBase(document.name)}.svg`,
-    );
-    return;
-  }
-  const blob = await pngBlob(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }));
-  download(blob, `${fileBase(document.name)}.png`);
+  const svg = svgBlob(document, ids);
+  downloadBlob(format === "svg" ? svg : await pngBlob(svg), boardFileName(document.name, format));
 }
 
 export type VisualBackground = "board" | "transparent";
 
-/** Rasterization uses the same semantic export as downloaded PNGs. */
-export async function visualPng(
-  document: BoardDocument,
-  ids?: readonly string[],
-  background: VisualBackground = "board",
-): Promise<Blob> {
+function svgBlob(document: BoardDocument, ids?: readonly string[], background?: string): Blob {
   const svg = exportSvg(document, {
     ids,
     measureText: createTextMeasurer(),
-    background:
-      background === "transparent" ? "transparent" : themePalette(boardTheme(document)).background,
+    background,
   });
-  return pngBlob(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }));
+  return new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
 }
 
 /** Start the clipboard write during the user gesture; browsers can await image encoding. */
@@ -102,7 +76,9 @@ export async function copyVisual(
     (typeof ClipboardItem.supports === "function" && !ClipboardItem.supports("image/png"))
   )
     throw new Error("This browser cannot copy images to the clipboard. Use Export PNG instead.");
-  const item = new ClipboardItem({ "image/png": visualPng(document, ids, background) });
+  const color =
+    background === "transparent" ? "transparent" : themePalette(document.theme).background;
+  const item = new ClipboardItem({ "image/png": pngBlob(svgBlob(document, ids, color)) });
   try {
     await navigator.clipboard.write([item]);
   } catch {

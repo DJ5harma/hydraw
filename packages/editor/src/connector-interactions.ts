@@ -1,4 +1,5 @@
 import {
+  clamp,
   createConnectorResolver,
   lockedObjectIds,
   isFrame,
@@ -11,7 +12,7 @@ import {
 } from "@hydraw/document";
 import type { BoardDocument, Connector, Endpoint, Point, Rectangle, Shape } from "@hydraw/document";
 import { labelClipBounds } from "./labels.ts";
-import { clamp, screenToWorld } from "./geometry.ts";
+import { screenToWorld } from "./geometry.ts";
 import type { Camera, EditorSnapshot } from "./types.ts";
 
 export type ConnectorEnd = "start" | "end";

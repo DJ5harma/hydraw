@@ -1,3 +1,4 @@
+import { clamp } from "./math.ts";
 import { MAX_COORDINATE, MAX_SHAPES } from "./model.ts";
 import type { BoardDocument, ImageShape, Point } from "./model.ts";
 import { applyTransaction } from "./transactions.ts";
@@ -44,7 +45,6 @@ export function insertImages(
     const scale = Math.min(1, 480 / Math.max(image.width, image.height));
     const width = Math.max(1, image.width * scale),
       height = Math.max(1, image.height * scale);
-    const clamp = (value: number) => Math.max(-MAX_COORDINATE, Math.min(MAX_COORDINATE, value));
     return {
       id,
       type: "image",
@@ -52,8 +52,8 @@ export function insertImages(
       name: image.name,
       width,
       height,
-      x: clamp(point.x - width / 2 + index * 24),
-      y: clamp(point.y - height / 2 + index * 24),
+      x: clamp(point.x - width / 2 + index * 24, -MAX_COORDINATE, MAX_COORDINATE),
+      y: clamp(point.y - height / 2 + index * 24, -MAX_COORDINATE, MAX_COORDINATE),
       zIndex: Math.min(1_000_000_000, top + index + 1),
     };
   });

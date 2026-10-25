@@ -29,7 +29,7 @@ export class DocumentSession {
   readonly boardId: string;
   private document: BoardDocument;
   private revision = 0;
-  private epoch = 0;
+  private documentEpoch = 0;
   private sequence = 0;
   private readonly actor = crypto.randomUUID();
   private readonly versions = new Map<string, number>();
@@ -105,6 +105,10 @@ export class DocumentSession {
     };
   }
 
+  get epoch(): number {
+    return this.documentEpoch;
+  }
+
   get isReplacing(): boolean {
     return this.replacementLocked;
   }
@@ -126,7 +130,7 @@ export class DocumentSession {
     this.historyWarning = null;
     this.versions.clear();
     this.recent.clear();
-    this.epoch++;
+    this.documentEpoch++;
     this.commit(next, "replacement", null, [...new Set(changedIds)]);
   }
 
@@ -134,7 +138,7 @@ export class DocumentSession {
     return Object.freeze({
       id: `${this.actor}:${++this.sequence}`,
       boardId: this.boardId,
-      epoch: this.epoch,
+      epoch: this.documentEpoch,
       expected: Object.freeze(
         Object.fromEntries(
           operationDependencies(edit).map((key) => [key, this.versions.get(key) ?? 0]),
@@ -154,7 +158,7 @@ export class DocumentSession {
         throw new Error("An operation ID cannot be reused for different edits.");
       return false;
     }
-    if (!operation.id || operation.epoch !== this.epoch)
+    if (!operation.id || operation.epoch !== this.documentEpoch)
       throw new Error("The document changed before this operation.");
     for (const key of operationDependencies(operation.edit)) {
       if (operation.expected[key] !== (this.versions.get(key) ?? 0))

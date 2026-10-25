@@ -13,11 +13,12 @@ Simplification follow-up: pure transaction builders now produce ID-addressed edi
 directly, with optional ID-based insertion anchors. There is one edit representation
 for commands, history and external updates; the array-index transaction format and
 both conversion directions have been removed. `planTransaction` resolves identities,
-validates the complete candidate graph and captures a canonical inverse in one pass.
+validates the complete candidate graph and captures a canonical inverse in one application.
 Collection arrays remain the portable document representation;
 an unrelated deletion does not invalidate another object's position. Concurrent
-appends and equal stacking ranks use authoritative acceptance order as the tie
-breaker. Reordering depends on a scene-order version.
+appends retain acceptance order within their record collection. The scene sorts by
+stacking rank; equal ranks retain connector-then-shape collection order. Reordering
+depends on a scene-order version.
 
 Prepared operations capture record versions and relationship dependencies. Node
 deletion checks incident-connector dependencies; grouped edits check membership;

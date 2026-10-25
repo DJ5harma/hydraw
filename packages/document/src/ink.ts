@@ -1,3 +1,4 @@
+import { distanceToSegment } from "./math.ts";
 import {
   MAX_COORDINATE,
   MAX_SIZE,
@@ -98,17 +99,6 @@ export function simplifyInkPoints(points: readonly Point[]): readonly Point[] {
     .map((i) => points[i]!);
 }
 
-function segmentDistance(point: Point, a: Point, b: Point): number {
-  const dx = b.x - a.x;
-  const dy = b.y - a.y;
-  const length2 = dx * dx + dy * dy;
-  const t =
-    length2 === 0
-      ? 0
-      : Math.max(0, Math.min(1, ((point.x - a.x) * dx + (point.y - a.y) * dy) / length2));
-  return Math.hypot(point.x - a.x - t * dx, point.y - a.y - t * dy);
-}
-
 /** Polyline hit test in world coordinates, including stroke radius and caller tolerance. */
 export function hitTestInk(shape: InkShape, point: Point, tolerance = 0): boolean {
   if (!Number.isFinite(point.x) || !Number.isFinite(point.y) || tolerance < 0) return false;
@@ -119,7 +109,7 @@ export function hitTestInk(shape: InkShape, point: Point, tolerance = 0): boolea
   const radius = shape.strokeWidth / 2 + tolerance;
   if (path.length === 1) return Math.hypot(point.x - path[0]!.x, point.y - path[0]!.y) <= radius;
   for (let i = 1; i < path.length; i++)
-    if (segmentDistance(point, path[i - 1]!, path[i]!) <= radius) return true;
+    if (distanceToSegment(point, path[i - 1]!, path[i]!) <= radius) return true;
   return false;
 }
 

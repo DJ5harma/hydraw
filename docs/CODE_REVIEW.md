@@ -16,6 +16,19 @@ the later architecture refactor was as simple as it could be.
 
 Removed an unused connector-only hit-test path and the duplicate clipboard object-ID helper. The global scene hit test remains the single hit-order implementation.
 
+Further cleanup removed duplicate segment-distance implementations, download and
+filename setup, the pass-through `boardTheme()` helper, the editor's duplicate
+replacement epoch, an unnecessary image-import liveness flag, a duplicated clipboard
+limit and a UUID fallback inconsistent with the editor's existing platform contract.
+The obsolete development-namespace browser journey was removed. Storage now retains
+one recovery asset-root state instead of a raw manifest, a boolean and repeated
+revalidation of the same root.
+
+The server remains one small Hono composition. Renderer and SVG output share
+semantic geometry while keeping their distinct output code. Native input/focus
+coordination and IndexedDB transaction handling have concrete lifecycle duties;
+they were reviewed without introducing a general command, state or database framework.
+
 Checks accompany each cohesive increment. Preserve atomic graph validation,
 recoverable drafts, native input behavior and durable storage acknowledgements.
 Judge simplification by fewer concepts and duplicate rules, not file length alone.

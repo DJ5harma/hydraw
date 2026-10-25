@@ -1,8 +1,5 @@
-import { decodeClipboardFragment } from "@hydraw/editor";
+import { decodeClipboardFragment, MAX_CLIPBOARD_BYTES } from "@hydraw/editor";
 import type { BoardDocument } from "@hydraw/document";
-
-// Keep in sync with the editor clipboard envelope limit.
-const MAX_CLIPBOARD_BYTES = 28_000_000;
 
 export const MAX_LIBRARY_ITEMS = 50;
 export const MAX_LIBRARY_BYTES = 50_000_000;
@@ -199,11 +196,6 @@ function applyMutation<T>(
   });
 }
 
-function newId(): string {
-  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
-  return `library-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
-}
-
 function validateQuota(
   raw: readonly unknown[],
   replacingId: string | null,
@@ -223,7 +215,7 @@ export async function saveLibraryItem(name: string, fragment: string): Promise<L
   fragmentDocument(fragment);
   const now = Date.now();
   const item: LibraryItem = Object.freeze({
-    id: newId(),
+    id: crypto.randomUUID(),
     name: normalizedName,
     fragment,
     createdAt: now,

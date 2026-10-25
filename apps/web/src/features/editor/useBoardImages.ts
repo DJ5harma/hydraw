@@ -18,7 +18,6 @@ export function useBoardImages({
 }) {
   const current = useRef({ center, onError });
   current.current = { center, onError };
-  const alive = useRef(false);
   const generation = useRef(0);
   const queue = useRef(Promise.resolve());
   const insertImages = useCallback(
@@ -32,22 +31,23 @@ export function useBoardImages({
         x: (point.x - camera.x) / camera.zoom,
         y: (point.y - camera.y) / camera.zoom,
       };
-      const epoch = editor.getDocumentEpoch();
+      const epoch = editor.documentSession.epoch;
       const owner = generation.current;
       queue.current = queue.current.then(async () => {
+        if (generation.current !== owner) return;
         try {
           if (raster.length > 10) throw new Error("Insert up to 10 images at a time.");
           const images = [];
           for (const file of raster) images.push(await readBoardImage(file));
-          if (!alive.current || generation.current !== owner) return;
+          if (generation.current !== owner) return;
           // An import/restore replaces the board; never insert pending files into that new board.
-          if (editor.getDocumentEpoch() !== epoch)
+          if (editor.documentSession.epoch !== epoch)
             throw new Error("The board changed while opening images. Please insert them again.");
           editor.addImages(images, world);
           current.current.onError(null);
           canvasRef.current?.focus();
         } catch (cause) {
-          if (alive.current && generation.current === owner)
+          if (generation.current === owner)
             current.current.onError(
               cause instanceof Error ? cause.message : "The image could not be inserted.",
             );
@@ -57,7 +57,6 @@ export function useBoardImages({
     [editor, canvasRef],
   );
   useEffect(() => {
-    alive.current = true;
     generation.current++;
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -87,7 +86,6 @@ export function useBoardImages({
     canvas.addEventListener("drop", drop);
     canvas.addEventListener("paste", paste);
     return () => {
-      alive.current = false;
       generation.current++;
       canvas.removeEventListener("dragover", dragover);
       canvas.removeEventListener("drop", drop);

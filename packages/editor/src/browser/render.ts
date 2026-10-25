@@ -3,7 +3,6 @@ import {
   rectangleAppearance,
   createConnectorResolver,
   sceneObjects,
-  boardTheme,
   themePalette,
   themedShape,
   themedConnector,
@@ -193,7 +192,7 @@ function renderScene(
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, width, height);
   const { camera, selectedId } = snapshot;
-  const theme = boardTheme(snapshot.document);
+  const theme = snapshot.document.theme;
   const palette = themePalette(theme);
   ctx.fillStyle = palette.background;
   ctx.fillRect(0, 0, width, height);

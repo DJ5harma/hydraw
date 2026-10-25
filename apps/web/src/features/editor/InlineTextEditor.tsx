@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { TEXT_FONT_FAMILY, TEXT_LINE_HEIGHT, TEXT_PADDING } from "@hydraw/editor";
-import { boardTheme, themePalette } from "@hydraw/document";
+import { TEXT_LINE_HEIGHT, TEXT_PADDING } from "@hydraw/editor";
+import { themePalette } from "@hydraw/document";
 import type { Editor } from "@hydraw/editor";
 import type { RefObject } from "react";
 
@@ -69,7 +69,7 @@ function TextDraft({
           width: draft.width,
           height: draft.height,
           transform: `scale(${camera.zoom})`,
-          fontFamily: themePalette(boardTheme(document)).fontFamily || TEXT_FONT_FAMILY,
+          fontFamily: themePalette(document.theme).fontFamily,
           fontSize: draft.fontSize,
           fontWeight: draft.fontWeight,
           lineHeight: TEXT_LINE_HEIGHT,

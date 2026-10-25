@@ -1,4 +1,5 @@
 import {
+  clamp,
   detachConnectorBindings,
   insertImages,
   makeInkShape,
@@ -8,7 +9,6 @@ import {
   isTextColor,
   isFill,
   imageCropTransaction,
-  boardTheme,
   boardThemeTransaction,
   themePalette,
   createFrameAroundSelection,
@@ -73,7 +73,7 @@ import {
   connectionHandleAt,
 } from "./connector-interactions.ts";
 import type { ConnectorEnd } from "./connector-interactions.ts";
-import { clamp, hitResizeHandle, screenToWorld } from "./geometry.ts";
+import { hitResizeHandle, screenToWorld } from "./geometry.ts";
 import type { ResizeHandle } from "./geometry.ts";
 import { createClipboardFragment, pastedSelection } from "./clipboard.ts";
 import { IDLE_GESTURE, previewGesture, startGesture } from "./gestures.ts";
@@ -134,8 +134,6 @@ export class Editor {
   readonly documentSession: DocumentSession;
   private readonly disconnectSession: () => void;
   private gesture: Gesture | null = null;
-  private documentEpoch = 0;
-  getDocumentEpoch = (): number => this.documentEpoch;
   private readonly measureText: TextMeasurer | undefined;
   private readonly makeId: () => string;
 
@@ -206,7 +204,6 @@ export class Editor {
             this.snapshot.textEditing.draft.text,
           ])
         : this.snapshot.recoveredTextDrafts;
-      this.documentEpoch++;
       this.gesture = null;
       this.lastGestureScreen = null;
       this.publish({
@@ -690,7 +687,7 @@ export class Editor {
     this.finishTextEditing();
     this.cancelGesture();
     const changes = [
-      ...(boardThemeTransaction(boardTheme(this.snapshot.document), theme)?.changes ?? []),
+      ...(boardThemeTransaction(this.snapshot.document.theme, theme)?.changes ?? []),
     ];
     const fontFamily = themePalette(theme).fontFamily;
     this.snapshot.document.shapes.forEach((shape) => {
@@ -777,7 +774,7 @@ export class Editor {
 
   private fitText(
     shape: TextShape,
-    fontFamily = themePalette(boardTheme(this.snapshot.document)).fontFamily,
+    fontFamily = themePalette(this.snapshot.document.theme).fontFamily,
   ): TextShape {
     const valid = decodeText(shape);
     if (!this.measureText) throw new Error("Text editing requires a text measurement adapter.");
@@ -853,7 +850,7 @@ export class Editor {
       },
       this.snapshot.document.shapes,
       this.measureText,
-      themePalette(boardTheme(this.snapshot.document)).fontFamily,
+      themePalette(this.snapshot.document.theme).fontFamily,
     )!;
     this.publish({
       selectedIds: [owner.id],
@@ -880,7 +877,7 @@ export class Editor {
         { ...owner, label: decodeLabel(content) },
         this.snapshot.document.shapes,
         this.measureText,
-        themePalette(boardTheme(this.snapshot.document)).fontFamily,
+        themePalette(this.snapshot.document.theme).fontFamily,
       )!;
     } else draft = this.fitText(content);
     this.publish({ textEditing: { ...editing, draft } });

@@ -1,9 +1,6 @@
-import { MAX_COORDINATE, MAX_SIZE } from "@hydraw/document";
+import { MAX_COORDINATE, MAX_SIZE, clamp } from "@hydraw/document";
 import type { Point, Bounds, Shape } from "@hydraw/document";
 import type { Camera } from "./types.ts";
-
-export const clamp = (value: number, min: number, max: number): number =>
-  Math.max(min, Math.min(max, value));
 
 export function screenToWorld(point: Point, camera: Camera): Point {
   return { x: (point.x - camera.x) / camera.zoom, y: (point.y - camera.y) / camera.zoom };

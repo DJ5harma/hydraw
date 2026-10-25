@@ -11,15 +11,10 @@ export function selectedObjects(
 
 /** A locked member protects its entire flat group, regardless of selection/input method. */
 export function lockedObjectIds(document: BoardDocument): ReadonlySet<string> {
-  const objects = [...document.shapes, ...document.connectors];
-  const groups = new Set(
-    objects.filter((object) => object.locked && object.groupId).map((object) => object.groupId),
-  );
-  return new Set(
-    objects
-      .filter((object) => object.locked || (object.groupId && groups.has(object.groupId)))
-      .map((object) => object.id),
-  );
+  const locked = [...document.shapes, ...document.connectors]
+    .filter((object) => object.locked)
+    .map((object) => object.id);
+  return new Set(locked.length ? expandGroups(document, locked) : []);
 }
 
 export function commonGroupId(objects: readonly ObjectMetadata[]): string | undefined {

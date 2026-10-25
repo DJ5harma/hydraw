@@ -1,4 +1,4 @@
-import type { BoardDocument, Connector, Rectangle, Shape, TextShape, TextColor } from "./model.ts";
+import type { Connector, Rectangle, Shape, TextShape, TextColor } from "./model.ts";
 import { rectangleAppearance } from "./appearance.ts";
 
 export const BOARD_THEMES = ["clean", "notebook", "blueprint"] as const;
@@ -6,10 +6,6 @@ export type BoardTheme = (typeof BOARD_THEMES)[number];
 
 export function isBoardTheme(value: unknown): value is BoardTheme {
   return BOARD_THEMES.some((theme) => theme === value);
-}
-
-export function boardTheme(document: Pick<BoardDocument, "theme">): BoardTheme {
-  return document.theme;
 }
 
 export type ThemePalette = Readonly<{

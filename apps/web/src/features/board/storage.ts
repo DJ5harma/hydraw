@@ -146,7 +146,6 @@ async function open(id: string, signal: AbortSignal): Promise<BoardLease> {
       stored.primary === undefined ? createDocument() : await hydrate(stored.primary);
     let recovery: BoardDocument | null = null;
     let recoveryWarning: string | null = null;
-    let retainedRecovery = stored.recovery;
     if (stored.recovery !== undefined) {
       try {
         recovery = await hydrate(stored.recovery);
@@ -155,7 +154,12 @@ async function open(id: string, signal: AbortSignal): Promise<BoardLease> {
           "The previous recovery copy could not be read. Your current board is available. Opening another board will replace that unreadable recovery copy.";
       }
     }
-    let recoveryUnreadable = recoveryWarning !== null;
+    // null means the recovery root is unreadable, so its assets cannot be collected.
+    let recoveryAssets: readonly string[] | null = recoveryWarning
+      ? null
+      : stored.recovery === undefined
+        ? []
+        : documentAssetIds(stored.recovery);
     signal.throwIfAborted();
     const identify = async (source: string): Promise<string> => {
       const cached = hashes.get(source);
@@ -183,20 +187,15 @@ async function open(id: string, signal: AbortSignal): Promise<BoardLease> {
         }),
       );
       if (closed) throw new Error("This board storage lease is closed.");
-      const nextRecovery =
-        prepared.find((entry) => entry.key === "recovery")?.packed.document ?? retainedRecovery;
+      const replacement = prepared.find((entry) => entry.key === "recovery");
+      const nextRecoveryAssets = replacement
+        ? documentAssetIds(replacement.packed.document)
+        : recoveryAssets;
       const retainedIds = new Set(
         prepared.flatMap((entry) => documentAssetIds(entry.packed.document)),
       );
-      const replacingRecovery = prepared.some((entry) => entry.key === "recovery");
-      let canCollect = !recoveryUnreadable || replacingRecovery;
-      if (nextRecovery !== undefined) {
-        try {
-          documentAssetIds(nextRecovery).forEach((assetId) => retainedIds.add(assetId));
-        } catch {
-          canCollect = false;
-        }
-      }
+      const canCollect = nextRecoveryAssets !== null;
+      nextRecoveryAssets?.forEach((assetId) => retainedIds.add(assetId));
       await new Promise<void>((resolve, reject) => {
         const transaction = database.transaction(["boards", "assets"], "readwrite");
         transaction.oncomplete = () => resolve();
@@ -222,8 +221,7 @@ async function open(id: string, signal: AbortSignal): Promise<BoardLease> {
           reject(error);
         }
       });
-      retainedRecovery = nextRecovery;
-      if (replacingRecovery) recoveryUnreadable = false;
+      recoveryAssets = nextRecoveryAssets;
       for (const { packed } of prepared)
         for (const assetId of packed.assets.keys()) knownAssetIds.add(assetId);
       if (canCollect)

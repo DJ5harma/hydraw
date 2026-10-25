@@ -3,21 +3,11 @@ import {
   createConnectorResolver,
   rectangleAppearance,
   lockedObjectIds,
+  distanceToSegment,
 } from "@hydraw/document";
 import type { BoardDocument, InkShape, Point, Shape } from "@hydraw/document";
 
 export const ERASER_RADIUS_SCREEN = 12;
-
-function pointToSegmentDistance(point: Point, a: Point, b: Point): number {
-  const dx = b.x - a.x;
-  const dy = b.y - a.y;
-  const length2 = dx * dx + dy * dy;
-  const t =
-    length2 === 0
-      ? 0
-      : Math.max(0, Math.min(1, ((point.x - a.x) * dx + (point.y - a.y) * dy) / length2));
-  return Math.hypot(point.x - a.x - t * dx, point.y - a.y - t * dy);
-}
 
 function orientation(a: Point, b: Point, c: Point): number {
   return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
@@ -43,10 +33,10 @@ function segmentsIntersect(a: Point, b: Point, c: Point, d: Point): boolean {
 function segmentDistance(a: Point, b: Point, c: Point, d: Point): number {
   if (segmentsIntersect(a, b, c, d)) return 0;
   return Math.min(
-    pointToSegmentDistance(a, c, d),
-    pointToSegmentDistance(b, c, d),
-    pointToSegmentDistance(c, a, b),
-    pointToSegmentDistance(d, a, b),
+    distanceToSegment(a, c, d),
+    distanceToSegment(b, c, d),
+    distanceToSegment(c, a, b),
+    distanceToSegment(d, a, b),
   );
 }
 
@@ -58,7 +48,7 @@ export function hitInkStroke(shape: InkShape, from: Point, to: Point, radius: nu
     y: shape.y + y * shape.height,
   }));
   const threshold = radius + shape.strokeWidth / 2;
-  if (path.length === 1) return pointToSegmentDistance(path[0]!, from, to) <= threshold;
+  if (path.length === 1) return distanceToSegment(path[0]!, from, to) <= threshold;
   for (let index = 1; index < path.length; index++) {
     if (segmentDistance(from, to, path[index - 1]!, path[index]!) <= threshold) return true;
   }

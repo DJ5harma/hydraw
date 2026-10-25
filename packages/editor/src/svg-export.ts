@@ -3,12 +3,12 @@ import {
   rectangleAppearance,
   resolveConnector,
   sceneObjects,
-  boardTheme,
   themePalette,
   themedShape,
   themedConnector,
 } from "@hydraw/document";
 import type {
+  BoardTheme,
   BoardDocument,
   Bounds,
   Connector,
@@ -140,7 +140,7 @@ function labelElements(
   measure: TextMeasurer,
   key: string,
   fontFamily: string,
-  theme: ReturnType<typeof boardTheme>,
+  theme: BoardTheme,
 ): { svg: string; defs?: string } {
   const label = labelTextShape(owner, shapes, measure, fontFamily);
   if (!label) return { svg: "" };
@@ -197,7 +197,7 @@ function connectorBounds(connector: Connector, shapes: readonly Shape[]): Bounds
 
 /** Serialize only document semantics; no DOM or browser APIs are accessed. */
 export function exportSvg(document: BoardDocument, options: SvgExportOptions): string {
-  const theme = boardTheme(document);
+  const theme = document.theme;
   const palette = themePalette(theme);
   const padding = safePadding(options.padding);
   const background = safeBackground(

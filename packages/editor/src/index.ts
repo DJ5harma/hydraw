@@ -10,6 +10,10 @@ export type { TextMeasurer } from "./text-layout.ts";
 
 export { exportSvg } from "./svg-export.ts";
 
-export { createClipboardFragment, decodeClipboardFragment } from "./clipboard.ts";
+export {
+  createClipboardFragment,
+  decodeClipboardFragment,
+  MAX_CLIPBOARD_BYTES,
+} from "./clipboard.ts";
 
 export { selectionBounds } from "./selection-bounds.ts";

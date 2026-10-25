@@ -1,4 +1,5 @@
 import {
+  clamp,
   expandGroups,
   lockedObjectIds,
   frameSelectionContents,
@@ -13,7 +14,6 @@ import {
 import { makeInkShape } from "@hydraw/document";
 import type { Fill, InkShape, Point, Shape, ShapeKind } from "@hydraw/document";
 import {
-  clamp,
   handlePoint,
   hitResizeHandle,
   resizeShape,

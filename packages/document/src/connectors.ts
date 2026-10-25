@@ -107,20 +107,6 @@ export function createConnectorResolver(shapes: readonly Shape[]): ConnectorReso
   return (connector) => resolve(connector, (id) => index.get(id));
 }
 
-export function distanceToSegment(point: Point, start: Point, end: Point): number {
-  const dx = end.x - start.x;
-  const dy = end.y - start.y;
-  const lengthSquared = dx * dx + dy * dy;
-  const ratio =
-    lengthSquared === 0
-      ? 0
-      : Math.max(
-          0,
-          Math.min(1, ((point.x - start.x) * dx + (point.y - start.y) * dy) / lengthSquared),
-        );
-  return Math.hypot(point.x - start.x - ratio * dx, point.y - start.y - ratio * dy);
-}
-
 /** A caption follows the midpoint by travelled path length, including edited bends. */
 export function connectorMidpoint(geometry: ConnectorGeometry): Point {
   const { points } = geometry;
