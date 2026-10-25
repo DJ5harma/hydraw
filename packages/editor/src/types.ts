@@ -45,7 +45,7 @@ export type EditorSnapshot = Readonly<{
   canRedo: boolean;
   historyWarning: string | null;
   interactionNotice: string | null;
-  recoveredTextDraft: string | null;
+  recoveredTextDrafts: readonly string[];
 }>;
 export type EditorChromeSnapshot = Omit<
   EditorSnapshot,

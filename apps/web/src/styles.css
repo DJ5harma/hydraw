@@ -368,6 +368,17 @@ kbd {
   border-radius: 8px;
   box-shadow: var(--shadow);
 }
+.workspace-notices .interaction-warning {
+  display: block;
+  width: min(100%, 640px);
+}
+.interaction-warning textarea {
+  display: block;
+  width: 100%;
+  min-height: 5rem;
+  margin: 8px 0;
+  resize: vertical;
+}
 @media (max-width: 660px) {
   .workspace-notices {
     top: 112px;

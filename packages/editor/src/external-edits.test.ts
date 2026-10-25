@@ -70,13 +70,13 @@ describe("external edit reconciliation", () => {
     expect(left.getSnapshot()).toMatchObject({
       selectedIds: [],
       textEditing: null,
-      recoveredTextDraft: "Keep my explanation",
+      recoveredTextDrafts: ["Keep my explanation"],
     });
     expect(left.getSnapshot().document.shapes.map((shape) => shape.id)).toEqual([b.id]);
     left.finishTextEditing();
     expect(left.getSnapshot().document.shapes).toHaveLength(1);
     left.dismissInteractionNotice();
-    expect(left.getSnapshot().recoveredTextDraft).toBeNull();
+    expect(left.getSnapshot().recoveredTextDrafts).toEqual([]);
   });
 
   it("retains an unrelated label draft until it is explicitly committed", () => {
@@ -90,6 +90,22 @@ describe("external edit reconciliation", () => {
     expect(left.getSnapshot().textEditing).toBe(draft);
     left.finishTextEditing();
     expect(left.getSnapshot().document.shapes[0]).toMatchObject({ label: { text: "Local draft" } });
+  });
+
+  it("keeps multiple recovered drafts until explicit dismissal, including across replacement", () => {
+    const { left, right } = pair();
+    left.select(a.id);
+    left.editText();
+    left.updateTextDraft("First draft");
+    right.select(a.id);
+    right.nudgeSelection(10, 0);
+    left.select(a.id);
+    left.editText();
+    left.updateTextDraft("Second draft");
+    right.nudgeSelection(10, 0);
+    expect(left.getSnapshot().recoveredTextDrafts).toEqual(["First draft", "Second draft"]);
+    left.documentSession.replace(createDocument());
+    expect(left.getSnapshot().recoveredTextDrafts).toEqual(["First draft", "Second draft"]);
   });
 
   it("preserves text geometry across editors with different font metrics and remote updates", () => {

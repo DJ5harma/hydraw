@@ -101,7 +101,7 @@ function chromeSnapshot(snapshot: EditorSnapshot): EditorChromeSnapshot {
     canRedo,
     historyWarning,
     interactionNotice,
-    recoveredTextDraft,
+    recoveredTextDrafts,
   } = snapshot;
   return {
     document,
@@ -118,7 +118,7 @@ function chromeSnapshot(snapshot: EditorSnapshot): EditorChromeSnapshot {
     canRedo,
     historyWarning,
     interactionNotice,
-    recoveredTextDraft,
+    recoveredTextDrafts,
     zoom: snapshot.camera.zoom,
   };
 }
@@ -141,10 +141,11 @@ export class Editor {
     document: BoardDocument,
     makeId: () => string = () => crypto.randomUUID(),
     measureText?: TextMeasurer,
+    boardId = "local",
   ) {
     this.makeId = makeId;
     this.measureText = measureText;
-    this.documentSession = new DocumentSession(document);
+    this.documentSession = new DocumentSession(document, boardId);
     this.snapshot = {
       document: this.documentSession.getSnapshot().document,
       revision: 0,
@@ -173,7 +174,7 @@ export class Editor {
       canRedo: false,
       historyWarning: null,
       interactionNotice: null,
-      recoveredTextDraft: null,
+      recoveredTextDrafts: Object.freeze([]),
     };
     this.chrome = chromeSnapshot(this.snapshot);
     this.disconnectSession = this.documentSession.subscribe((event) =>
@@ -192,11 +193,17 @@ export class Editor {
   }
 
   dismissInteractionNotice(): void {
-    this.publish({ interactionNotice: null, recoveredTextDraft: null });
+    this.publish({ interactionNotice: null, recoveredTextDrafts: Object.freeze([]) });
   }
 
   private onDocumentCommit(event: DocumentCommit): void {
     if (event.origin === "replacement") {
+      const recoveredTextDrafts = this.snapshot.textEditing?.draft.text
+        ? Object.freeze([
+            ...this.snapshot.recoveredTextDrafts,
+            this.snapshot.textEditing.draft.text,
+          ])
+        : this.snapshot.recoveredTextDrafts;
       this.documentEpoch++;
       this.gesture = null;
       this.lastGestureScreen = null;
@@ -208,8 +215,10 @@ export class Editor {
         tool: "select",
         camera: { x: 0, y: 0, zoom: 1 },
         textEditing: null,
-        interactionNotice: null,
-        recoveredTextDraft: null,
+        interactionNotice: recoveredTextDrafts.length
+          ? "Your uncommitted text drafts are available below."
+          : null,
+        recoveredTextDrafts,
       });
       return;
     }

@@ -12,6 +12,16 @@ import type { DocumentCommit } from "./document-session.ts";
 import { Editor } from "./editor.ts";
 
 describe("committed document session", () => {
+  it("publishes nested local commits to observers in revision order", () => {
+    const session = new DocumentSession(createDocument());
+    session.subscribe(({ document }) => {
+      if (document.name === "First") session.execute(nameTransaction("First", "Second"));
+    });
+    const observed: number[] = [];
+    session.subscribe(({ revision }) => observed.push(revision));
+    session.execute(nameTransaction("Untitled board", "First"));
+    expect(observed).toEqual([1, 2]);
+  });
   it("publishes only successful commits with explicit history and replacement origins", () => {
     const session = new DocumentSession(createDocument());
     const events: DocumentCommit[] = [];
@@ -59,6 +69,27 @@ const b = { ...a, id: "b", x: 200 };
 const board = () => ({ ...createDocument(), shapes: [a, b] });
 
 describe("two sessions through a local ordered relay", () => {
+  it("rejects operations for a different board even when its records match", () => {
+    const left = new DocumentSession(board(), "left");
+    const right = new DocumentSession(board(), "right");
+    const operation = left.prepare(nameTransaction("Untitled board", "Left only")!);
+    expect(() => right.apply(operation)).toThrow("another board");
+    expect(right.getSnapshot().revision).toBe(0);
+  });
+  it("rejects dependent out-of-order delivery, then accepts canonical catch-up", () => {
+    const left = new DocumentSession(board());
+    const right = new DocumentSession(board());
+    const events: DocumentCommit[] = [];
+    left.subscribe((event) => events.push(event));
+    left.execute(nameTransaction("Untitled board", "First"));
+    left.execute(nameTransaction("First", "Second"));
+    expect(() => right.apply(events[1]!.operation!)).toThrow("changed");
+    expect(right.getSnapshot().revision).toBe(0);
+    right.apply(events[0]!.operation!);
+    right.apply(events[1]!.operation!);
+    expect(right.apply(events[0]!.operation!)).toBe(false);
+    expect(right.getSnapshot().document).toEqual(left.getSnapshot().document);
+  });
   it("combines independent proposals, deduplicates delivery, and undoes only local work", () => {
     const left = new DocumentSession(board());
     const right = new DocumentSession(board());

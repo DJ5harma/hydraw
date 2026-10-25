@@ -42,6 +42,7 @@ it("opens the requested board identity through the repository", async () => {
   const session = await openBoardSession(signal, "another-board");
   expect(localBoards.open).toHaveBeenCalledWith("another-board", signal);
   expect(session.id).toBe("another-board");
+  expect(session.editor.documentSession.boardId).toBe("another-board");
 });
 
 it("opens stored text without rewriting geometry or measuring fonts", async () => {

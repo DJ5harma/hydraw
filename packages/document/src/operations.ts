@@ -64,19 +64,28 @@ function resolveOperation(
 ): DocumentTransaction {
   const shapes: (Shape | Connector)[] = [...document.shapes];
   const connectors: (Shape | Connector)[] = [...document.connectors];
+  const shapePositions = new Map(shapes.map((shape, index) => [shape.id, index]));
+  const connectorPositions = new Map(connectors.map((connector, index) => [connector.id, index]));
   const changes = operation.changes.map((change): DocumentChange => {
     if (change.type === "name" || change.type === "theme") return change;
     if (change.type !== "shape" && change.type !== "connector")
       throw new Error("Invalid operation change.");
     if (!change.before && !change.after) throw new Error("Invalid empty object change.");
     const records = change.type === "shape" ? shapes : connectors;
+    const positions = change.type === "shape" ? shapePositions : connectorPositions;
     const index = change.before
-      ? records.findIndex((record) => record.id === change.before!.id)
+      ? (positions.get(change.before.id) ?? -1)
       : change.beforeId === null
         ? records.length
-        : records.findIndex((record) => record.id === change.beforeId);
+        : (positions.get(change.beforeId) ?? -1);
     if (index < 0) throw new Error("An operation target or insertion anchor changed.");
-    records.splice(index, change.before ? 1 : 0, ...(change.after ? [change.after] : []));
+    if (change.before && change.after) {
+      records[index] = change.after;
+    } else {
+      records.splice(index, change.before ? 1 : 0, ...(change.after ? [change.after] : []));
+      if (change.before) positions.delete(change.before.id);
+      for (let i = index; i < records.length; i++) positions.set(records[i]!.id, i);
+    }
     if (change.type === "shape")
       return { type: "shape", index, before: change.before, after: change.after };
     return { type: "connector", index, before: change.before, after: change.after };
@@ -87,6 +96,11 @@ function resolveOperation(
 
 export function applyOperation(document: BoardDocument, operation: DocumentOperation) {
   const transaction = resolveOperation(document, operation);
+  return planTransaction(document, transaction);
+}
+
+/** Validate one local plan once, returning its committed state and canonical inverse. */
+export function planTransaction(document: BoardDocument, transaction: DocumentTransaction) {
   const next = applyTransaction(document, transaction);
   return Object.freeze({
     document: next,

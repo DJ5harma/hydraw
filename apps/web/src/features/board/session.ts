@@ -23,13 +23,18 @@ export async function openBoardSession(
   try {
     storage = await localBoards.open(id, signal);
     signal.throwIfAborted();
-    return { id, editor: new Editor(storage.document, undefined, measure), storage, error: null };
+    return {
+      id,
+      editor: new Editor(storage.document, undefined, measure, id),
+      storage,
+      error: null,
+    };
   } catch (error) {
     storage?.close();
     signal.throwIfAborted();
     return {
       id,
-      editor: new Editor(createDocument(), undefined, measure),
+      editor: new Editor(createDocument(), undefined, measure, id),
       storage: null,
       error: error instanceof Error ? error.message : "Local storage is unavailable.",
     };

@@ -5,12 +5,14 @@ import {
   operationFromTransaction,
   operationObjectIds,
   operationWriteKeys,
+  planTransaction,
 } from "@hydraw/document";
 import type { BoardDocument, DocumentOperation, DocumentTransaction } from "@hydraw/document";
 
 export type CommitOrigin = "local" | "remote" | "undo" | "redo" | "replacement";
 export type SessionOperation = Readonly<{
   id: string;
+  boardId: string;
   epoch: number;
   expected: Readonly<Record<string, number>>;
   edit: DocumentOperation;
@@ -26,6 +28,7 @@ type HistoryEntry = Readonly<{ inverse: DocumentOperation; dependencies: readonl
 
 /** Owns committed document state. Tools, cameras and browser resources live elsewhere. */
 export class DocumentSession {
+  readonly boardId: string;
   private document: BoardDocument;
   private revision = 0;
   private epoch = 0;
@@ -38,8 +41,11 @@ export class DocumentSession {
   private historyWarning: string | null = null;
   private listeners = new Set<(event: DocumentCommit) => void>();
   private replacementLocked = false;
+  private publishing = false;
+  private readonly events: DocumentCommit[] = [];
 
-  constructor(document: BoardDocument) {
+  constructor(document: BoardDocument, boardId = "local") {
+    this.boardId = boardId;
     this.document = decodeDocument(document);
   }
 
@@ -65,7 +71,9 @@ export class DocumentSession {
 
   execute(transaction: DocumentTransaction | null): void {
     if (!transaction || transaction.changes.length === 0) return;
-    this.apply(this.prepare(transaction), "local");
+    this.assertWritable();
+    const planned = planTransaction(this.document, transaction);
+    this.accept(this.envelope(planned.edit), "local", planned);
   }
 
   /** Deliver accepted operations in canonical order. This is not a network transport. */
@@ -124,6 +132,7 @@ export class DocumentSession {
   private envelope(edit: DocumentOperation): SessionOperation {
     return Object.freeze({
       id: `${this.actor}:${++this.sequence}`,
+      boardId: this.boardId,
       epoch: this.epoch,
       expected: Object.freeze(
         Object.fromEntries(
@@ -134,8 +143,14 @@ export class DocumentSession {
     });
   }
 
-  private accept(operation: SessionOperation, origin: CommitOrigin): boolean {
+  private accept(
+    operation: SessionOperation,
+    origin: CommitOrigin,
+    planned?: ReturnType<typeof planTransaction>,
+  ): boolean {
     this.assertWritable();
+    if (operation.boardId !== this.boardId)
+      throw new Error("This operation belongs to another board.");
     const previous = this.recent.get(operation.id);
     if (previous) {
       if (JSON.stringify(previous) !== JSON.stringify(operation))
@@ -149,7 +164,7 @@ export class DocumentSession {
         throw new Error("The document changed before this operation.");
     }
     if (operation.edit.changes.length === 0) return false;
-    const { document, edit, inverse } = applyOperation(this.document, operation.edit);
+    const { document, edit, inverse } = planned ?? applyOperation(this.document, operation.edit);
     const accepted = Object.freeze({
       ...operation,
       expected: Object.freeze({ ...operation.expected }),
@@ -199,6 +214,18 @@ export class DocumentSession {
       changedIds: Object.freeze(changedIds),
       revision: ++this.revision,
     });
-    this.listeners.forEach((listener) => listener(event));
+    this.events.push(event);
+    if (this.publishing) return;
+    this.publishing = true;
+    try {
+      while (this.events.length) {
+        const next = this.events.shift()!;
+        // Subscription changes take effect on the next event, not halfway through this one.
+        const listeners = [...this.listeners];
+        for (const listener of listeners) listener(next);
+      }
+    } finally {
+      this.publishing = false;
+    }
   }
 }

@@ -68,7 +68,7 @@ export function reconcileExternalChange(
   if (textConflict)
     Object.assign(patch, {
       textEditing: null,
-      recoveredTextDraft: editing!.draft.text,
+      recoveredTextDrafts: Object.freeze([...snapshot.recoveredTextDrafts, editing!.draft.text]),
       interactionNotice: "Another session changed the text target. Your draft is available below.",
     });
   return { cancelGesture, patch };

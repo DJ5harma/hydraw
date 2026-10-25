@@ -351,15 +351,16 @@ export function Workspace({ session }: { session: BoardSession }) {
             </div>
           )}
           {snapshot.interactionNotice && (
-            <div className="storage-warning" role="status">
+            <div className="storage-warning interaction-warning" role="status">
               {snapshot.interactionNotice}
-              {snapshot.recoveredTextDraft !== null && (
+              {snapshot.recoveredTextDrafts.map((text, index) => (
                 <textarea
-                  aria-label="Recovered text draft"
+                  key={index}
+                  aria-label={`Recovered text draft ${index + 1}`}
                   readOnly
-                  value={snapshot.recoveredTextDraft}
+                  value={text}
                 />
-              )}
+              ))}
               <button onClick={() => editor.dismissInteractionNotice()}>Dismiss</button>
             </div>
           )}

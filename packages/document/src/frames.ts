@@ -68,10 +68,9 @@ export function frameSelectionContents(
   ids: readonly string[],
 ): readonly string[] {
   const expanded = new Set(ids);
-  for (const id of ids) {
-    const frame = document.shapes.find((shape) => shape.id === id && isFrame(shape));
-    if (frame) for (const contentId of frameContents(document, id)) expanded.add(contentId);
-  }
+  for (const shape of document.shapes)
+    if (expanded.has(shape.id) && isFrame(shape))
+      for (const contentId of frameContents(document, shape.id)) expanded.add(contentId);
   return Object.freeze([...expanded]);
 }
 
