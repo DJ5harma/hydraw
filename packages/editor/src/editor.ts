@@ -131,7 +131,6 @@ export class Editor {
   readonly documentSession: DocumentSession;
   private readonly disconnectSession: () => void;
   private gesture: Gesture | null = null;
-  private documentLocked = false;
   private documentEpoch = 0;
   getDocumentEpoch = (): number => this.documentEpoch;
   private readonly measureText: TextMeasurer | undefined;
@@ -188,7 +187,7 @@ export class Editor {
   }
 
   applyExternal(operation: SessionOperation): boolean {
-    this.assertWritable();
+    this.documentSession.assertWritable();
     return this.documentSession.apply(operation);
   }
 
@@ -261,14 +260,15 @@ export class Editor {
     )
       selectedIds = this.snapshot.selectedIds;
     else selectedIds = Object.freeze([...selectedIds]);
+    const session = this.documentSession.getSnapshot();
     this.snapshot = {
       ...this.snapshot,
       ...patch,
       selectedIds,
       selectedId: selectedIds.length === 1 ? selectedIds[0]! : null,
-      canUndo: this.documentSession.getSnapshot().canUndo,
-      canRedo: this.documentSession.getSnapshot().canRedo,
-      historyWarning: this.documentSession.getSnapshot().historyWarning,
+      canUndo: session.canUndo,
+      canRedo: session.canRedo,
+      historyWarning: session.historyWarning,
     };
     const next = chromeSnapshot(this.snapshot);
     if (
@@ -422,35 +422,17 @@ export class Editor {
     );
   }
 
-  private assertWritable(): void {
-    if (this.documentLocked) throw new Error("A board replacement is in progress.");
-  }
-
   /** Excludes edits while an external replacement is being durably committed. */
   lockDocument(): Readonly<{ replace: (document: BoardDocument) => void; release: () => void }> {
-    this.assertWritable();
+    this.documentSession.assertWritable();
     this.finishTextEditing();
     this.cancelGesture();
-    const lease = this.documentSession.lockReplacement();
-    this.documentLocked = true;
-    let active = true;
-    return {
-      replace: (document) => {
-        if (!active) throw new Error("This replacement lock has been released.");
-        lease.replace(document);
-      },
-      release: () => {
-        if (!active) return;
-        active = false;
-        this.documentLocked = false;
-        lease.release();
-      },
-    };
+    return this.documentSession.lockReplacement();
   }
 
   private commit(transaction: DocumentTransaction | null): void {
     if (!transaction) return;
-    this.assertWritable();
+    this.documentSession.assertWritable();
     this.documentSession.execute(transaction);
   }
 
@@ -613,7 +595,7 @@ export class Editor {
   }
 
   pasteSelection(serialized: string, screen: Point): void {
-    this.assertWritable();
+    this.documentSession.assertWritable();
     this.finishTextEditing();
     this.cancelGesture();
     const result = pastedSelection(
@@ -637,7 +619,7 @@ export class Editor {
 
   duplicateSelection(): void {
     if (this.selectionLocked()) return;
-    this.assertWritable();
+    this.documentSession.assertWritable();
     this.finishTextEditing();
     this.cancelGesture();
     const result = duplicateObjects(
@@ -659,7 +641,7 @@ export class Editor {
       )
     )
       return;
-    this.assertWritable();
+    this.documentSession.assertWritable();
     this.finishTextEditing();
     this.cancelGesture();
     this.commit(
@@ -677,7 +659,7 @@ export class Editor {
       )
     )
       return;
-    this.assertWritable();
+    this.documentSession.assertWritable();
     this.finishTextEditing();
     this.cancelGesture();
     this.commit(
@@ -790,7 +772,7 @@ export class Editor {
   }
 
   addImages(images: readonly ImageInput[], world: Point): void {
-    this.assertWritable();
+    this.documentSession.assertWritable();
     this.finishTextEditing();
     this.cancelGesture();
     const result = insertImages(this.snapshot.document, images, world, this.makeId);
@@ -833,7 +815,7 @@ export class Editor {
   }
 
   addText(screen: Point, placement: "start" | "center" = "start"): void {
-    this.assertWritable();
+    this.documentSession.assertWritable();
     this.finishTextEditing();
     this.cancelGesture();
     if (this.snapshot.document.shapes.length >= MAX_SHAPES) return;
@@ -879,7 +861,7 @@ export class Editor {
 
   editText(id = this.snapshot.selectedId): void {
     if (id && this.selectionLocked([id])) return;
-    this.assertWritable();
+    this.documentSession.assertWritable();
     this.finishTextEditing();
     this.cancelGesture();
     const shape = this.snapshot.document.shapes.find((shape) => shape.id === id);
@@ -937,7 +919,7 @@ export class Editor {
   finishTextEditing(): void {
     const editing = this.snapshot.textEditing;
     if (!editing) return;
-    this.assertWritable();
+    this.documentSession.assertWritable();
     const { before, draft } = editing;
     if (editing.ownerId) {
       const owner =
@@ -1016,7 +998,7 @@ export class Editor {
   }
 
   begin(screen: Point, pan = false, additive = false): void {
-    if (this.documentLocked) return;
+    if (this.documentSession.isReplacing) return;
     this.finishTextEditing();
     this.cancelGesture();
     if (!pan && this.snapshot.tool === "text") {
@@ -1366,7 +1348,7 @@ export class Editor {
   }
 
   private restore(direction: "undo" | "redo"): void {
-    this.assertWritable();
+    this.documentSession.assertWritable();
     this.cancelTextEditing();
     this.cancelGesture();
     this.documentSession.restore(direction);

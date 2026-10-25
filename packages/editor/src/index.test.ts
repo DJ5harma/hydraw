@@ -9,6 +9,17 @@ function setup() {
 }
 
 describe("editor transactions", () => {
+  it("uses the session replacement lock for editor commands and gesture entry", () => {
+    const editor = setup();
+    editor.setTool("rectangle");
+    const lease = editor.documentSession.lockReplacement();
+    expect(() => editor.rename("Blocked")).toThrow("replacement");
+    editor.begin({ x: 20, y: 20 });
+    expect(editor.getSnapshot().interacting).toBe(false);
+    lease.release();
+    editor.begin({ x: 20, y: 20 });
+    expect(editor.getSnapshot().interacting).toBe(true);
+  });
   it("moves a single shape by the pointer delta even beyond the origin coordinate limit", () => {
     const editor = setup();
     editor.addRectangle({ x: 100, y: 100 });

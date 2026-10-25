@@ -1,6 +1,6 @@
 import { decodeDocument } from "@hydraw/document";
 import type { BoardDocument } from "@hydraw/document";
-import type { Editor } from "@hydraw/editor";
+import type { Editor, CommitOrigin, DocumentCommit } from "@hydraw/editor";
 import type { BoardLease } from "./repository.ts";
 
 export type SaveState = "idle" | "saving" | "saved" | "error";
@@ -17,7 +17,6 @@ export class BoardPersistence {
   private snapshot: PersistenceSnapshot;
   private listeners = new Set<() => void>();
   private tail = Promise.resolve();
-  private applyingReplacement = false;
   private observedRevision: number;
 
   private readonly editor: Editor;
@@ -61,22 +60,25 @@ export class BoardPersistence {
 
   connect(): () => void {
     const storage = this.storage;
-    const observe = () => {
-      const current = this.editor.getSnapshot();
+    const session = this.editor.documentSession;
+    const observe = (
+      current: Pick<DocumentCommit, "document" | "revision"> = session.getSnapshot(),
+      origin?: CommitOrigin,
+    ) => {
       if (current.revision === this.observedRevision) return;
       this.observedRevision = current.revision;
-      if (this.applyingReplacement || !storage) return;
+      if ((this.snapshot.replacing && origin === "replacement") || !storage) return;
       this.publish({ saveState: "saving" });
       void this.enqueue(async () => {
         await storage.save(current.document);
-        if (this.editor.getSnapshot().revision === current.revision)
+        if (session.getSnapshot().revision === current.revision)
           this.publish({ saveState: "saved", saveError: null });
       }).catch((error: unknown) => {
-        if (this.editor.getSnapshot().revision === current.revision)
+        if (session.getSnapshot().revision === current.revision)
           this.publish({ saveState: "error", saveError: message(error) });
       });
     };
-    const disconnect = this.editor.documentSession.subscribe(observe);
+    const disconnect = session.subscribe((event) => observe(event, event.origin));
     observe();
     return disconnect;
   }
@@ -95,12 +97,7 @@ export class BoardPersistence {
     try {
       await this.enqueue(async () => {
         await storage.replace(previous, document);
-        this.applyingReplacement = true;
-        try {
-          lock.replace(document);
-        } finally {
-          this.applyingReplacement = false;
-        }
+        lock.replace(document);
         this.publish({
           recovery: previous,
           recoveryWarning: null,

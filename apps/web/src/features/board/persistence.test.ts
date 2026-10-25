@@ -39,6 +39,12 @@ function setup() {
 }
 
 describe("board persistence coordination", () => {
+  it("autosaves external replacements that have not already been persisted", async () => {
+    const { editor, persistence, writes } = setup();
+    editor.documentSession.replace(imported());
+    await vi.waitFor(() => expect(persistence.getSnapshot().saveState).toBe("saved"));
+    expect(writes).toEqual(["save:Imported"]);
+  });
   it("saves edits made while disconnected when observation resumes", async () => {
     const { editor, persistence, writes, disconnect, stored } = setup();
     disconnect();

@@ -108,7 +108,11 @@ export class DocumentSession {
     };
   }
 
-  private assertWritable(): void {
+  get isReplacing(): boolean {
+    return this.replacementLocked;
+  }
+
+  assertWritable(): void {
     if (this.replacementLocked) throw new Error("A board replacement is in progress.");
   }
 
