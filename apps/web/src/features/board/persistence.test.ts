@@ -2,15 +2,16 @@ import { describe, expect, it, vi } from "vite-plus/test";
 import { createDocument, decodeDocument } from "@hydraw/document";
 import { Editor } from "@hydraw/editor";
 import { BoardPersistence } from "./persistence.ts";
-import type { LocalBoard } from "./storage.ts";
+import type { BoardLease } from "./repository.ts";
 
 const imported = () => decodeDocument({ ...createDocument(), name: "Imported" });
 function setup() {
   const editor = new Editor(createDocument(), () => "a");
   let primary = editor.getSnapshot().document;
-  let recovery = null as LocalBoard["recovery"];
+  let recovery = null as BoardLease["recovery"];
   const writes: string[] = [];
-  const storage: LocalBoard = {
+  const storage: BoardLease = {
+    id: "local",
     document: primary,
     recovery: null,
     recoveryWarning: null,

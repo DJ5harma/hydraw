@@ -34,10 +34,19 @@ package versions describe different contracts; they are not release counters.
 
 ## Local storage
 
-The board and its recovery copy live in `hydraw-board-v1` (IndexedDB schema 1).
-The writer lock is `hydraw-board-v1-writer`. Personal library items live in
+Board manifests, per-board recovery copies and immutable image assets live in
+`hydraw-board-v2` (IndexedDB schema 1), under the `boards` and `assets` stores.
+Keys are `[boardId, "primary" | "recovery"]` and `[boardId, assetId]`. Writer locks
+are `hydraw-board-v2-writer:<boardId>`, so independent boards can open concurrently.
+The current UI uses board ID `local`; the repository/session APIs accept other IDs.
+Storage manifests use `assetFormat: 1` and image asset IDs instead of embedded PNG
+sources. The asset codec hydrates portable semantic records on read and stores
+SHA-256-addressed pixels separately. Manifests, pixels and recovery commit in one
+transaction; unreferenced per-board assets are collected in that transaction.
+Unreadable recovery manifests prevent collection until explicit replacement.
+Personal library items live in
 `hydraw-library-v1` (IndexedDB schema 1). Both databases start fresh after the reset.
-The app does not open, migrate or delete the old development databases. Existing
+The refactor starts a fresh board database. The app does not open, migrate or delete old development databases. Existing
 browser data stays isolated; it cannot reappear through autosave or recovery.
 
 ## Colors

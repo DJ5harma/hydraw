@@ -1,7 +1,7 @@
 import { decodeDocument } from "@hydraw/document";
 import type { BoardDocument } from "@hydraw/document";
 import type { Editor } from "@hydraw/editor";
-import type { LocalBoard } from "./storage.ts";
+import type { BoardLease } from "./repository.ts";
 
 export type SaveState = "idle" | "saving" | "saved" | "error";
 type PersistenceSnapshot = Readonly<{
@@ -21,9 +21,9 @@ export class BoardPersistence {
   private observedRevision: number;
 
   private readonly editor: Editor;
-  private readonly storage: LocalBoard | null;
+  private readonly storage: BoardLease | null;
 
-  constructor(editor: Editor, storage: LocalBoard | null, initialError: string | null) {
+  constructor(editor: Editor, storage: BoardLease | null, initialError: string | null) {
     this.editor = editor;
     this.storage = storage;
     this.observedRevision = editor.getSnapshot().revision;

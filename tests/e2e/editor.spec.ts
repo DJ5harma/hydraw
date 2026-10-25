@@ -127,13 +127,16 @@ test("a future stored document is preserved instead of overwritten", async ({ pa
   await expect(page.locator("canvas")).toBeVisible();
   await page.evaluate(async () => {
     await new Promise<void>((resolve, reject) => {
-      const request = indexedDB.open("hydraw-board-v1", 1);
+      const request = indexedDB.open("hydraw-board-v2", 1);
       request.onsuccess = () => {
         const database = request.result;
         const transaction = database.transaction("boards", "readwrite");
         transaction
           .objectStore("boards")
-          .put({ format: "hydraw", version: 99, importantFutureData: "keep me" }, "primary");
+          .put({ format: "hydraw", version: 99, importantFutureData: "keep me" }, [
+            "local",
+            "primary",
+          ]);
         transaction.oncomplete = () => {
           database.close();
           resolve();
@@ -153,11 +156,11 @@ test("a future stored document is preserved instead of overwritten", async ({ pa
   const stored = await page.evaluate(
     async () =>
       new Promise<unknown>((resolve, reject) => {
-        const request = indexedDB.open("hydraw-board-v1", 1);
+        const request = indexedDB.open("hydraw-board-v2", 1);
         request.onsuccess = () => {
           const database = request.result;
           const transaction = database.transaction("boards", "readonly");
-          const read = transaction.objectStore("boards").get("primary");
+          const read = transaction.objectStore("boards").get(["local", "primary"]);
           transaction.oncomplete = () => {
             database.close();
             resolve(read.result as unknown);

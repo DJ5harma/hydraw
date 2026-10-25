@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useSyncExternalStore } from "react";
 import type { Editor } from "@hydraw/editor";
 import { BoardPersistence } from "./persistence.ts";
-import type { LocalBoard } from "./storage.ts";
+import type { BoardLease } from "./repository.ts";
 
 export function useBoardPersistence(
   editor: Editor,
-  storage: LocalBoard | null,
+  storage: BoardLease | null,
   initialError: string | null,
 ) {
   const persistence = useMemo(

@@ -36,12 +36,12 @@ async function stored(page: Page) {
   return page.evaluate(
     () =>
       new Promise<unknown>((resolve, reject) => {
-        const request = indexedDB.open("hydraw-board-v1", 1);
+        const request = indexedDB.open("hydraw-board-v2", 1);
         request.onsuccess = () => {
           const database = request.result;
           const transaction = database.transaction("boards", "readonly");
-          const primary = transaction.objectStore("boards").get("primary");
-          const recovery = transaction.objectStore("boards").get("recovery");
+          const primary = transaction.objectStore("boards").get(["local", "primary"]);
+          const recovery = transaction.objectStore("boards").get(["local", "recovery"]);
           transaction.oncomplete = () => {
             database.close();
             resolve({ primary: primary.result as unknown, recovery: recovery.result as unknown });
@@ -87,7 +87,7 @@ test("previews an import, persists it, and swaps recovery boards across reloads"
   await expect(page.getByRole("textbox", { name: "Board name" })).toHaveValue(imported.name);
   await expect(page.getByRole("button", { name: "Undo", exact: true })).toBeDisabled();
   expect(await stored(page)).toEqual({
-    primary: { ...imported, version: 1, theme: "clean", connectors: [] },
+    primary: { ...imported, version: 1, theme: "clean", connectors: [], assetFormat: 1 },
     recovery: original.primary,
   });
   await page.reload();
@@ -99,7 +99,7 @@ test("previews an import, persists it, and swaps recovery boards across reloads"
   await expect(page.getByRole("textbox", { name: "Board name" })).toHaveValue("Original board");
   expect(await stored(page)).toEqual({
     primary: original.primary,
-    recovery: { ...imported, version: 1, theme: "clean", connectors: [] },
+    recovery: { ...imported, version: 1, theme: "clean", connectors: [], assetFormat: 1 },
   });
   await page.reload();
   await openBoardMenu(page);
@@ -108,7 +108,7 @@ test("previews an import, persists it, and swaps recovery boards across reloads"
   await openBoardMenu(page);
   await expect(page.getByRole("textbox", { name: "Board name" })).toHaveValue(imported.name);
   expect(await stored(page)).toEqual({
-    primary: { ...imported, version: 1, theme: "clean", connectors: [] },
+    primary: { ...imported, version: 1, theme: "clean", connectors: [], assetFormat: 1 },
     recovery: original.primary,
   });
 });
@@ -156,7 +156,12 @@ for (const failure of ["abort", "throw"] as const) {
       const put = Object.getOwnPropertyDescriptor(IDBObjectStore.prototype, "put")!
         .value as IDBObjectStore["put"];
       IDBObjectStore.prototype.put = function (value: unknown, key?: IDBValidKey) {
-        if (key === "primary" && (value as { name?: string }).name === "Failed import") {
+        if (
+          Array.isArray(key) &&
+          key[0] === "local" &&
+          key[1] === "primary" &&
+          (value as { name?: string }).name === "Failed import"
+        ) {
           if (mode === "throw")
             throw new DOMException("Simulated write failure", "QuotaExceededError");
           const request = put.call(this, value, key);
@@ -223,7 +228,7 @@ test("an unreadable recovery copy does not strand or overwrite a valid current b
   await page.evaluate(
     () =>
       new Promise<void>((resolve, reject) => {
-        const request = indexedDB.open("hydraw-board-v1", 1);
+        const request = indexedDB.open("hydraw-board-v2", 1);
         request.onsuccess = () => {
           const database = request.result;
           const transaction = database.transaction("boards", "readwrite");
@@ -233,7 +238,7 @@ test("an unreadable recovery copy does not strand or overwrite a valid current b
               version: 99,
               futureRecovery: "preserve until explicit replacement",
             },
-            "recovery",
+            ["local", "recovery"],
           );
           transaction.oncomplete = () => {
             database.close();

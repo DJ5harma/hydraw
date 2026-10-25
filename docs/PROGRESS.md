@@ -12,6 +12,11 @@ External edits preserve camera, valid selection and unrelated gestures. Conflict
 gestures cancel with feedback; conflicting text drafts remain recoverable. Opening
 or importing documents preserves text geometry instead of remeasuring it. Durable
 replacement locks also protect the document session from incoming edits.
+Board persistence now targets a repository lease with explicit board identity.
+IndexedDB uses per-board writer locks and atomically stores asset-reference
+manifests, deduplicated image bytes and recovery. Native files, clipboard and
+library fragments retain embedded portable images. The storage refactor starts
+a fresh board namespace without a legacy-data migration.
 
 Updated 25 October 2026. Git history records the development milestones.
 

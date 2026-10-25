@@ -1,11 +1,11 @@
 import { beforeEach, expect, it, vi } from "vite-plus/test";
 import { createDocument } from "@hydraw/document";
 import { createTextMeasurer } from "@hydraw/editor/canvas";
-import { openLocalBoard } from "./storage.ts";
-import type { LocalBoard } from "./storage.ts";
+import { localBoards } from "./storage.ts";
+import type { BoardLease } from "./repository.ts";
 import { openBoardSession } from "./session.ts";
 
-vi.mock("./storage.ts", () => ({ openLocalBoard: vi.fn() }));
+vi.mock("./storage.ts", () => ({ localBoards: { open: vi.fn() } }));
 vi.mock("@hydraw/editor/canvas", () => ({ createTextMeasurer: vi.fn() }));
 
 beforeEach(() => {
@@ -13,8 +13,9 @@ beforeEach(() => {
   vi.mocked(createTextMeasurer).mockReturnValue((text) => text.length * 10);
 });
 
-function storage(): LocalBoard {
+function storage(): BoardLease {
   return {
+    id: "local",
     document: createDocument(),
     recovery: null,
     recoveryWarning: null,
@@ -26,11 +27,21 @@ function storage(): LocalBoard {
 
 it("keeps acquired storage with a successfully initialized editor", async () => {
   const local = storage();
-  vi.mocked(openLocalBoard).mockResolvedValue(local);
+  vi.mocked(localBoards.open).mockResolvedValue(local);
   const session = await openBoardSession(new AbortController().signal);
   expect(session.storage).toBe(local);
   expect(session.error).toBeNull();
+  expect(session.id).toBe("local");
   expect(local.close).not.toHaveBeenCalled();
+});
+
+it("opens the requested board identity through the repository", async () => {
+  const local = { ...storage(), id: "another-board" };
+  vi.mocked(localBoards.open).mockResolvedValue(local);
+  const signal = new AbortController().signal;
+  const session = await openBoardSession(signal, "another-board");
+  expect(localBoards.open).toHaveBeenCalledWith("another-board", signal);
+  expect(session.id).toBe("another-board");
 });
 
 it("opens stored text without rewriting geometry or measuring fonts", async () => {
@@ -53,7 +64,7 @@ it("opens stored text without rewriting geometry or measuring fonts", async () =
       },
     ],
   };
-  vi.mocked(openLocalBoard).mockResolvedValue(local);
+  vi.mocked(localBoards.open).mockResolvedValue(local);
   vi.mocked(createTextMeasurer).mockReturnValue(() => {
     throw new Error("Font measurement failed");
   });
@@ -67,7 +78,7 @@ it("opens stored text without rewriting geometry or measuring fonts", async () =
 it("closes a late storage result after cancellation without creating a fallback session", async () => {
   const controller = new AbortController();
   const local = storage();
-  vi.mocked(openLocalBoard).mockImplementation(async () => {
+  vi.mocked(localBoards.open).mockImplementation(async () => {
     controller.abort();
     return local;
   });
@@ -82,5 +93,5 @@ it("reports renderer initialization failures before acquiring a writer", async (
   await expect(openBoardSession(new AbortController().signal)).rejects.toThrow(
     "Canvas unavailable",
   );
-  expect(openLocalBoard).not.toHaveBeenCalled();
+  expect(localBoards.open).not.toHaveBeenCalled();
 });
