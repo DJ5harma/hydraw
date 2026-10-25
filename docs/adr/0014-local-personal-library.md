@@ -33,5 +33,5 @@ reload, search/rename/delete, unavailable storage, quotas and preservation of
 unreadable records in production and development. A development-only check exercises
 concurrent saves from two tabs through the actual storage module; the production
 project skips that source-module test while retaining UI quota checks. Desktop and
-320 px panels are visually inspected. Browser storage is the current scope; cloud
-library sync and a standalone library backup format are separate future features.
+320 px panels are visually inspected. The library currently uses browser storage;
+a standalone library backup format may be considered separately.

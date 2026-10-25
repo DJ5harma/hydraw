@@ -16,7 +16,7 @@ Each local edit creates an immutable transaction with a label and ordered change
 
 Undo applies inverse changes in reverse order. Redo reapplies the original transaction. History stacks change only after successful application. No-op edit builders return no transaction, preserving redo. History remains bounded to 100 transactions, with memory proportional to changed records rather than whole-board copies. Input arrays still require copying per application; this does not claim constant-time edits on large boards.
 
-Preconditions compare whole affected records and stacking positions. They protect against stale inverses locally but are not yet field revisions, authorization or a collaborative synchronization protocol. Introduce those explicitly when cloud editing is implemented.
+Preconditions compare whole affected records and stacking positions. They protect against stale inverses in the local editor.
 
 ## Interaction and UI boundaries
 

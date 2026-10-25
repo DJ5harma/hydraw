@@ -77,21 +77,15 @@ ADR 0010. Named frames and three architecture presets are implemented in ADR 001
 (current native format). Frames use spatial containment and exclude partially contained
 groups. Nested frames and presentation mode remain future work. Straight and elbow
 routing are implemented; custom ports and self-loops remain future work. Defer broad shape
-catalog expansion, templates, sketch styles, AI, presentation,
-cloud dashboards and realtime presence until observed use supports them. Cloud
-saving needs its own correctness prototype: authorized durable admission,
-idempotent retries, commit-ordered catch-up, local outbox/recovery, conflicts and
-two-client conditional undo. Current local transaction preconditions are not that
-protocol. A hosted local-only preview is separate from cloud saving; publication
-is not part of this request.
+catalog expansion, templates, sketch styles, AI and presentation until observed use
+supports them. Keep the current focus on the local diagram workflow and its quality.
 
 ## Board creation follow-up — 23 October 2026
 
 Connected creation, embedded image insertion/paste/drop, freehand ink and held
 rectangle/ellipse recognition, and Clean/Notebook/Blueprint styles are implemented.
 See ADR 0012 for native records, image/sample budgets, undo, export and font contracts.
-These additions broaden the local board; backend persistence and collaboration
-remain separate later milestones.
+These additions broaden the local board and its editing workflow.
 
 ## Annotation and reuse follow-up — 24 October 2026
 
@@ -100,4 +94,4 @@ backgrounds. Whole-stroke erasing supports correction with gesture-scoped undo.
 Native v10 adds non-destructive image crops, keyboard/drag handles, reset and
 matching Canvas/SVG/PNG views. A browser-local personal library stores and reuses
 named editable selections independently of board persistence. ADRs 0013 and 0014
-record cropping and library contracts. Backend collaboration remains separate.
+record cropping and library contracts.

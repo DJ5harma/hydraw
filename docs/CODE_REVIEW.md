@@ -22,8 +22,8 @@ cleanup; missing product features are not code defects.
 Keep the existing package direction, atomic replacement queue, mutation lease,
 strict current-format validation, native text input and gesture-scoped history. These mechanisms
 have concrete correctness responsibilities and should not be removed as cosmetic
-"simplification". Do not introduce a general state framework, plugin system or
-speculative cloud abstractions during this cleanup.
+"simplification". Do not introduce a general state framework or plugin system during
+this cleanup.
 
 Verification completed on 20 October 2026:
 

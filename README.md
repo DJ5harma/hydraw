@@ -94,7 +94,7 @@ Internal packages expose TypeScript source to the toolchain. They are private wo
 
 Within packages, code is separated by responsibility: document model/validation/graph geometry/transactions; editor coordination/geometry/gestures/connector interactions/history; browser input/rendering/lifecycle; and React board persistence/components/editor controls. `App.tsx` only composes the session and workspace. Source and manifest checks enforce package direction, and editor core modules cannot import browser adapters.
 
-Runtime dependencies are limited to the chosen React/Hono foundations and the Hono Node adapter. There is no editor, drawing, state-store, geometry, history or collaboration library. Oxc is used only by a development-time dependency-boundary check; Playwright is used only for browser verification.
+Runtime dependencies are limited to the chosen React/Hono foundations and the Hono Node adapter. There is no editor, drawing, state-store, geometry or history library. Oxc is used only by a development-time dependency-boundary check; Playwright is used only for browser verification.
 
 ## Verify
 
@@ -109,7 +109,7 @@ Individual commands: `pnpm run check`, `pnpm test`, `pnpm run build`, and `pnpm 
 
 ## Current limits
 
-Hydraw supports one local board with rectangles, ellipses, diamonds, attached labels, standalone text, images and nondestructive crops, freehand ink, straight and elbow connectors, frames, presets, groups, organization controls, clipboard reuse, a personal library, board styles, and visual export. Import requires writable local storage to preserve a recovery copy. Cloud storage, authentication, collaboration and hosted deployment are still planned. Undo history is session-local and resets after reload, import or restore. History retains at most 100 transactions containing changed records rather than full-board snapshots. Transaction application is atomic and checks expected prior values. These are local edit preconditions; server revisions, authorization and collaborative rebase are not implemented yet.
+Hydraw supports one local board with rectangles, ellipses, diamonds, attached labels, standalone text, images and nondestructive crops, freehand ink, straight and elbow connectors, frames, presets, groups, organization controls, clipboard reuse, a personal library, board styles, and visual export. Import requires writable local storage to preserve a recovery copy. Undo history is session-local and resets after reload, import or restore. History retains at most 100 transactions containing changed records rather than full-board snapshots. Transaction application is atomic and checks expected prior values.
 
 An already loaded page can edit without network access. Offline application startup is not supported yet. Desktop Chromium is verified; other browsers, pen/touch behavior and accessibility need further testing. The responsive layout is an early shell, not a claim of full mobile editor support.
 
