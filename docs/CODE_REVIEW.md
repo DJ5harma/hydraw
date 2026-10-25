@@ -37,6 +37,21 @@ Checks accompany each cohesive increment. Preserve atomic graph validation,
 recoverable drafts, native input behavior and durable storage acknowledgements.
 Judge simplification by fewer concepts and duplicate rules, not file length alone.
 
+Result: 236 fewer production TypeScript lines against `2dfd2a2` (431 added,
+667 removed), with no new dependencies. The main reduction is the removal of
+duplicate edit languages and state ownership, rather than moving code into more
+files. `Editor` remains the largest coordinator: its text drafts, commands and
+gesture completion still represent real behavior. Further changes there should
+be driven by a specific responsibility or repeated rule.
+
+Final verification: `pnpm run ready` passes formatting/lint, types, boundaries,
+237 unit/server tests, production builds and 155 Chromium journeys. Five
+development-source scenarios are intentionally skipped in production. Docker
+smoke also passes. Existing PNG pixel checks caught a background-default regression
+during cleanup; the final implementation preserves clean download transparency and
+explicit clipboard backgrounds. [Editor measurements](EDITOR_BENCHMARK.md) record
+the before/after comparison and its limits.
+
 ## Earlier audit — 20 October 2026
 
 Review baseline: `5fb53bc` (20 October 2026). Scope: document rules and transactions,

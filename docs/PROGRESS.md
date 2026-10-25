@@ -1,5 +1,11 @@
 # Current implementation
 
+Simplification audit, 26 October 2026: one ID-addressed edit format now serves
+commands, validation, external updates and inverse history. The editor no longer
+duplicates the session's replacement lock or epoch. Selection/group locks, frame
+defaults, geometry primitives and download setup have shared implementations;
+storage retains one recovery asset-root state. See [the audit](CODE_REVIEW.md).
+
 Architecture refactor, 26 October 2026: a framework-independent `DocumentSession`
 owns committed state and history. Editor tools submit transactions to that session;
 persistence observes explicit commit events rather than camera/gesture updates.
@@ -20,7 +26,7 @@ a fresh board namespace without a legacy-data migration.
 Operations are scoped to board identity; nested commit notifications retain revision
 order. Recovered text drafts accumulate until explicitly dismissed. Stored image
 checksums are verified on read, and geometry saves reuse verified pixels.
-Verification: `pnpm run ready` passes 233 unit/server tests and 157 browser journeys,
+Verification: `pnpm run ready` passes 237 unit/server tests and 155 browser journeys,
 with five intentional production skips for development source-module scenarios.
 The final Docker smoke check also passes API, frontend routes/assets and non-root runtime.
 [The benchmark record](EDITOR_BENCHMARK.md) compares the original editor with the

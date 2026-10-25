@@ -5,7 +5,7 @@ Recorded 26 October 2026 after the local architecture refactor.
 ## Functional checks
 
 `pnpm run ready` passes formatting, lint, strict TypeScript, dependency boundaries,
-233 unit/server tests, production builds and 157 Chromium browser journeys.
+237 unit/server tests, production builds and 155 Chromium browser journeys.
 Five browser cases intentionally run only against development source modules:
 four repository API scenarios and the existing library race scenario. Their
 production project entries are skipped; ordinary UI journeys run in both builds.
@@ -20,7 +20,7 @@ reconciliation and geometry preservation across different text measurement adapt
 Storage browser tests cover independent board leases, asset deduplication,
 atomic rollback, recovery retention, collection, missing pixels and checksum damage.
 
-## Reproducible editor measurements
+## Initial architecture measurements
 
 Run `node tooling/benchmark-editor.mjs` with the pinned Node 24 runtime. To compare
 against another checkout with its workspace dependencies linked, supply its path:
@@ -30,6 +30,8 @@ This comparison uses pre-refactor commit `9fbd8b2`, extracted into a temporary
 directory with its `@hydraw/document` dependency linked to its own document package.
 The final run was performed without concurrent builds or browser tests. Hardware:
 13th Gen Intel Core i7-13620H, Linux x64, Node v24.22.0.
+The first table records the original architecture refactor before the later
+simplification audit; the audit comparison appears below.
 
 Fixtures contain the listed shape count and one fewer bound connector. Mixed
 fixtures use 10% images and 10% ink strokes with 20 points each. Images share a
@@ -57,3 +59,23 @@ still exceed a frame budget, while gesture previews avoid committing on every mo
 Timings exclude DOM, Canvas drawing, snapping, persistence, media decoding and
 networking. Full browser rendering/interaction profiling, cross-browser fidelity
 and human evaluation of same-record conflict UX remain separate product checks.
+
+## Simplification audit measurements
+
+The later audit compares baseline `2dfd2a2` with the single-edit-format implementation,
+using the same hardware, fixtures and sample protocol without concurrent browser
+tests or builds. No benchmark thresholds were added to CI.
+
+| Shapes / connectors | Fixture      | Preview p95, before → after (ms) | Single commit p95, before → after (ms) | Whole-selection commit p95, before → after (ms) |
+| ------------------- | ------------ | -------------------------------- | -------------------------------------- | ----------------------------------------------- |
+| 100 / 99            | Rectangles   | 0.07 → 0.06                      | 0.32 → 0.29                            | 1.30 → 1.08                                     |
+| 100 / 99            | Images + ink | 0.04 → 0.03                      | 0.17 → 0.16                            | 1.77 → 1.55                                     |
+| 1,000 / 999         | Rectangles   | 0.55 → 0.48                      | 1.37 → 1.30                            | 9.59 → 6.33                                     |
+| 1,000 / 999         | Images + ink | 0.17 → 0.42                      | 0.86 → 0.80                            | 11.72 → 7.87                                    |
+| 5,000 / 4,999       | Rectangles   | 1.48 → 1.30                      | 6.38 → 5.97                            | 36.02 → 30.69                                   |
+| 5,000 / 4,999       | Images + ink | 1.32 → 3.80                      | 6.68 → 6.21                            | 42.54 → 36.96                                   |
+
+Commit samples improve in this run; preview samples vary, including a slower mixed
+limit-sized fixture. These short editor-only measurements do not establish uniform
+performance improvement or browser frame times. The primary simplification benefit
+is removing conversion and duplicate rules while preserving verified behavior.
