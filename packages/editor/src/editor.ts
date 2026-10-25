@@ -441,10 +441,7 @@ export class Editor {
       this.commit(deleteShapeTransaction(this.snapshot.document, before.id));
       return;
     }
-    const index = before
-      ? this.snapshot.document.shapes.findIndex((shape) => shape.id === before.id)
-      : this.snapshot.document.shapes.length;
-    this.commit(shapeTransaction(label, index, before, after));
+    this.commit(shapeTransaction(label, before, after));
   }
 
   private selectedConnector(): Connector | undefined {
@@ -454,10 +451,7 @@ export class Editor {
   }
 
   private commitConnector(label: string, before: Connector | null, after: Connector | null): void {
-    const index = before
-      ? this.snapshot.document.connectors.findIndex((connector) => connector.id === before.id)
-      : this.snapshot.document.connectors.length;
-    this.commit(connectorTransaction(label, index, before, after));
+    this.commit(connectorTransaction(label, before, after));
   }
 
   addConnector(screen: Point): void {
@@ -723,14 +717,14 @@ export class Editor {
       ...(boardThemeTransaction(boardTheme(this.snapshot.document), theme)?.changes ?? []),
     ];
     const fontFamily = themePalette(theme).fontFamily;
-    this.snapshot.document.shapes.forEach((shape, index) => {
+    this.snapshot.document.shapes.forEach((shape) => {
       if (!this.measureText) return;
       if (shape.type !== "text") return;
       const next = decodeText({
         ...shape,
         height: layoutText(shape, this.measureText, fontFamily).height,
       });
-      const change = shapeTransaction("Change board style", index, shape, next);
+      const change = shapeTransaction("Change board style", shape, next);
       if (change) changes.push(...change.changes);
     });
     this.commit(changes.length ? { label: "Change board style", changes } : null);
@@ -1200,18 +1194,8 @@ export class Editor {
               end: { type: "binding", shapeId: shape.id },
               zIndex: this.creationRank(false),
             };
-            const shapeChange = shapeTransaction(
-              "Create connected shape",
-              this.snapshot.document.shapes.length,
-              null,
-              shape,
-            );
-            const connectorChange = connectorTransaction(
-              "Create connected shape",
-              this.snapshot.document.connectors.length,
-              null,
-              connector,
-            );
+            const shapeChange = shapeTransaction("Create connected shape", null, shape);
+            const connectorChange = connectorTransaction("Create connected shape", null, connector);
             this.commit(
               shapeChange && connectorChange
                 ? {

@@ -3,7 +3,7 @@ import {
   applyTransaction,
   createDocument,
   decodeDocument,
-  invertTransaction,
+  planTransaction,
   nameTransaction,
   shapeTransaction,
 } from "./index.ts";
@@ -22,13 +22,50 @@ const second = { ...first, id: "b", x: 200 };
 const initial = () => decodeDocument({ ...createDocument(), shapes: [first, second] });
 
 describe("reversible document transactions", () => {
+  it("addresses objects by ID after an unrelated deletion shifts their positions", () => {
+    const document = initial();
+    const move = shapeTransaction("Move B", second, { ...second, x: 300 })!;
+    const shifted = applyTransaction(document, shapeTransaction("Delete A", first, null)!);
+    const next = applyTransaction(shifted, move);
+    expect(next.shapes).toEqual([{ ...second, x: 300 }]);
+    expect(applyTransaction(next, planTransaction(shifted, move).inverse)).toEqual(shifted);
+  });
+
+  it("rejects insertion when its explicit anchor disappeared", () => {
+    const document = initial();
+    const insertion = shapeTransaction("Insert", null, { ...first, id: "c" }, second.id)!;
+    expect(applyTransaction(document, insertion).shapes.map((shape) => shape.id)).toEqual([
+      "a",
+      "c",
+      "b",
+    ]);
+    const changed = applyTransaction(document, shapeTransaction("Delete B", second, null)!);
+    expect(() => applyTransaction(changed, insertion)).toThrow("anchor");
+  });
+
+  it("rejects a stale batch without applying its earlier rename", () => {
+    const document = initial();
+    const transaction: DocumentTransaction = {
+      label: "Rename and move",
+      changes: [
+        { type: "name", before: document.name, after: "Must not leak" },
+        { type: "shape", before: second, after: { ...second, x: 300 } },
+      ],
+    };
+    const changed = applyTransaction(
+      document,
+      shapeTransaction("Move B", second, { ...second, y: 50 })!,
+    );
+    expect(() => applyTransaction(changed, transaction)).toThrow("changed");
+    expect(changed.name).toBe("Untitled board");
+  });
   it("round-trips changed records while sharing untouched records", () => {
     const document = initial();
-    const change = shapeTransaction("Resize", 0, first, { ...first, width: 150 })!;
+    const change = shapeTransaction("Resize", first, { ...first, width: 150 })!;
     const next = applyTransaction(document, change);
     expect(next.shapes[0]?.width).toBe(150);
     expect(next.shapes[1]).toBe(document.shapes[1]);
-    expect(applyTransaction(next, invertTransaction(change))).toEqual(document);
+    expect(applyTransaction(next, planTransaction(document, change).inverse)).toEqual(document);
     expect(Object.isFrozen(next.shapes)).toBe(true);
     expect(Object.isFrozen(next.shapes[0])).toBe(true);
     expect(next.connectors).toBe(document.connectors);
@@ -42,18 +79,20 @@ describe("reversible document transactions", () => {
     const transaction: DocumentTransaction = {
       label: "Replace and move",
       changes: [
-        { type: "shape", index: 0, before: first, after: null },
-        { type: "shape", index: 1, before: null, after: first },
-        { type: "shape", index: 1, before: first, after: { ...first, x: 50 } },
+        { type: "shape", before: first, after: null },
+        { type: "shape", before: null, after: first },
+        { type: "shape", before: first, after: { ...first, x: 50 } },
       ],
     };
     const next = applyTransaction(document, transaction);
     expect(next.shapes).toEqual([second, { ...first, x: 50 }]);
-    expect(applyTransaction(next, invertTransaction(transaction))).toEqual(document);
+    expect(applyTransaction(next, planTransaction(document, transaction).inverse)).toEqual(
+      document,
+    );
     expect(() =>
       applyTransaction(document, {
         ...transaction,
-        changes: [...transaction.changes, { type: "shape", index: 2, before: null, after: first }],
+        changes: [...transaction.changes, { type: "shape", before: null, after: first }],
       }),
     ).toThrow("Duplicate");
     expect(document).toEqual(initial());
@@ -63,8 +102,8 @@ describe("reversible document transactions", () => {
     const transaction: DocumentTransaction = {
       label: "Reorganize",
       changes: [
-        { type: "shape", index: 0, before: first, after: null },
-        { type: "shape", index: 1, before: null, after: { ...first, id: "c" } },
+        { type: "shape", before: first, after: null },
+        { type: "shape", before: null, after: { ...first, id: "c" } },
         { type: "name", before: "Untitled board", after: "A new name" },
       ],
     };
@@ -72,7 +111,9 @@ describe("reversible document transactions", () => {
     const next = applyTransaction(document, transaction);
     expect(next.shapes.map((shape) => shape.id)).toEqual(["b", "c"]);
     expect(next.name).toBe("A new name");
-    expect(applyTransaction(next, invertTransaction(transaction))).toEqual(document);
+    expect(applyTransaction(next, planTransaction(document, transaction).inverse)).toEqual(
+      document,
+    );
   });
 
   it("rejects an entire transaction on a later failure and does not mutate its input", () => {
@@ -81,29 +122,31 @@ describe("reversible document transactions", () => {
       label: "Invalid batch",
       changes: [
         { type: "name", before: document.name, after: "Do not apply partially" },
-        { type: "shape", index: 0, before: first, after: { ...first, width: -2 } },
+        { type: "shape", before: first, after: { ...first, width: -2 } },
       ],
     };
     expect(() => applyTransaction(document, transaction)).toThrow("invalid");
     expect(document).toEqual(initial());
-    expect(() =>
-      applyTransaction(document, shapeTransaction("Duplicate", 1, null, first)!),
-    ).toThrow("Duplicate");
-    expect(() => shapeTransaction("Invalid", 0, first, { ...first, height: Infinity })).toThrow(
+    expect(() => applyTransaction(document, shapeTransaction("Duplicate", null, first)!)).toThrow(
+      "Duplicate",
+    );
+    expect(() => shapeTransaction("Invalid", first, { ...first, height: Infinity })).toThrow(
       "invalid",
     );
   });
 
   it("rejects a stale inverse instead of overwriting a later edit", () => {
-    const resize = shapeTransaction("Resize", 0, first, { ...first, width: 150 })!;
+    const resize = shapeTransaction("Resize", first, { ...first, width: 150 })!;
     const resized = applyTransaction(initial(), resize);
     const later = applyTransaction(
       resized,
-      shapeTransaction("Move", 0, resized.shapes[0]!, { ...resized.shapes[0]!, x: 100 })!,
+      shapeTransaction("Move", resized.shapes[0]!, { ...resized.shapes[0]!, x: 100 })!,
     );
-    expect(() => applyTransaction(later, invertTransaction(resize))).toThrow("changed");
+    expect(() => applyTransaction(later, planTransaction(initial(), resize).inverse)).toThrow(
+      "changed",
+    );
     expect(later.shapes[0]).toMatchObject({ width: 150, x: 100 });
-    expect(shapeTransaction("No-op", 0, first, first)).toBeNull();
+    expect(shapeTransaction("No-op", first, first)).toBeNull();
     expect(nameTransaction("same", "same")).toBeNull();
   });
 });

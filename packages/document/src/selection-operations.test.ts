@@ -5,7 +5,7 @@ import {
   decodeDocument,
   deleteObjectsTransaction,
   duplicateObjects,
-  invertTransaction,
+  planTransaction,
   MAX_SHAPES,
   translateObjects,
   updateObjectsTransaction,
@@ -75,7 +75,9 @@ describe("atomic selection operations", () => {
     expect(next.connectors[0]).toBe(document.connectors[0]);
     expect(next.connectors[2]).toMatchObject({ start: { x: 70, y: 320 }, end: { x: 220, y: 320 } });
     expect(next.shapes[2]).toBe(document.shapes[2]);
-    expect(applyTransaction(next, invertTransaction(transaction))).toEqual(document);
+    expect(applyTransaction(next, planTransaction(document, transaction).inverse)).toEqual(
+      document,
+    );
     expect(
       updateObjectsTransaction(
         document,
@@ -123,7 +125,9 @@ describe("atomic selection operations", () => {
         end: { type: "binding", shapeId: "copy-2" },
       },
     ]);
-    expect(applyTransaction(next, invertTransaction(result.transaction!))).toEqual(document);
+    expect(applyTransaction(next, planTransaction(document, result.transaction!).inverse)).toEqual(
+      document,
+    );
   });
   it("copies explicitly selected boundary edges independently of unselected nodes and moves points once", () => {
     const document = initial();
@@ -148,7 +152,9 @@ describe("atomic selection operations", () => {
     const next = applyTransaction(document, transaction);
     expect(next.shapes).toEqual([external]);
     expect(next.connectors).toHaveLength(0);
-    expect(applyTransaction(next, invertTransaction(transaction))).toEqual(document);
+    expect(applyTransaction(next, planTransaction(document, transaction).inverse)).toEqual(
+      document,
+    );
   });
   it("rejects capacity and identity failures before applying any partial duplication", () => {
     const full: BoardDocument = {

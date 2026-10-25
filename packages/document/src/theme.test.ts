@@ -2,7 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 import {
   boardThemeTransaction,
   applyTransaction,
-  invertTransaction,
+  planTransaction,
   createDocument,
 } from "./index.ts";
 import { decodeDocument } from "./validation.ts";
@@ -19,6 +19,6 @@ describe("board themes", () => {
     expect(change).not.toBeNull();
     const themed = applyTransaction(doc, change!);
     expect(themed.theme).toBe("blueprint");
-    expect(applyTransaction(themed, invertTransaction(change!))).toEqual(doc);
+    expect(applyTransaction(themed, planTransaction(doc, change!).inverse)).toEqual(doc);
   });
 });

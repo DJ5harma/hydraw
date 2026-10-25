@@ -129,7 +129,7 @@ describe("external edit reconciliation", () => {
     left.documentSession.subscribe((event) => {
       operation = event.operation!;
     });
-    left.documentSession.execute(shapeTransaction("Move text", 0, text, { ...text, x: 50 }));
+    left.documentSession.execute(shapeTransaction("Move text", text, { ...text, x: 50 }));
     right.applyExternal(operation);
     expect(right.getSnapshot().document).toEqual(left.getSnapshot().document);
     expect(right.getSnapshot().document.shapes[0]?.height).toBe(37);
@@ -142,11 +142,11 @@ describe("external edit reconciliation", () => {
       operation = event.operation!;
     });
     // Prepare before taking the lease; incoming accepted work must wait until it ends.
-    operation = right.documentSession.prepare(shapeTransaction("Move A", 0, a, { ...a, x: 50 })!);
+    operation = right.documentSession.prepare(shapeTransaction("Move A", a, { ...a, x: 50 })!);
     const lock = left.lockDocument();
     expect(() => left.documentSession.apply(operation)).toThrow("replacement");
     expect(() =>
-      left.documentSession.execute(shapeTransaction("Move A", 0, a, { ...a, x: 50 })),
+      left.documentSession.execute(shapeTransaction("Move A", a, { ...a, x: 50 })),
     ).toThrow("replacement");
     lock.release();
     left.pan(10, 20);

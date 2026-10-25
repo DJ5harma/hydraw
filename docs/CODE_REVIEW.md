@@ -7,12 +7,12 @@ input, React interactions, board/library persistence, server composition and too
 The earlier audit below is historical; passing its checks did not establish that
 the later architecture refactor was as simple as it could be.
 
-| Finding                                                                    | Action / status                                                                                     |
-| -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| Editor and document session duplicate replacement flags and lease wrappers | Removed the editor flag/wrapper; the session owns the lock, including gesture entry checks          |
-| Persistence adds a flag to suppress its own already-persisted replacements | Use explicit commit origin and the existing replacement lifecycle; consume commit payloads directly |
-| Array-index transactions and ID operations represent the same edits twice  | Simplify to one ID-addressed representation, including inverses and history                         |
-| Selection/group/lock checks are repeated across core and controls          | Review the actual policies and share the common queries without introducing a command framework     |
+| Finding                                                                    | Action / status                                                                                                           |
+| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Editor and document session duplicate replacement flags and lease wrappers | Removed the editor flag/wrapper; the session owns the lock, including gesture entry checks                                |
+| Persistence adds a flag to suppress its own already-persisted replacements | Use explicit commit origin and the existing replacement lifecycle; consume commit payloads directly                       |
+| Array-index transactions and ID operations represent the same edits twice  | Removed both conversion directions; commands, validation, inverse generation and history use one ID-addressed edit format |
+| Selection/group/lock checks are repeated across core and controls          | Review the actual policies and share the common queries without introducing a command framework                           |
 
 Checks accompany each cohesive increment. Preserve atomic graph validation,
 recoverable drafts, native input behavior and durable storage acknowledgements.

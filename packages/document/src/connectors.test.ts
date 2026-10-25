@@ -7,7 +7,7 @@ import {
   decodeDocument,
   deleteShapeTransaction,
   distanceToSegment,
-  invertTransaction,
+  planTransaction,
   resolveConnector,
   shapeTransaction,
 } from "./index.ts";
@@ -97,27 +97,29 @@ describe("bound connector documents", () => {
     const next = applyTransaction(document, transaction);
     expect(next.shapes).toEqual([b]);
     expect(next.connectors).toEqual([unrelated]);
-    expect(applyTransaction(next, invertTransaction(transaction))).toEqual(document);
-    expect(() =>
-      applyTransaction(document, shapeTransaction("Unsafe deletion", 0, a, null)!),
-    ).toThrow("missing");
+    expect(applyTransaction(next, planTransaction(document, transaction).inverse)).toEqual(
+      document,
+    );
+    expect(() => applyTransaction(document, shapeTransaction("Unsafe deletion", a, null)!)).toThrow(
+      "missing",
+    );
   });
   it("validates the final graph atomically and protects inverse connector edits from stale state", () => {
     const document = initial();
-    const change = connectorTransaction("Color", 0, connector, { ...connector, color: "#3568db" })!;
+    const change = connectorTransaction("Color", connector, { ...connector, color: "#3568db" })!;
     const next = applyTransaction(document, change);
-    expect(applyTransaction(next, invertTransaction(change))).toEqual(document);
+    expect(applyTransaction(next, planTransaction(document, change).inverse)).toEqual(document);
     expect(() => applyTransaction(next, change)).toThrow("changed");
     expect(() =>
       applyTransaction(
         document,
-        connectorTransaction("Bad binding", 0, connector, {
+        connectorTransaction("Bad binding", connector, {
           ...connector,
           end: { type: "binding", shapeId: "missing" },
         })!,
       ),
     ).toThrow("missing");
     expect(document).toEqual(initial());
-    expect(connectorTransaction("No-op", 0, connector, connector)).toBeNull();
+    expect(connectorTransaction("No-op", connector, connector)).toBeNull();
   });
 });

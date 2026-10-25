@@ -59,9 +59,8 @@ export function insertImages(
   });
   const transaction: DocumentTransaction = {
     label: images.length === 1 ? "Insert image" : "Insert images",
-    changes: shapes.map((shape, index) => ({
+    changes: shapes.map((shape) => ({
       type: "shape",
-      index: document.shapes.length + index,
       before: null,
       after: shape,
     })),

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
 import { createDocument } from "./model.ts";
 import type { BoardDocument, Rectangle } from "./model.ts";
-import { applyTransaction, invertTransaction } from "./transactions.ts";
+import { applyTransaction, planTransaction } from "./transactions.ts";
 import { decodeDocument } from "./validation.ts";
 import { createFrameAroundSelection, frameContents, frameSelectionContents } from "./frames.ts";
 
@@ -41,9 +41,9 @@ describe("frames", () => {
     });
     expect(frameContents(next, "frame")).toEqual(["a"]);
     expect(frameSelectionContents(next, ["frame"])).toEqual(["frame", "a"]);
-    expect(applyTransaction(next, invertTransaction(created.transaction!)).shapes).toEqual(
-      document.shapes,
-    );
+    expect(
+      applyTransaction(next, planTransaction(document, created.transaction!).inverse).shapes,
+    ).toEqual(document.shapes);
   });
 
   it("does not include partially contained shapes", () => {

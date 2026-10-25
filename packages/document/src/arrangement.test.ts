@@ -5,7 +5,7 @@ import {
   createDocument,
   decodeDocument,
   distributeShapesTransaction,
-  invertTransaction,
+  planTransaction,
 } from "./index.ts";
 import type { Alignment, Connector, Rectangle, TextShape } from "./index.ts";
 const a: Rectangle = {
@@ -69,7 +69,9 @@ describe("selection arrangement", () => {
         width: text.width,
         height: text.height,
       });
-      expect(applyTransaction(next, invertTransaction(transaction))).toEqual(document);
+      expect(applyTransaction(next, planTransaction(document, transaction).inverse)).toEqual(
+        document,
+      );
       expect(alignShapesTransaction(next, ids, alignment)).toBeNull();
     });
   it("distributes centers with variable dimensions while preserving outer nodes and document stacking order", () => {
@@ -106,7 +108,9 @@ describe("selection arrangement", () => {
     expect(next.shapes[1]?.x).toBeCloseTo(83.3333333333);
     expect(next.shapes[2]?.x).toBeCloseTo(266.6666666667);
     expect(next.shapes[3]?.x).toBe(400);
-    expect(applyTransaction(next, invertTransaction(transaction))).toEqual(document);
+    expect(applyTransaction(next, planTransaction(document, transaction).inverse)).toEqual(
+      document,
+    );
   });
   it("does not add history for repeated layouts with fractional bounds", () => {
     const document = decodeDocument({

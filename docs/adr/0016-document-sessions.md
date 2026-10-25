@@ -9,10 +9,12 @@ observes immutable commit events, with local, remote, undo, redo and replacement
 origins, an operation identity and changed object IDs. Replacement invalidates
 prepared operations from the previous session epoch.
 
-Existing pure transaction builders are local edit planners. At the session boundary
-they become ID-addressed operations, with ID-based insertion anchors. Applying an
-operation resolves current collection positions and validates the entire candidate
-graph atomically. Collection arrays remain the portable document representation;
+Simplification follow-up: pure transaction builders now produce ID-addressed edits
+directly, with optional ID-based insertion anchors. There is one edit representation
+for commands, history and external updates; the array-index transaction format and
+both conversion directions have been removed. `planTransaction` resolves identities,
+validates the complete candidate graph and captures a canonical inverse in one pass.
+Collection arrays remain the portable document representation;
 an unrelated deletion does not invalidate another object's position. Concurrent
 appends and equal stacking ranks use authoritative acceptance order as the tie
 breaker. Reordering depends on a scene-order version.

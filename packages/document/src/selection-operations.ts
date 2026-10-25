@@ -75,20 +75,18 @@ export function updateObjectsTransaction(
   updates: ObjectUpdates,
 ): DocumentTransaction | null {
   const changes: DocumentChange[] = [];
-  const shapePositions = new Map(document.shapes.map((shape, index) => [shape.id, index]));
-  const connectorPositions = new Map(
-    document.connectors.map((connector, index) => [connector.id, index]),
-  );
+  const shapesById = new Map(document.shapes.map((shape) => [shape.id, shape]));
+  const connectorsById = new Map(document.connectors.map((connector) => [connector.id, connector]));
   for (const shape of updates.shapes) {
-    const index = shapePositions.get(shape.id);
-    if (index === undefined) throw new Error("Cannot update a missing shape.");
-    const change = shapeTransaction(label, index, document.shapes[index]!, shape);
+    const before = shapesById.get(shape.id);
+    if (!before) throw new Error("Cannot update a missing shape.");
+    const change = shapeTransaction(label, before, shape);
     if (change) changes.push(...change.changes);
   }
   for (const connector of updates.connectors) {
-    const index = connectorPositions.get(connector.id);
-    if (index === undefined) throw new Error("Cannot update a missing connector.");
-    const change = connectorTransaction(label, index, document.connectors[index]!, connector);
+    const before = connectorsById.get(connector.id);
+    if (!before) throw new Error("Cannot update a missing connector.");
+    const change = connectorTransaction(label, before, connector);
     if (change) changes.push(...change.changes);
   }
   return changes.length ? Object.freeze({ label, changes: Object.freeze(changes) }) : null;
@@ -100,20 +98,18 @@ export function deleteObjectsTransaction(
 ): DocumentTransaction | null {
   const selected = new Set(ids);
   const changes: DocumentChange[] = [];
-  for (let index = document.connectors.length - 1; index >= 0; index--) {
-    const before = document.connectors[index]!;
+  for (const before of document.connectors) {
     if (
       selected.has(before.id) ||
       [before.start, before.end].some(
         (endpoint) => endpoint.type === "binding" && selected.has(endpoint.shapeId),
       )
     )
-      changes.push(Object.freeze({ type: "connector", index, before, after: null }));
+      changes.push(Object.freeze({ type: "connector", before, after: null }));
   }
-  for (let index = document.shapes.length - 1; index >= 0; index--) {
-    const before = document.shapes[index]!;
+  for (const before of document.shapes) {
     if (selected.has(before.id))
-      changes.push(Object.freeze({ type: "shape", index, before, after: null }));
+      changes.push(Object.freeze({ type: "shape", before, after: null }));
   }
   return changes.length
     ? Object.freeze({ label: "Delete selection", changes: Object.freeze(changes) })
@@ -180,9 +176,9 @@ export function duplicateObjects(
     ...identities.values(),
   ]);
   const changes: DocumentChange[] = [];
-  updates.shapes.forEach((shape, position) =>
+  updates.shapes.forEach((shape) =>
     changes.push(
-      ...shapeTransaction("Duplicate selection", document.shapes.length + position, null, {
+      ...shapeTransaction("Duplicate selection", null, {
         ...shape,
         ...metadata.get(shape.id),
         id: identities.get(shape.id)!,
@@ -194,9 +190,9 @@ export function duplicateObjects(
       ? { type: "binding", shapeId: identities.get(endpoint.shapeId)! }
       : endpoint;
   }
-  updates.connectors.forEach((connector, position) =>
+  updates.connectors.forEach((connector) =>
     changes.push(
-      ...connectorTransaction("Duplicate selection", document.connectors.length + position, null, {
+      ...connectorTransaction("Duplicate selection", null, {
         ...connector,
         ...metadata.get(connector.id),
         id: identities.get(connector.id)!,

@@ -46,7 +46,7 @@ it("enforces a board point budget through imports and transactions without chang
   const full = decodeDocument({ ...createDocument(), shapes });
   const next = { ...stroke, id: "one-too-many", points: [{ x: 0, y: 0 }] };
   expect(() => decodeDocument({ ...full, shapes: [...full.shapes, next] })).toThrow("point limit");
-  const transaction = shapeTransaction("Draw", shapes.length, null, next)!;
+  const transaction = shapeTransaction("Draw", null, next)!;
   expect(() => applyTransaction(full, transaction)).toThrow("point limit");
   expect(full.shapes).toHaveLength(shapes.length);
 });

@@ -26,18 +26,9 @@ import {
 } from "./image-crop.ts";
 import type { ImageCrop, ImageShape } from "./model.ts";
 
-type ShapeChange = Readonly<{
-  type: "shape";
-  index: number;
-  before: Shape | null;
-  after: Shape | null;
-}>;
-type ConnectorChange = Readonly<{
-  type: "connector";
-  index: number;
-  before: Connector | null;
-  after: Connector | null;
-}>;
+type RecordChange<T> = Readonly<{ before: T | null; after: T | null; beforeId?: string | null }>;
+type ShapeChange = RecordChange<Shape> & Readonly<{ type: "shape" }>;
+type ConnectorChange = RecordChange<Connector> & Readonly<{ type: "connector" }>;
 type NameChange = Readonly<{ type: "name"; before: string; after: string }>;
 type ThemeChange = Readonly<{ type: "theme"; before: BoardTheme; after: BoardTheme }>;
 export type DocumentChange = ShapeChange | ConnectorChange | NameChange | ThemeChange;
@@ -122,14 +113,14 @@ export function sameShape(a: Shape, b: Shape): boolean {
 
 export function shapeTransaction(
   label: string,
-  index: number,
   before: Shape | null,
   after: Shape | null,
+  beforeId: string | null = null,
 ): DocumentTransaction | null {
   if ((!before && !after) || (before && after && sameShape(before, after))) return null;
   const change: ShapeChange = Object.freeze({
     type: "shape",
-    index,
+    beforeId,
     before: before ? decodeShape(before) : null,
     after: after ? decodeShape(after) : null,
   });
@@ -142,8 +133,7 @@ export function imageCropTransaction(
   id: string,
   crop: ImageCrop | null,
 ): DocumentTransaction | null {
-  const index = document.shapes.findIndex((shape) => shape.id === id);
-  const image = document.shapes[index];
+  const image = document.shapes.find((shape) => shape.id === id);
   if (!image || image.type !== "image") throw new Error("The selected image no longer exists.");
   let after: ImageShape;
   if (crop === null) {
@@ -163,7 +153,7 @@ export function imageCropTransaction(
       after = { ...image, ...imageBoundsForCrop(image, normalized), crop: normalized };
     }
   }
-  return shapeTransaction("Crop image", index, image, after);
+  return shapeTransaction("Crop image", image, after);
 }
 
 function sameEndpoint(a: Endpoint, b: Endpoint): boolean {
@@ -190,9 +180,9 @@ export function sameConnector(a: Connector, b: Connector): boolean {
 
 export function connectorTransaction(
   label: string,
-  index: number,
   before: Connector | null,
   after: Connector | null,
+  beforeId: string | null = null,
 ): DocumentTransaction | null {
   if ((!before && !after) || (before && after && sameConnector(before, after))) return null;
   return Object.freeze({
@@ -200,7 +190,7 @@ export function connectorTransaction(
     changes: Object.freeze([
       Object.freeze({
         type: "connector" as const,
-        index,
+        beforeId,
         before: before ? decodeConnector(before) : null,
         after: after ? decodeConnector(after) : null,
       }),
@@ -233,9 +223,7 @@ export function boardThemeTransaction(
   });
 }
 
-type RecordChange<T> = Readonly<{ index: number; before: T | null; after: T | null }>;
-
-/** Each collection is copied only when touched; all changes stay private until graph validation. */
+/** Resolve IDs and build a canonical inverse while applying one collection's changes. */
 function applyRecordChanges<T extends Readonly<{ id: string; type: string }>>(
   records: readonly T[],
   changes: readonly RecordChange<T>[],
@@ -245,94 +233,137 @@ function applyRecordChanges<T extends Readonly<{ id: string; type: string }>>(
     decode: (value: unknown) => T;
     same: (a: T, b: T) => boolean;
   },
-): readonly T[] {
-  if (!changes.length) return records;
-  const next = [...records];
-  const ids = new Set(records.map((record) => record.id));
-  for (const { before, after, index } of changes) {
-    if (!Number.isInteger(index) || index < 0 || index > next.length || (!before && !after))
-      throw new Error(`Invalid ${rules.kind} transaction.`);
-    const current = next[index];
+) {
+  if (!changes.length) return { records, applied: [], inverse: [] };
+  const positions = new Map(records.map((record, index) => [record.id, index]));
+  const applied: RecordChange<T>[] = [];
+  const inverse: RecordChange<T>[] = [];
+  let next: T[] | null = null;
+  for (const { before, after, beforeId = null } of changes) {
+    if (!before && !after) throw new Error(`Invalid ${rules.kind} transaction.`);
+    const active = next ?? records;
+    const index = before
+      ? positions.get(before.id)
+      : beforeId === null
+        ? active.length
+        : positions.get(beforeId);
+    if (index === undefined)
+      throw new Error(
+        `The ${rules.kind} target or insertion anchor changed before this transaction.`,
+      );
+    const current = before ? active[index] : null;
     if (before && (!current || !rules.same(current, before)))
       throw new Error(`The ${rules.kind} changed before this transaction.`);
     if (before && after && (before.id !== after.id || before.type !== after.type))
       throw new Error(`A transaction cannot change ${rules.kind} identity.`);
-    if (!before && after && ids.has(after.id)) throw new Error(`Duplicate ${rules.kind} identity.`);
+    if (!before && after && positions.has(after.id))
+      throw new Error(`Duplicate ${rules.kind} identity.`);
     const decoded = after ? rules.decode(after) : null;
-    next.splice(index, before ? 1 : 0, ...(decoded ? [decoded] : []));
-    if (before) ids.delete(before.id);
-    if (after) ids.add(after.id);
+    if (current && decoded && rules.same(current, decoded)) continue;
+    const prior = current ? rules.decode(current) : null;
+    applied.push(
+      Object.freeze({ before: prior, after: decoded, beforeId: before ? null : beforeId }),
+    );
+    inverse.push(
+      Object.freeze({
+        before: decoded,
+        after: prior,
+        beforeId: before && !after ? (active[index + 1]?.id ?? null) : null,
+      }),
+    );
+    next ??= [...records];
+    if (before && decoded) next[index] = decoded;
+    else {
+      next.splice(index, before ? 1 : 0, ...(decoded ? [decoded] : []));
+      if (before) positions.delete(before.id);
+      for (let i = index; i < next.length; i++) positions.set(next[i]!.id, i);
+    }
     if (next.length > rules.limit)
       throw new Error(`This board exceeds the supported ${rules.kind} limit.`);
   }
-  return Object.freeze(next);
+  return { records: next ? Object.freeze(next) : records, applied, inverse: inverse.reverse() };
 }
 
-/** Preconditions make stale inverses fail instead of silently replacing later edits. */
-export function applyTransaction(
-  document: BoardDocument,
-  transaction: DocumentTransaction,
-): BoardDocument {
-  if (transaction.changes.length === 0) return document;
+/** One ID-addressed edit format for local commands, remote changes and history. */
+export function planTransaction(document: BoardDocument, transaction: DocumentTransaction) {
   let name = document.name;
   let theme = document.theme;
+  const metadata: DocumentChange[] = [];
+  const inverseMetadata: DocumentChange[] = [];
   for (const change of transaction.changes) {
     if (change.type === "name") {
       if (name !== change.before)
         throw new Error("The board name changed before this transaction.");
-      name = decodeName(change.after);
+      const next = decodeName(change.after);
+      if (name !== next) {
+        metadata.push(Object.freeze({ type: "name", before: name, after: next }));
+        inverseMetadata.push(Object.freeze({ type: "name", before: next, after: name }));
+        name = next;
+      }
     } else if (change.type === "theme") {
-      if ((theme ?? "clean") !== change.before)
+      if (theme !== change.before)
         throw new Error("The board style changed before this transaction.");
       if (!isBoardTheme(change.after)) throw new Error("Invalid board style transaction.");
-      theme = change.after;
+      if (theme !== change.after) {
+        metadata.push(Object.freeze({ type: "theme", before: theme, after: change.after }));
+        inverseMetadata.push(Object.freeze({ type: "theme", before: change.after, after: theme }));
+        theme = change.after;
+      }
+    } else if (change.type !== "shape" && change.type !== "connector") {
+      throw new Error("Invalid document change.");
     }
   }
   const shapes = applyRecordChanges(
     document.shapes,
     transaction.changes.filter((change) => change.type === "shape"),
-    { kind: "shape", limit: MAX_SHAPES, decode: decodeShape, same: sameShape },
+    {
+      kind: "shape",
+      limit: MAX_SHAPES,
+      decode: decodeShape,
+      same: sameShape,
+    },
   );
   const connectors = applyRecordChanges(
     document.connectors,
     transaction.changes.filter((change) => change.type === "connector"),
-    { kind: "connector", limit: MAX_CONNECTORS, decode: decodeConnector, same: sameConnector },
+    {
+      kind: "connector",
+      limit: MAX_CONNECTORS,
+      decode: decodeConnector,
+      same: sameConnector,
+    },
   );
-  assertConnectorGraph(shapes, connectors);
-  assertImageBudget(shapes);
-  assertInkBudget(shapes);
+  assertConnectorGraph(shapes.records, connectors.records);
+  assertImageBudget(shapes.records);
+  assertInkBudget(shapes.records);
+  const changes: DocumentChange[] = [
+    ...metadata,
+    ...shapes.applied.map((change) => Object.freeze({ type: "shape" as const, ...change })),
+    ...connectors.applied.map((change) => Object.freeze({ type: "connector" as const, ...change })),
+  ];
+  const inverse: DocumentChange[] = [
+    ...inverseMetadata.reverse(),
+    ...shapes.inverse.map((change) => Object.freeze({ type: "shape" as const, ...change })),
+    ...connectors.inverse.map((change) => Object.freeze({ type: "connector" as const, ...change })),
+  ];
   return Object.freeze({
-    ...document,
-    name,
-    ...(theme === undefined ? {} : { theme }),
-    shapes,
-    connectors,
+    document: changes.length
+      ? Object.freeze({
+          ...document,
+          name,
+          theme,
+          shapes: shapes.records,
+          connectors: connectors.records,
+        })
+      : document,
+    edit: Object.freeze({ label: transaction.label, changes: Object.freeze(changes) }),
+    inverse: Object.freeze({ label: transaction.label, changes: Object.freeze(inverse) }),
   });
 }
 
-export function invertTransaction(transaction: DocumentTransaction): DocumentTransaction {
-  return Object.freeze({
-    label: transaction.label,
-    changes: Object.freeze([...transaction.changes].reverse().map(invertChange)),
-  });
-}
-
-function invertChange(change: DocumentChange): DocumentChange {
-  if (change.type === "name")
-    return Object.freeze({ type: "name", before: change.after, after: change.before });
-  if (change.type === "theme")
-    return Object.freeze({ type: "theme", before: change.after, after: change.before });
-  if (change.type === "connector")
-    return Object.freeze({
-      type: "connector",
-      index: change.index,
-      before: change.after,
-      after: change.before,
-    });
-  return Object.freeze({
-    type: "shape",
-    index: change.index,
-    before: change.after,
-    after: change.before,
-  });
+export function applyTransaction(
+  document: BoardDocument,
+  transaction: DocumentTransaction,
+): BoardDocument {
+  return planTransaction(document, transaction).document;
 }

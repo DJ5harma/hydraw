@@ -5,7 +5,7 @@ import {
   createDocument,
   decodeDocument,
   imageCropTransaction,
-  invertTransaction,
+  planTransaction,
   parseDocument,
   shapeTransaction,
   serializeDocument,
@@ -61,7 +61,9 @@ describe("non-destructive image cropping", () => {
     const reset = imageCropTransaction(cropped, "photo", null)!;
     const resetDocument = applyTransaction(cropped, reset);
     expect(resetDocument.shapes[0]).toEqual(original);
-    expect(applyTransaction(resetDocument, invertTransaction(reset))).toEqual(cropped);
+    expect(applyTransaction(resetDocument, planTransaction(cropped, reset).inverse)).toEqual(
+      cropped,
+    );
   });
 
   it("keeps the full source geometry coherent through move and resize before reset", () => {
@@ -73,7 +75,7 @@ describe("non-destructive image cropping", () => {
     const image = cropped.shapes[0]!;
     const moved = applyTransaction(
       cropped,
-      shapeTransaction("Move", 0, image, { ...image, x: image.x + 10, y: image.y - 5 })!,
+      shapeTransaction("Move", image, { ...image, x: image.x + 10, y: image.y - 5 })!,
     );
     expect(sourceImageBounds(moved.shapes[0] as typeof original)).toEqual({
       x: 110,
@@ -84,7 +86,7 @@ describe("non-destructive image cropping", () => {
     const resizedImage = moved.shapes[0]!;
     const resized = applyTransaction(
       moved,
-      shapeTransaction("Resize", 0, resizedImage, {
+      shapeTransaction("Resize", resizedImage, {
         ...resizedImage,
         width: resizedImage.width * 2,
         height: resizedImage.height * 2,

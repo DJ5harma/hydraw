@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
 import { createDocument } from "./model.ts";
 import type { BoardDocument, Connector, Shape } from "./model.ts";
-import { applyTransaction, invertTransaction } from "./transactions.ts";
+import { applyTransaction, planTransaction } from "./transactions.ts";
 import {
   expandGroups,
   groupObjectsTransaction,
@@ -73,7 +73,9 @@ describe("object organization", () => {
     const grouped = applyTransaction(document, grouping);
     expect(grouped.shapes.map((item) => item.groupId)).toEqual(["new", "new", "old"]);
     expect(grouped.connectors[0]?.groupId).toBe("old");
-    expect(applyTransaction(grouped, invertTransaction(grouping))).toEqual(document);
+    expect(applyTransaction(grouped, planTransaction(document, grouping).inverse)).toEqual(
+      document,
+    );
     const ungrouping = ungroupObjectsTransaction(document, ["c"])!;
     const ungrouped = applyTransaction(document, ungrouping);
     expect(ungrouped.shapes[2]?.groupId).toBeUndefined();
@@ -87,7 +89,7 @@ describe("object organization", () => {
     const raised = applyTransaction(document, forward);
     expect(ids(raised)).toEqual(["x", "y", "c", "a", "b"]);
     expect(sceneObjects(raised).map((object) => object.zIndex)).toEqual([0, 1, 2, 3, 4]);
-    expect(applyTransaction(raised, invertTransaction(forward))).toEqual(document);
+    expect(applyTransaction(raised, planTransaction(document, forward).inverse)).toEqual(document);
     const backward = reorderObjectsTransaction(document, ["a", "b"], "backward")!;
     expect(ids(applyTransaction(document, backward))).toEqual(["x", "a", "b", "y", "c"]);
     expect(reorderObjectsTransaction(document, ["x"], "back")).toBeNull();

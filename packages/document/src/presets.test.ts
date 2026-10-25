@@ -3,7 +3,7 @@ import {
   applyTransaction,
   createDocument,
   insertPreset,
-  invertTransaction,
+  planTransaction,
   PRESETS,
 } from "./index.ts";
 
@@ -42,9 +42,9 @@ describe("document presets", () => {
           { type: "binding", shapeId: document.shapes[2]!.id },
         ],
       ]);
-      expect(applyTransaction(document, invertTransaction(result.transaction!))).toEqual(
-        createDocument(),
-      );
+      expect(
+        applyTransaction(document, planTransaction(createDocument(), result.transaction!).inverse),
+      ).toEqual(createDocument());
     }
   });
 

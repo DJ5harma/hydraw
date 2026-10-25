@@ -12,6 +12,22 @@ import type { DocumentCommit } from "./document-session.ts";
 import { Editor } from "./editor.ts";
 
 describe("committed document session", () => {
+  it("ignores raw no-op edits without invalidating redo or creating commit events", () => {
+    const session = new DocumentSession(createDocument());
+    session.execute(nameTransaction("Untitled board", "First"));
+    session.restore("undo");
+    const before = session.getSnapshot();
+    const events: DocumentCommit[] = [];
+    session.subscribe((event) => events.push(event));
+    session.execute({
+      label: "No-op",
+      changes: [{ type: "name", before: "Untitled board", after: "Untitled board" }],
+    });
+    expect(session.getSnapshot()).toEqual(before);
+    expect(events).toEqual([]);
+    session.restore("redo");
+    expect(session.getSnapshot().document.name).toBe("First");
+  });
   it("publishes nested local commits to observers in revision order", () => {
     const session = new DocumentSession(createDocument());
     session.subscribe(({ document }) => {
@@ -93,8 +109,8 @@ describe("two sessions through a local ordered relay", () => {
   it("combines independent proposals, deduplicates delivery, and undoes only local work", () => {
     const left = new DocumentSession(board());
     const right = new DocumentSession(board());
-    const moveA = left.prepare(shapeTransaction("Move A", 0, a, { ...a, x: 50 })!);
-    const moveB = right.prepare(shapeTransaction("Move B", 1, b, { ...b, y: 50 })!);
+    const moveA = left.prepare(shapeTransaction("Move A", a, { ...a, x: 50 })!);
+    const moveB = right.prepare(shapeTransaction("Move B", b, { ...b, y: 50 })!);
     left.apply(moveA, "local");
     right.apply(moveA);
     right.apply(moveB, "local");
@@ -114,8 +130,8 @@ describe("two sessions through a local ordered relay", () => {
   it("rejects conflicting proposals and preserves the rejected proposal for review", () => {
     const left = new DocumentSession(board());
     const right = new DocumentSession(board());
-    const first = left.prepare(shapeTransaction("Move A", 0, a, { ...a, x: 50 })!);
-    const stale = right.prepare(shapeTransaction("Move A", 0, a, { ...a, x: 100 })!);
+    const first = left.prepare(shapeTransaction("Move A", a, { ...a, x: 50 })!);
+    const stale = right.prepare(shapeTransaction("Move A", a, { ...a, x: 100 })!);
     left.apply(first, "local");
     right.apply(first);
     expect(() => right.apply(stale, "local")).toThrow("changed");
@@ -126,8 +142,8 @@ describe("two sessions through a local ordered relay", () => {
 
   it("blocks ABA stale edits even when a record returns to its previous value", () => {
     const session = new DocumentSession(board());
-    const stale = session.prepare(shapeTransaction("Old proposal", 0, a, { ...a, y: 99 })!);
-    session.execute(shapeTransaction("Move", 0, a, { ...a, x: 50 }));
+    const stale = session.prepare(shapeTransaction("Old proposal", a, { ...a, y: 99 })!);
+    session.execute(shapeTransaction("Move", a, { ...a, x: 50 }));
     session.restore("undo");
     expect(session.getSnapshot().document.shapes[0]).toEqual(a);
     expect(() => session.apply(stale)).toThrow("changed");
@@ -136,11 +152,11 @@ describe("two sessions through a local ordered relay", () => {
   it("invalidates conflicting personal history without undoing remote work", () => {
     const left = new DocumentSession(board());
     const right = new DocumentSession(board());
-    const local = left.prepare(shapeTransaction("Move A", 0, a, { ...a, x: 50 })!);
+    const local = left.prepare(shapeTransaction("Move A", a, { ...a, x: 50 })!);
     left.apply(local, "local");
     right.apply(local);
     const remote = right.prepare(
-      shapeTransaction("Move A again", 0, { ...a, x: 50 }, { ...a, x: 80 })!,
+      shapeTransaction("Move A again", { ...a, x: 50 }, { ...a, x: 80 })!,
     );
     right.apply(remote, "local");
     left.apply(remote);
@@ -153,10 +169,10 @@ describe("two sessions through a local ordered relay", () => {
   it("keeps unrelated object insertion from invalidating personal creation undo", () => {
     const left = new DocumentSession(createDocument());
     const right = new DocumentSession(createDocument());
-    const first = left.prepare(shapeTransaction("Add A", 0, null, a)!);
+    const first = left.prepare(shapeTransaction("Add A", null, a)!);
     left.apply(first, "local");
     right.apply(first);
-    const second = right.prepare(shapeTransaction("Add B", 1, null, b)!);
+    const second = right.prepare(shapeTransaction("Add B", null, b)!);
     right.apply(second, "local");
     left.apply(second);
     left.restore("undo");
@@ -175,7 +191,7 @@ describe("two sessions through a local ordered relay", () => {
       color: "#243e33" as const,
       arrowhead: "arrow" as const,
     };
-    const creation = right.prepare(connectorTransaction("Connect", 0, null, connector)!);
+    const creation = right.prepare(connectorTransaction("Connect", null, connector)!);
     left.apply(creation);
     right.apply(creation, "local");
     expect(() => left.apply(deletion, "local")).toThrow("changed");
@@ -196,7 +212,7 @@ describe("two sessions through a local ordered relay", () => {
       color: "#243e33" as const,
       arrowhead: "arrow" as const,
     };
-    const pending = session.prepare(connectorTransaction("Connect", 0, null, connector)!);
+    const pending = session.prepare(connectorTransaction("Connect", null, connector)!);
     session.execute(deleteObjectsTransaction(session.getSnapshot().document, [a.id]));
     expect(() => session.apply(pending)).toThrow("changed");
     expect(session.getSnapshot().document.connectors).toEqual([]);
@@ -211,9 +227,9 @@ describe("two sessions through a local ordered relay", () => {
     session.apply(fresh, "local");
     const doc = session.getSnapshot().document;
     const moved = session.prepare(
-      shapeTransaction("Move grouped A", 0, doc.shapes[0]!, { ...doc.shapes[0]!, x: 40 })!,
+      shapeTransaction("Move grouped A", doc.shapes[0]!, { ...doc.shapes[0]!, x: 40 })!,
     );
-    session.execute(shapeTransaction("Leave group", 1, doc.shapes[1]!, { ...b, groupId: "other" }));
+    session.execute(shapeTransaction("Leave group", doc.shapes[1]!, { ...b, groupId: "other" }));
     expect(() => session.apply(moved)).toThrow("changed");
   });
 

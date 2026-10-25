@@ -145,9 +145,9 @@ export function pastedSelection(
   const identity = new Map(ids.map((id) => [id, uniqueId()]));
   const metadata = clonedMetadata(fragment, document, ids, uniqueId, [...identity.values()]);
   const changes: DocumentChange[] = [];
-  translated.shapes.forEach((shape, position) => {
+  translated.shapes.forEach((shape) => {
     changes.push(
-      ...shapeTransaction("Paste selection", document.shapes.length + position, null, {
+      ...shapeTransaction("Paste selection", null, {
         ...shape,
         ...metadata.get(shape.id),
         id: identity.get(shape.id)!,
@@ -160,9 +160,9 @@ export function pastedSelection(
     if (!shapeId) throw new Error("This clipboard selection has an invalid binding.");
     return { type: "binding" as const, shapeId };
   }
-  translated.connectors.forEach((connector, position) => {
+  translated.connectors.forEach((connector) => {
     changes.push(
-      ...connectorTransaction("Paste selection", document.connectors.length + position, null, {
+      ...connectorTransaction("Paste selection", null, {
         ...connector,
         ...metadata.get(connector.id),
         id: identity.get(connector.id)!,
@@ -176,7 +176,7 @@ export function pastedSelection(
     label: "Paste selection",
     changes: Object.freeze(changes),
   });
-  // Validate the adjusted indices and connector graph before handing work to the editor.
+  // Validate the complete graph before handing work to the editor.
   applyTransaction(document, transaction);
   return { transaction, ids: Object.freeze([...identity.values()]) };
 }

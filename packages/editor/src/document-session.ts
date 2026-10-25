@@ -1,13 +1,11 @@
 import {
-  applyOperation,
   decodeDocument,
   operationDependencies,
-  operationFromTransaction,
   operationObjectIds,
   operationWriteKeys,
   planTransaction,
 } from "@hydraw/document";
-import type { BoardDocument, DocumentOperation, DocumentTransaction } from "@hydraw/document";
+import type { BoardDocument, DocumentTransaction } from "@hydraw/document";
 
 export type CommitOrigin = "local" | "remote" | "undo" | "redo" | "replacement";
 export type SessionOperation = Readonly<{
@@ -15,7 +13,7 @@ export type SessionOperation = Readonly<{
   boardId: string;
   epoch: number;
   expected: Readonly<Record<string, number>>;
-  edit: DocumentOperation;
+  edit: DocumentTransaction;
 }>;
 export type DocumentCommit = Readonly<{
   origin: CommitOrigin;
@@ -24,7 +22,7 @@ export type DocumentCommit = Readonly<{
   operation: SessionOperation | null;
   changedIds: readonly string[];
 }>;
-type HistoryEntry = Readonly<{ inverse: DocumentOperation; dependencies: readonly string[] }>;
+type HistoryEntry = Readonly<{ inverse: DocumentTransaction; dependencies: readonly string[] }>;
 
 /** Owns committed document state. Tools, cameras and browser resources live elsewhere. */
 export class DocumentSession {
@@ -66,14 +64,13 @@ export class DocumentSession {
   /** Prepare without mutating; a local relay can order competing proposals. */
   prepare(transaction: DocumentTransaction): SessionOperation {
     this.assertWritable();
-    return this.envelope(operationFromTransaction(this.document, transaction));
+    return this.envelope(planTransaction(this.document, transaction).edit);
   }
 
   execute(transaction: DocumentTransaction | null): void {
     if (!transaction || transaction.changes.length === 0) return;
     this.assertWritable();
-    const planned = planTransaction(this.document, transaction);
-    this.accept(this.envelope(planned.edit), "local", planned);
+    this.accept(this.envelope(transaction), "local");
   }
 
   /** Deliver accepted operations in canonical order. This is not a network transport. */
@@ -133,7 +130,7 @@ export class DocumentSession {
     this.commit(next, "replacement", null, [...new Set(changedIds)]);
   }
 
-  private envelope(edit: DocumentOperation): SessionOperation {
+  private envelope(edit: DocumentTransaction): SessionOperation {
     return Object.freeze({
       id: `${this.actor}:${++this.sequence}`,
       boardId: this.boardId,
@@ -147,11 +144,7 @@ export class DocumentSession {
     });
   }
 
-  private accept(
-    operation: SessionOperation,
-    origin: CommitOrigin,
-    planned?: ReturnType<typeof planTransaction>,
-  ): boolean {
+  private accept(operation: SessionOperation, origin: CommitOrigin): boolean {
     this.assertWritable();
     if (operation.boardId !== this.boardId)
       throw new Error("This operation belongs to another board.");
@@ -168,7 +161,8 @@ export class DocumentSession {
         throw new Error("The document changed before this operation.");
     }
     if (operation.edit.changes.length === 0) return false;
-    const { document, edit, inverse } = planned ?? applyOperation(this.document, operation.edit);
+    const { document, edit, inverse } = planTransaction(this.document, operation.edit);
+    if (edit.changes.length === 0) return false;
     const accepted = Object.freeze({
       ...operation,
       expected: Object.freeze({ ...operation.expected }),

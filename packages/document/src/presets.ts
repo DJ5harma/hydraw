@@ -108,37 +108,34 @@ export function insertPreset(
     throw new Error("This preset would be outside the supported board area.");
   const changes: DocumentChange[] = [
     ...(rebase
-      ? document.shapes.flatMap((shape, index) => {
+      ? document.shapes.flatMap((shape) => {
           const zIndex = ranks.get(shape.id)!;
           return shape.zIndex === zIndex
             ? []
-            : [{ type: "shape" as const, index, before: shape, after: { ...shape, zIndex } }];
+            : [{ type: "shape" as const, before: shape, after: { ...shape, zIndex } }];
         })
       : []),
     ...(rebase
-      ? document.connectors.flatMap((connector, index) => {
+      ? document.connectors.flatMap((connector) => {
           const zIndex = ranks.get(connector.id)!;
           return connector.zIndex === zIndex
             ? []
             : [
                 {
                   type: "connector" as const,
-                  index,
                   before: connector,
                   after: { ...connector, zIndex },
                 },
               ];
         })
       : []),
-    ...shapes.map((shape, index) => ({
+    ...shapes.map((shape) => ({
       type: "shape" as const,
-      index: document.shapes.length + index,
       before: null,
       after: shape,
     })),
-    ...connectors.map((connector, index) => ({
+    ...connectors.map((connector) => ({
       type: "connector" as const,
-      index: document.connectors.length + index,
       before: null,
       after: connector,
     })),

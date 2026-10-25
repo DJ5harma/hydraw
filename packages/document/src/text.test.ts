@@ -3,7 +3,7 @@ import {
   applyTransaction,
   createDocument,
   decodeDocument,
-  invertTransaction,
+  planTransaction,
   parseDocument,
   shapeTransaction,
 } from "./index.ts";
@@ -63,15 +63,17 @@ describe("version 1 text documents", () => {
       { textAlign: "right" as const },
       { color: "#3568db" as const },
     ]) {
-      const transaction = shapeTransaction("Edit text", 0, text, { ...text, ...patch })!;
+      const transaction = shapeTransaction("Edit text", text, { ...text, ...patch })!;
       const next = applyTransaction(document, transaction);
-      expect(applyTransaction(next, invertTransaction(transaction))).toEqual(document);
+      expect(applyTransaction(next, planTransaction(document, transaction).inverse)).toEqual(
+        document,
+      );
       expect(() => applyTransaction(next, transaction)).toThrow("changed");
     }
     expect(() =>
       applyTransaction(
         document,
-        shapeTransaction("Change type", 0, text, {
+        shapeTransaction("Change type", text, {
           id: "a",
           type: "rectangle",
           x: 0,

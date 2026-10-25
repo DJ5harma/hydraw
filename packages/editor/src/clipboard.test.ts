@@ -3,7 +3,7 @@ import {
   applyTransaction,
   createDocument,
   decodeDocument,
-  invertTransaction,
+  planTransaction,
 } from "@hydraw/document";
 import type { BoardDocument, Connector, Rectangle, TextShape } from "@hydraw/document";
 import {
@@ -119,7 +119,9 @@ describe("Hydraw selection clipboard", () => {
       start: { type: "binding", shapeId: "paste-1" },
       end: { type: "binding", shapeId: "paste-2" },
     });
-    expect(applyTransaction(next, invertTransaction(pasted.transaction!))).toEqual(document);
+    expect(applyTransaction(next, planTransaction(document, pasted.transaction!).inverse)).toEqual(
+      document,
+    );
   });
 
   it("clamps paste movement to portable coordinates and rejects colliding IDs", () => {

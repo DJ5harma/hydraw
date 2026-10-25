@@ -8,7 +8,7 @@ import {
   detachConnectorBindings,
   duplicateObjects,
   frameContents,
-  invertTransaction,
+  planTransaction,
   parseDocument,
   resolveConnector,
   serializeDocument,
@@ -90,12 +90,12 @@ it("validates, freezes and round-trips routing and rejects stale route edits ato
   const before = document();
   expect(Object.isFrozen(before.connectors[0]!.route)).toBe(true);
   const after: Connector = { ...edge, route: { type: "elbow", axis: "y", position: 230 } };
-  const change = connectorTransaction("Route connector", 0, edge, after)!;
+  const change = connectorTransaction("Route connector", edge, after)!;
   const routed = applyTransaction(before, change);
   expect(parseDocument(serializeDocument(routed))).toEqual(routed);
-  expect(applyTransaction(routed, invertTransaction(change))).toEqual(before);
+  expect(applyTransaction(routed, planTransaction(before, change).inverse)).toEqual(before);
   expect(() => applyTransaction(routed, change)).toThrow();
-  expect(connectorTransaction("No change", 0, after, { ...after })).toBeNull();
+  expect(connectorTransaction("No change", after, { ...after })).toBeNull();
   for (const route of [
     { type: "curve", axis: "x" },
     { type: "elbow", axis: "z" },

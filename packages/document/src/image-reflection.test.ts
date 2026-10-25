@@ -5,7 +5,7 @@ import {
   decodeDocument,
   imageBoundsForCrop,
   imageCropTransaction,
-  invertTransaction,
+  planTransaction,
   reflectedImageCrop,
   shapeTransaction,
   sourceImageBounds,
@@ -44,18 +44,18 @@ it("keeps source-relative crops and mirrored display geometry consistent through
     flipY: true,
   });
   expect(reset.shapes[0]).not.toHaveProperty("crop");
-  expect(applyTransaction(reset, invertTransaction(change))).toEqual(before);
+  expect(applyTransaction(reset, planTransaction(before, change).inverse)).toEqual(before);
   expect(
     reflectedImageCrop({ flipX: true }, { x: 0.8, y: 0, width: 0.2, height: 1 }).x,
   ).toBeGreaterThanOrEqual(0);
 });
 it("validates reflection fields and detects stale orientation-only edits", () => {
   const before = decodeDocument({ ...createDocument(), shapes: [image] });
-  const change = shapeTransaction("Reflect image", 0, image, { ...image, flipX: false })!;
+  const change = shapeTransaction("Reflect image", image, { ...image, flipX: false })!;
   const next = applyTransaction(before, change);
   expect(next.shapes[0]).not.toHaveProperty("flipX");
   expect(() => applyTransaction(next, change)).toThrow();
-  expect(applyTransaction(next, invertTransaction(change))).toEqual(before);
+  expect(applyTransaction(next, planTransaction(before, change).inverse)).toEqual(before);
   for (const flipX of [1, "true", null])
     expect(() => decodeDocument({ ...before, shapes: [{ ...image, flipX }] })).toThrow(
       "invalid image",

@@ -144,6 +144,6 @@ export function createFrameAroundSelection(
     },
     label: { text: `Frame ${labelNumber}`, fontSize: 20, fontWeight: 700, color: "#202124" },
   };
-  const change = shapeTransaction("Create frame", document.shapes.length, null, frame)!;
+  const change = shapeTransaction("Create frame", null, frame)!;
   return { transaction: change, id };
 }
