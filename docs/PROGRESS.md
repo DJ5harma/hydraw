@@ -1,5 +1,10 @@
 # Current implementation
 
+Architecture refactor, 26 October 2026: a framework-independent `DocumentSession`
+owns committed state and history. Editor tools submit transactions to that session;
+persistence observes explicit commit events rather than camera/gesture updates.
+Commit origins distinguish local edits, undo, redo and board replacement.
+
 Updated 25 October 2026. Git history records the development milestones.
 
 Hydraw is a local canvas editor for architecture diagrams. It supports geometric

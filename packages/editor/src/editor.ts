@@ -80,7 +80,7 @@ import { objectIds, selectionBounds } from "./selection.ts";
 import { fittedCamera, MIN_ZOOM, MAX_ZOOM } from "./viewport.ts";
 import { layoutText } from "./text-layout.ts";
 import type { TextMeasurer } from "./text-layout.ts";
-import { TransactionHistory } from "./history.ts";
+import { DocumentSession } from "./document-session.ts";
 import type { EditorChromeSnapshot, EditorSnapshot, Tool } from "./types.ts";
 import { erasedObjects, ERASER_RADIUS_SCREEN } from "./eraser.ts";
 
@@ -121,7 +121,7 @@ export class Editor {
   private snapshot: EditorSnapshot;
   private chrome: EditorChromeSnapshot;
   private listeners = new Set<() => void>();
-  private readonly history = new TransactionHistory();
+  readonly documentSession: DocumentSession;
   private gesture: Gesture | null = null;
   private documentLocked = false;
   private documentEpoch = 0;
@@ -136,8 +136,9 @@ export class Editor {
   ) {
     this.makeId = makeId;
     this.measureText = measureText;
+    this.documentSession = new DocumentSession(this.prepareDocument(document));
     this.snapshot = {
-      document: this.prepareDocument(document),
+      document: this.documentSession.getSnapshot().document,
       revision: 0,
       selectedIds: Object.freeze([]),
       selectedId: null,
@@ -164,6 +165,9 @@ export class Editor {
       canRedo: false,
     };
     this.chrome = chromeSnapshot(this.snapshot);
+    this.documentSession.subscribe(({ document, revision, origin }) => {
+      if (origin !== "replacement") this.publish({ document, revision });
+    });
   }
 
   getSnapshot = (): EditorSnapshot => this.snapshot;
@@ -199,8 +203,8 @@ export class Editor {
       ...patch,
       selectedIds,
       selectedId: selectedIds.length === 1 ? selectedIds[0]! : null,
-      canUndo: this.history.canUndo,
-      canRedo: this.history.canRedo,
+      canUndo: this.documentSession.getSnapshot().canUndo,
+      canRedo: this.documentSession.getSnapshot().canRedo,
     };
     const next = chromeSnapshot(this.snapshot);
     if (
@@ -396,10 +400,10 @@ export class Editor {
     const document = this.prepareDocument(next);
     this.documentEpoch++;
     this.cancelGesture();
-    this.history.clear();
+    this.documentSession.replace(document);
     this.publish({
       document,
-      revision: this.snapshot.revision + 1,
+      revision: this.documentSession.getSnapshot().revision,
       selectedIds: [],
       tool: "select",
       camera: { x: 0, y: 0, zoom: 1 },
@@ -420,8 +424,7 @@ export class Editor {
   private commit(transaction: DocumentTransaction | null): void {
     if (!transaction) return;
     this.assertWritable();
-    const document = this.history.execute(this.snapshot.document, transaction);
-    this.publish({ document, revision: this.snapshot.revision + 1 });
+    this.documentSession.execute(transaction);
   }
 
   private commitShape(label: string, before: Shape | null, after: Shape | null): void {
@@ -1339,8 +1342,6 @@ export class Editor {
     this.assertWritable();
     this.cancelTextEditing();
     this.cancelGesture();
-    const document = this.history[direction](this.snapshot.document);
-    if (!document) return;
-    this.publish({ document, revision: this.snapshot.revision + 1 });
+    this.documentSession.restore(direction);
   }
 }

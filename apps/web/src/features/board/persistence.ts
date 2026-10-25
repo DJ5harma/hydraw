@@ -75,7 +75,7 @@ export class BoardPersistence {
           this.publish({ saveState: "error", saveError: message(error) });
       });
     };
-    const disconnect = this.editor.subscribe(observe);
+    const disconnect = this.editor.documentSession.subscribe(observe);
     observe();
     return disconnect;
   }
