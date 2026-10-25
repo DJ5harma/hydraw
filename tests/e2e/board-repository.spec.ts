@@ -166,3 +166,110 @@ test("failed asset writes roll back pixels, document and recovery together", asy
     recovery: null,
   });
 });
+
+for (const damage of ["missing", "checksum"] as const) {
+  test(`repository preserves manifests when image assets have ${damage} damage`, async ({
+    page,
+  }, testInfo) => {
+    test.skip(
+      testInfo.project.name === "production",
+      "Repository API is exercised through the development source module.",
+    );
+    await page.goto("/");
+    const result = await page.evaluate(async (damage) => {
+      const moduleUrl = new URL("/src/features/board/storage.ts", location.origin).href;
+      const { localBoards } = (await import(
+        moduleUrl
+      )) as typeof import("../../apps/web/src/features/board/storage.ts");
+      const signal = new AbortController().signal;
+      const id = `damaged-${damage}`;
+      const board = await localBoards.open(id, signal);
+      const source =
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLbtAAAAABJRU5ErkJggg==";
+      const document = {
+        ...board.document,
+        name: "Keep this manifest",
+        shapes: [
+          {
+            id: "image",
+            type: "image" as const,
+            x: 0,
+            y: 0,
+            width: 100,
+            height: 100,
+            name: "Picture",
+            src: source,
+          },
+        ],
+      };
+      const put = Object.getOwnPropertyDescriptor(IDBObjectStore.prototype, "put")!
+        .value as IDBObjectStore["put"];
+      let assetWrites = 0;
+      try {
+        IDBObjectStore.prototype.put = function (value: unknown, key?: IDBValidKey) {
+          if (this.name === "assets") assetWrites++;
+          return put.call(this, value, key);
+        };
+        await board.save(document);
+        await board.save({
+          ...document,
+          shapes: document.shapes.map((shape) => ({ ...shape, x: 50 })),
+        });
+      } finally {
+        IDBObjectStore.prototype.put = put;
+        board.close();
+      }
+      const before = await new Promise<unknown>((resolve, reject) => {
+        const request = indexedDB.open("hydraw-board-v2", 1);
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          const database = request.result;
+          const transaction = database.transaction(["boards", "assets"], "readwrite");
+          const manifest = transaction.objectStore("boards").get([id, "primary"]);
+          const assets = transaction.objectStore("assets");
+          const keys = assets.getAllKeys(IDBKeyRange.bound([id, ""], [id, "\uffff"]));
+          keys.onsuccess = () => {
+            if (damage === "missing") assets.delete(keys.result[0]!);
+            else assets.put(source.replace("AAAADUl", "AAAAEUl"), keys.result[0]!);
+          };
+          transaction.oncomplete = () => {
+            database.close();
+            resolve(manifest.result);
+          };
+          transaction.onabort = () => {
+            database.close();
+            reject(transaction.error);
+          };
+        };
+      });
+      let error = "";
+      try {
+        const unexpected = await localBoards.open(id, signal);
+        unexpected.close();
+      } catch (cause) {
+        error = (cause as Error).message;
+      }
+      const after = await new Promise<unknown>((resolve, reject) => {
+        const request = indexedDB.open("hydraw-board-v2", 1);
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          const database = request.result;
+          const tx = database.transaction("boards", "readonly");
+          const read = tx.objectStore("boards").get([id, "primary"]);
+          tx.oncomplete = () => {
+            database.close();
+            resolve(read.result);
+          };
+          tx.onabort = () => {
+            database.close();
+            reject(tx.error);
+          };
+        };
+      });
+      return { before, after, error, assetWrites };
+    }, damage);
+    expect(result.assetWrites).toBe(1);
+    expect(result.after).toEqual(result.before);
+    expect(result.error).toContain(damage === "missing" ? "missing" : "checksum");
+  });
+}

@@ -44,6 +44,8 @@ sources. The asset codec hydrates portable semantic records on read and stores
 SHA-256-addressed pixels separately. Manifests, pixels and recovery commit in one
 transaction; unreferenced per-board assets are collected in that transaction.
 Unreadable recovery manifests prevent collection until explicit replacement.
+Loading verifies image checksums; missing or corrupt assets leave the stored board
+intact. Geometry-only saves reuse verified pixels instead of rewriting them.
 Personal library items live in
 `hydraw-library-v1` (IndexedDB schema 1). Both databases start fresh after the reset.
 The refactor starts a fresh board database. The app does not open, migrate or delete old development databases. Existing

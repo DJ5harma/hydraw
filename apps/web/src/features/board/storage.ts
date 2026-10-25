@@ -9,6 +9,11 @@ import type { BoardLease, BoardRepository } from "./repository.ts";
 
 const DATABASE = "hydraw-board-v2";
 
+async function fingerprint(source: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(source));
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
 async function acquireWriter(id: string, signal: AbortSignal): Promise<() => void> {
   if (!navigator.locks)
     throw new Error("This browser cannot safely coordinate local editing across tabs.");
@@ -120,29 +125,42 @@ async function open(id: string, signal: AbortSignal): Promise<BoardLease> {
         reject(transaction.error ?? new Error("Local read was interrupted."));
     });
     signal.throwIfAborted();
+    const hashes = new Map<string, string>();
+    let knownAssetIds = new Set<string>();
+    async function hydrate(value: unknown): Promise<BoardDocument> {
+      const document = hydrateDocumentAssets(value, stored.assets);
+      await Promise.all(
+        documentAssetIds(value).map(async (id) => {
+          const source = stored.assets.get(id)!;
+          if (hashes.get(source) !== id && (await fingerprint(source)) !== id)
+            throw new Error(
+              "An image asset checksum does not match. Existing board data has been preserved.",
+            );
+          hashes.set(source, id);
+          knownAssetIds.add(id);
+        }),
+      );
+      return document;
+    }
     const document =
-      stored.primary === undefined
-        ? createDocument()
-        : hydrateDocumentAssets(stored.primary, stored.assets);
+      stored.primary === undefined ? createDocument() : await hydrate(stored.primary);
     let recovery: BoardDocument | null = null;
     let recoveryWarning: string | null = null;
     let retainedRecovery = stored.recovery;
     if (stored.recovery !== undefined) {
       try {
-        recovery = hydrateDocumentAssets(stored.recovery, stored.assets);
+        recovery = await hydrate(stored.recovery);
       } catch {
         recoveryWarning =
           "The previous recovery copy could not be read. Your current board is available. Opening another board will replace that unreadable recovery copy.";
       }
     }
-    const hashes = new Map<string, string>();
-    const fingerprint = async (source: string): Promise<string> => {
+    let recoveryUnreadable = recoveryWarning !== null;
+    signal.throwIfAborted();
+    const identify = async (source: string): Promise<string> => {
       const cached = hashes.get(source);
       if (cached) return cached;
-      const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(source));
-      const hash = Array.from(new Uint8Array(digest), (byte) =>
-        byte.toString(16).padStart(2, "0"),
-      ).join("");
+      const hash = await fingerprint(source);
       hashes.set(source, hash);
       return hash;
     };
@@ -158,7 +176,7 @@ async function open(id: string, signal: AbortSignal): Promise<BoardLease> {
           ];
           const ids = new Map(
             await Promise.all(
-              sources.map(async (source) => [source, await fingerprint(source)] as const),
+              sources.map(async (source) => [source, await identify(source)] as const),
             ),
           );
           return { key, packed: packDocumentAssets(board, (source) => ids.get(source)!) };
@@ -170,7 +188,8 @@ async function open(id: string, signal: AbortSignal): Promise<BoardLease> {
       const retainedIds = new Set(
         prepared.flatMap((entry) => documentAssetIds(entry.packed.document)),
       );
-      let canCollect = true;
+      const replacingRecovery = prepared.some((entry) => entry.key === "recovery");
+      let canCollect = !recoveryUnreadable || replacingRecovery;
       if (nextRecovery !== undefined) {
         try {
           documentAssetIds(nextRecovery).forEach((assetId) => retainedIds.add(assetId));
@@ -187,7 +206,8 @@ async function open(id: string, signal: AbortSignal): Promise<BoardLease> {
         try {
           const assets = transaction.objectStore("assets");
           for (const { key, packed } of prepared) {
-            for (const [assetId, source] of packed.assets) assets.put(source, [id, assetId]);
+            for (const [assetId, source] of packed.assets)
+              if (!knownAssetIds.has(assetId)) assets.put(source, [id, assetId]);
             transaction.objectStore("boards").put(packed.document, [id, key]);
           }
           if (canCollect) {
@@ -203,6 +223,11 @@ async function open(id: string, signal: AbortSignal): Promise<BoardLease> {
         }
       });
       retainedRecovery = nextRecovery;
+      if (replacingRecovery) recoveryUnreadable = false;
+      for (const { packed } of prepared)
+        for (const assetId of packed.assets.keys()) knownAssetIds.add(assetId);
+      if (canCollect)
+        knownAssetIds = new Set([...knownAssetIds].filter((assetId) => retainedIds.has(assetId)));
       // Keep only current/recovery pixels in the fingerprint cache.
       for (const [source, hash] of hashes) if (!retainedIds.has(hash)) hashes.delete(source);
     }
