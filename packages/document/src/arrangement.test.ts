@@ -175,6 +175,21 @@ describe("selection arrangement", () => {
     expect(alignShapesTransaction(document, ["a", "edge", "missing"], "left")).toBeNull();
     expect(distributeShapesTransaction(document, ["a", "b", "edge"], "horizontal")).toBeNull();
   });
+
+  it("enforces lock, group and frame restrictions at the document boundary", () => {
+    for (const metadata of [{ locked: true }, { groupId: "group" }, { kind: "frame" as const }]) {
+      const source = initial();
+      const document = decodeDocument({
+        ...source,
+        connectors: [],
+        shapes: source.shapes.map((shape) =>
+          shape.id === "a" ? { ...shape, ...metadata } : shape,
+        ),
+      });
+      expect(alignShapesTransaction(document, ["a", "b", "c"], "left")).toBeNull();
+      expect(distributeShapesTransaction(document, ["a", "b", "c"], "horizontal")).toBeNull();
+    }
+  });
   it("rejects an out-of-range layout as a whole instead of clamping away the alignment", () => {
     const document = decodeDocument({
       ...createDocument(),

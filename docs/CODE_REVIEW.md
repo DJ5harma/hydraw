@@ -12,7 +12,9 @@ the later architecture refactor was as simple as it could be.
 | Editor and document session duplicate replacement flags and lease wrappers | Removed the editor flag/wrapper; the session owns the lock, including gesture entry checks                                |
 | Persistence adds a flag to suppress its own already-persisted replacements | Use explicit commit origin and the existing replacement lifecycle; consume commit payloads directly                       |
 | Array-index transactions and ID operations represent the same edits twice  | Removed both conversion directions; commands, validation, inverse generation and history use one ID-addressed edit format |
-| Selection/group/lock checks are repeated across core and controls          | Review the actual policies and share the common queries without introducing a command framework                           |
+| Selection/group/lock checks are repeated across core and controls          | Shared object/group/lock queries now serve controls and input paths; arrangement eligibility lives in the document rules  |
+
+Removed an unused connector-only hit-test path and the duplicate clipboard object-ID helper. The global scene hit test remains the single hit-order implementation.
 
 Checks accompany each cohesive increment. Preserve atomic graph validation,
 recoverable drafts, native input behavior and durable storage acknowledgements.

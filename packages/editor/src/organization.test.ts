@@ -3,6 +3,7 @@ import { createDocument, decodeDocument, parseDocument, serializeDocument } from
 import { Editor } from "./editor.ts";
 import { hitSceneObject } from "./connector-interactions.ts";
 import { exportSvg } from "./svg-export.ts";
+import { erasedObjects } from "./eraser.ts";
 
 const board = () =>
   decodeDocument({
@@ -17,6 +18,25 @@ const editor = () => {
   let id = 0;
   return new Editor(board(), () => `new-${++id}`);
 };
+
+it("protects every member of a partially locked imported group across input paths", () => {
+  const source = board();
+  const document = decodeDocument({
+    ...source,
+    shapes: source.shapes.map((shape, i) =>
+      i < 2 ? { ...shape, groupId: "group", ...(i === 1 ? { locked: true } : {}) } : shape,
+    ),
+  });
+  const e = new Editor(document);
+  e.selectAll();
+  expect(e.getSnapshot().selectedIds).toEqual(["c"]);
+  expect(hitSceneObject(document, { x: 350, y: 240 }, 7)).toBeUndefined();
+  expect(hitSceneObject(document, { x: 350, y: 240 }, 7, true)?.id).toBe("a");
+  expect(erasedObjects(document, { x: 250, y: 240 }, { x: 450, y: 240 }, 12)).toEqual([]);
+  e.select("a");
+  e.nudgeSelection(20, 0);
+  expect(e.getSnapshot().document).toEqual(document);
+});
 
 it("expands group selection, moves it atomically and round-trips metadata", () => {
   const e = editor();

@@ -1,4 +1,9 @@
-import { containsShape, createConnectorResolver, rectangleAppearance } from "@hydraw/document";
+import {
+  containsShape,
+  createConnectorResolver,
+  rectangleAppearance,
+  lockedObjectIds,
+} from "@hydraw/document";
 import type { BoardDocument, InkShape, Point, Shape } from "@hydraw/document";
 
 export const ERASER_RADIUS_SCREEN = 12;
@@ -121,15 +126,11 @@ export function erasedObjects(
   radius: number,
 ): string[] {
   const objects = [...document.shapes, ...document.connectors];
-  const lockedGroups = new Set(
-    objects.filter((item) => item.locked && item.groupId).map((item) => item.groupId),
-  );
-  const protectedObject = (item: (typeof objects)[number]) =>
-    !!item.locked || !!(item.groupId && lockedGroups.has(item.groupId));
+  const locked = lockedObjectIds(document);
   // Deleting a node also deletes its bindings; keep protected edges intact.
   const protectedBindings = new Set(
     document.connectors
-      .filter(protectedObject)
+      .filter((object) => locked.has(object.id))
       .flatMap((edge) =>
         [edge.start, edge.end].flatMap((end) => (end.type === "binding" ? [end.shapeId] : [])),
       ),
@@ -137,7 +138,7 @@ export function erasedObjects(
   const resolve = createConnectorResolver(document.shapes);
   return objects
     .filter((item) => {
-      if (protectedObject(item) || protectedBindings.has(item.id)) return false;
+      if (locked.has(item.id) || protectedBindings.has(item.id)) return false;
       if (item.type !== "connector") return hitEraserShape(item, from, to, radius);
       const ends = resolve(item);
       return ends.points

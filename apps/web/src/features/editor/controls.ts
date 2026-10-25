@@ -1,5 +1,6 @@
 import type { RefObject, KeyboardEvent as ReactKeyboardEvent } from "react";
 import type { Editor, Tool } from "@hydraw/editor";
+import { lockedObjectIds } from "@hydraw/document";
 export function createEditorControls(
   editor: Editor,
   canvasRef: RefObject<HTMLCanvasElement | null>,
@@ -43,12 +44,9 @@ function createKeyboardHandler(
     } else if (mod && event.shiftKey && key === "l") {
       event.preventDefault();
       const snapshot = editor.getSnapshot();
-      const selected = new Set(snapshot.selectedIds);
-      if (selected.size) {
-        const locked = [...snapshot.document.shapes, ...snapshot.document.connectors].some(
-          (item) => selected.has(item.id) && item.locked,
-        );
-        editor.setSelectionLocked(!locked);
+      if (snapshot.selectedIds.length) {
+        const locked = lockedObjectIds(snapshot.document);
+        editor.setSelectionLocked(!snapshot.selectedIds.some((id) => locked.has(id)));
       }
     } else if (mod && (event.code === "BracketRight" || event.code === "BracketLeft")) {
       event.preventDefault();

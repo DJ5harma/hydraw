@@ -1,5 +1,6 @@
 import {
   expandGroups,
+  lockedObjectIds,
   frameSelectionContents,
   MAX_CONNECTORS,
   MAX_COORDINATE,
@@ -204,12 +205,8 @@ export function startGesture(
   const edge = object?.type === "connector" ? object : undefined;
   const hitId = shape?.id ?? edge?.id;
   const hitIds = hitId ? expandGroups(document, [hitId]) : [];
-  const groupLocked = (ids: readonly string[]) => {
-    const selected = new Set(ids);
-    return [...document.shapes, ...document.connectors].some(
-      (item) => selected.has(item.id) && item.locked,
-    );
-  };
+  const locked = lockedObjectIds(document);
+  const groupLocked = (ids: readonly string[]) => ids.some((id) => locked.has(id));
   if (additive && hitId)
     return {
       gesture: null,

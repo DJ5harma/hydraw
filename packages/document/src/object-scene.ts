@@ -1,5 +1,31 @@
 import type { BoardDocument, Shape, Connector, ObjectMetadata } from "./model.ts";
-type SceneObject = Shape | Connector;
+export type SceneObject = Shape | Connector;
+
+export function selectedObjects(
+  document: BoardDocument,
+  ids: readonly string[],
+): readonly SceneObject[] {
+  const selected = new Set(ids);
+  return [...document.shapes, ...document.connectors].filter((object) => selected.has(object.id));
+}
+
+/** A locked member protects its entire flat group, regardless of selection/input method. */
+export function lockedObjectIds(document: BoardDocument): ReadonlySet<string> {
+  const objects = [...document.shapes, ...document.connectors];
+  const groups = new Set(
+    objects.filter((object) => object.locked && object.groupId).map((object) => object.groupId),
+  );
+  return new Set(
+    objects
+      .filter((object) => object.locked || (object.groupId && groups.has(object.groupId)))
+      .map((object) => object.id),
+  );
+}
+
+export function commonGroupId(objects: readonly ObjectMetadata[]): string | undefined {
+  const groupId = objects[0]?.groupId;
+  return groupId && objects.every((object) => object.groupId === groupId) ? groupId : undefined;
+}
 
 /** Return drawable objects from back to front, using the original scene order for stable ties. */
 export function sceneObjects(document: BoardDocument): readonly SceneObject[] {

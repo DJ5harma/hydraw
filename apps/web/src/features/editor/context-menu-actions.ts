@@ -1,4 +1,10 @@
-import { isFrame, PRESETS } from "@hydraw/document";
+import {
+  isFrame,
+  PRESETS,
+  selectedObjects,
+  commonGroupId,
+  lockedObjectIds,
+} from "@hydraw/document";
 import type { Point } from "@hydraw/document";
 import type { Editor } from "@hydraw/editor";
 import type { ContextMenuItem } from "./CanvasContextMenu.tsx";
@@ -23,10 +29,7 @@ export function contextMenuActions({
   cropImage,
 }: Options): readonly (readonly ContextMenuItem[])[] {
   const snapshot = editor.getSnapshot();
-  const selected = new Set(snapshot.selectedIds);
-  const objects = [...snapshot.document.shapes, ...snapshot.document.connectors].filter((item) =>
-    selected.has(item.id),
-  );
+  const objects = selectedObjects(snapshot.document, snapshot.selectedIds);
   const copy: ContextMenuItem = {
     id: "copy",
     label: "Copy",
@@ -65,8 +68,8 @@ export function contextMenuActions({
         { id: "fit", label: "Fit board", run: fit },
       ],
     ];
-  const locked = objects.some((item) => item.locked);
-  if (locked)
+  const locked = lockedObjectIds(snapshot.document);
+  if (objects.some((item) => locked.has(item.id)))
     return [
       [
         {
@@ -122,8 +125,7 @@ export function contextMenuActions({
   if (imageCopy.length) groups.push(imageCopy);
   const organize: ContextMenuItem[] = [];
   if (!hasFrames) {
-    const oneGroup = objects.every((item) => item.groupId && item.groupId === objects[0]!.groupId);
-    if (objects.length > 1 && !oneGroup)
+    if (objects.length > 1 && !commonGroupId(objects))
       organize.push({
         id: "group",
         label: "Group",

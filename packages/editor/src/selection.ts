@@ -1,4 +1,9 @@
-import { createConnectorResolver, translateObjects, expandGroups } from "@hydraw/document";
+import {
+  createConnectorResolver,
+  translateObjects,
+  expandGroups,
+  lockedObjectIds,
+} from "@hydraw/document";
 import type {
   BoardDocument,
   Bounds,
@@ -33,13 +38,8 @@ function contains(bounds: Bounds, point: Point): boolean {
 
 export function enclosedObjects(document: BoardDocument, bounds: Bounds): readonly string[] {
   const resolveConnector = createConnectorResolver(document.shapes);
-  const lockedGroups = new Set(
-    [...document.shapes, ...document.connectors]
-      .filter((item) => item.locked && item.groupId)
-      .map((item) => item.groupId),
-  );
-  const editable = (item: Shape | Connector) =>
-    !item.locked && (!item.groupId || !lockedGroups.has(item.groupId));
+  const locked = lockedObjectIds(document);
+  const editable = (item: Shape | Connector) => !locked.has(item.id);
   return expandGroups(document, [
     ...document.shapes
       .filter(

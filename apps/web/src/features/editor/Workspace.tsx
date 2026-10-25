@@ -3,7 +3,7 @@ import type { Alignment, DistributionAxis } from "@hydraw/document";
 import { LibraryPanel } from "../library/LibraryPanel.tsx";
 import type { LibraryPanelMode } from "../library/LibraryPanel.tsx";
 import { ImageCropOverlay } from "./ImageCropOverlay.tsx";
-import { boardTheme, expandGroups } from "@hydraw/document";
+import { boardTheme, lockedObjectIds } from "@hydraw/document";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { BoardTransferDialog } from "../board/BoardTransferDialog.tsx";
 import type { TransferMode } from "../board/BoardTransferDialog.tsx";
@@ -64,13 +64,7 @@ export function Workspace({ session }: { session: BoardSession }) {
     const current = editor.getSnapshot();
     const image = current.document.shapes.find((shape) => shape.id === id);
     if (image?.type !== "image") return;
-    const ids = new Set(expandGroups(current.document, [id]));
-    if (
-      [...current.document.shapes, ...current.document.connectors].some(
-        (object) => ids.has(object.id) && object.locked,
-      )
-    )
-      return;
+    if (lockedObjectIds(current.document).has(id)) return;
     editor.finishTextEditing();
     editor.cancelGesture();
     setCropId(id);

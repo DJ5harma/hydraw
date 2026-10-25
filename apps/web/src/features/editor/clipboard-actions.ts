@@ -1,17 +1,13 @@
-import { frameSelectionContents } from "@hydraw/document";
+import { frameSelectionContents, lockedObjectIds } from "@hydraw/document";
 import { decodeClipboardFragment } from "@hydraw/editor";
 import type { Editor } from "@hydraw/editor";
 import type { Point } from "@hydraw/document";
 
 export function canCutSelection(editor: Editor): boolean {
   const snapshot = editor.getSnapshot();
-  const ids = new Set(frameSelectionContents(snapshot.document, snapshot.selectedIds));
-  return (
-    ids.size > 0 &&
-    ![...snapshot.document.shapes, ...snapshot.document.connectors].some(
-      (item) => ids.has(item.id) && item.locked,
-    )
-  );
+  const ids = frameSelectionContents(snapshot.document, snapshot.selectedIds);
+  const locked = lockedObjectIds(snapshot.document);
+  return ids.length > 0 && !ids.some((id) => locked.has(id));
 }
 
 /** Delete only after the clipboard write succeeds and the captured selection is still current. */

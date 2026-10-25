@@ -3,13 +3,12 @@ import { createDocument } from "./model.ts";
 import type { BoardDocument, Connector, Shape } from "./model.ts";
 import { applyTransaction, planTransaction } from "./transactions.ts";
 import {
-  expandGroups,
   groupObjectsTransaction,
   reorderObjectsTransaction,
-  sceneObjects,
   setObjectsLockedTransaction,
   ungroupObjectsTransaction,
 } from "./organization.ts";
+import { expandGroups, sceneObjects } from "./object-scene.ts";
 
 const shape = (id: string, metadata: Pick<Shape, "groupId" | "locked" | "zIndex"> = {}): Shape => ({
   id,

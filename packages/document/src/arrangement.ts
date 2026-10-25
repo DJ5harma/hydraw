@@ -2,6 +2,8 @@ import { MAX_COORDINATE } from "./model.ts";
 import type { BoardDocument, Shape } from "./model.ts";
 import { updateObjectsTransaction } from "./selection-operations.ts";
 import type { DocumentTransaction } from "./transactions.ts";
+import { selectedObjects } from "./object-scene.ts";
+import { isFrame } from "./frames.ts";
 
 export type Alignment =
   | "left"
@@ -13,8 +15,15 @@ export type Alignment =
 export type DistributionAxis = "horizontal" | "vertical";
 
 function selectedShapes(document: BoardDocument, ids: readonly string[]): readonly Shape[] {
-  const selected = new Set(ids);
-  return document.shapes.filter((shape) => selected.has(shape.id));
+  const objects = selectedObjects(document, ids);
+  if (
+    objects.some(
+      (object) =>
+        object.locked || object.groupId || (object.type !== "connector" && isFrame(object)),
+    )
+  )
+    return [];
+  return objects.filter((object) => object.type !== "connector");
 }
 
 function arrangement(

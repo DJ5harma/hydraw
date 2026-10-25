@@ -19,7 +19,7 @@ import type {
   Endpoint,
   Point,
 } from "@hydraw/document";
-import { selectionBounds } from "./selection.ts";
+import { objectIds, selectionBounds } from "./selection.ts";
 
 const CLIPBOARD_FORMAT = "hydraw/selection";
 const CLIPBOARD_VERSION = 1;
@@ -34,13 +34,6 @@ function utf8ByteLengthUpTo(text: string, limit: number): number {
     if (bytes > limit) return bytes;
   }
   return bytes;
-}
-
-function allIds(document: BoardDocument): readonly string[] {
-  return [
-    ...document.shapes.map((shape) => shape.id),
-    ...document.connectors.map((connector) => connector.id),
-  ];
 }
 
 /** Serialize selected objects as a validated, portable Hydraw fragment. */
@@ -117,7 +110,7 @@ export function pastedSelection(
   )
     throw new Error("There is not enough room to paste this selection.");
 
-  const ids = allIds(fragment);
+  const ids = objectIds(fragment);
   const bounds = selectionBounds(fragment.shapes, fragment.connectors, ids);
   if (!bounds) return { transaction: null, ids: [] };
   const offset = {
@@ -125,7 +118,7 @@ export function pastedSelection(
     y: point.y - (bounds.y + bounds.height / 2),
   };
   const occupied = new Set([
-    ...allIds(document),
+    ...objectIds(document),
     ...ids,
     ...[
       ...document.shapes,

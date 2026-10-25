@@ -1,6 +1,6 @@
 import { InkStyleControls } from "./DrawingProperties.tsx";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { isFrame } from "@hydraw/document";
+import { isFrame, selectedObjects, lockedObjectIds, commonGroupId } from "@hydraw/document";
 import { FrameProperties } from "./FrameProperties.tsx";
 import type { Alignment, DistributionAxis, Point } from "@hydraw/document";
 import { selectionBounds } from "@hydraw/editor";
@@ -81,10 +81,6 @@ export function SelectionActions({
     snapshot.textEditing,
   ]);
   const ids = snapshot.selectedIds;
-  const selectedShape = snapshot.document.shapes.find((shape) => shape.id === snapshot.selectedId);
-  const selectedConnector = snapshot.document.connectors.find(
-    (item) => item.id === snapshot.selectedId,
-  );
   useEffect(() => setCommandError(null), [ids.join("\u0000")]);
   if (
     !ids.length ||
@@ -96,19 +92,17 @@ export function SelectionActions({
     return null;
 
   const multi = ids.length > 1;
-  const selectedSet = new Set(ids);
-  const shapeCount = snapshot.document.shapes.filter((shape) => selectedSet.has(shape.id)).length;
-  const selectedObjects = [
-    ...snapshot.document.shapes.filter((shape) => selectedSet.has(shape.id)),
-    ...snapshot.document.connectors.filter((connector) => selectedSet.has(connector.id)),
-  ];
-  const anyFrames = selectedObjects.some((item) => item.type !== "connector" && isFrame(item));
+  const objects = selectedObjects(snapshot.document, ids);
+  const single = multi ? undefined : objects[0];
+  const selectedConnector = single?.type === "connector" ? single : undefined;
+  const selectedShape = single?.type !== "connector" ? single : undefined;
+  const shapeCount = objects.filter((item) => item.type !== "connector").length;
+  const anyFrames = objects.some((item) => item.type !== "connector" && isFrame(item));
   const selectedFrame = selectedShape && isFrame(selectedShape) ? selectedShape : undefined;
-  const anyLocked = selectedObjects.some((item) => item.locked);
-  const anyGrouped = selectedObjects.some((item) => item.groupId !== undefined);
-  const groupIds = new Set(selectedObjects.flatMap((item) => (item.groupId ? [item.groupId] : [])));
-  const oneGroup =
-    groupIds.size === 1 && selectedObjects.every((item) => item.groupId === [...groupIds][0]);
+  const locked = lockedObjectIds(snapshot.document);
+  const anyLocked = objects.some((item) => locked.has(item.id));
+  const anyGrouped = objects.some((item) => item.groupId !== undefined);
+  const oneGroup = commonGroupId(objects);
   const title = multi
     ? `${ids.length} objects`
     : anyLocked

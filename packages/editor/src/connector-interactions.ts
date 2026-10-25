@@ -1,5 +1,6 @@
 import {
   createConnectorResolver,
+  lockedObjectIds,
   isFrame,
   distanceToSegment,
   hitTest,
@@ -60,33 +61,6 @@ export function endpointAt(shapes: readonly Shape[], point: Point, tolerance: nu
   const shape =
     hitTest(targets, point) ?? targets.findLast((shape) => containsShape(shape, point, tolerance));
   return shape ? { type: "binding", shapeId: shape.id } : { type: "point", ...point };
-}
-
-export function hitConnector(
-  document: BoardDocument,
-  point: Point,
-  tolerance: number,
-): Connector | undefined {
-  const resolve = createConnectorResolver(document.shapes);
-  return document.connectors
-    .toSorted((a, b) => (a.zIndex ?? 0) - (b.zIndex ?? 0))
-    .findLast((connector) => {
-      const geometry = resolve(connector);
-      if (
-        geometry.points
-          .slice(1)
-          .some((end, i) => distanceToSegment(point, geometry.points[i]!, end) <= tolerance)
-      )
-        return true;
-      if (!connector.label?.text.trim()) return false;
-      const bounds = labelClipBounds(connector, document.shapes);
-      return (
-        point.x >= bounds.x &&
-        point.x <= bounds.x + bounds.width &&
-        point.y >= bounds.y &&
-        point.y <= bounds.y + bounds.height
-      );
-    });
 }
 
 export function hitConnectorEnd(
@@ -186,14 +160,9 @@ export function hitSceneObject(
   includeLocked = false,
 ): Shape | Connector | undefined {
   const resolve = createConnectorResolver(document.shapes);
-  const lockedGroups = new Set(
-    [...document.shapes, ...document.connectors]
-      .filter((item) => item.locked && item.groupId)
-      .map((item) => item.groupId),
-  );
+  const locked = includeLocked ? null : lockedObjectIds(document);
   return sceneObjects(document).findLast((object) => {
-    if (!includeLocked && (object.locked || (object.groupId && lockedGroups.has(object.groupId))))
-      return false;
+    if (locked?.has(object.id)) return false;
     if (object.type !== "connector") {
       if (isFrame(object)) {
         const title = labelClipBounds(object, document.shapes);

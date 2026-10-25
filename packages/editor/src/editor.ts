@@ -21,6 +21,9 @@ import {
   setObjectsLockedTransaction,
   reorderObjectsTransaction,
   decodeLabel,
+  lockedObjectIds,
+  selectedObjects,
+  commonGroupId,
   rectangleAppearance,
   alignShapesTransaction,
   distributeShapesTransaction,
@@ -281,10 +284,8 @@ export class Editor {
   }
 
   private selectionLocked(ids = this.snapshot.selectedIds): boolean {
-    const selected = new Set(expandGroups(this.snapshot.document, ids));
-    return [...this.snapshot.document.shapes, ...this.snapshot.document.connectors].some(
-      (item) => selected.has(item.id) && item.locked,
-    );
+    const locked = lockedObjectIds(this.snapshot.document);
+    return ids.some((id) => locked.has(id));
   }
 
   private creationRank(front: boolean): number {
@@ -382,19 +383,16 @@ export class Editor {
     this.finishTextEditing();
     this.cancelGesture();
     const { document, selectedIds } = this.snapshot;
-    const objects = [...document.shapes, ...document.connectors].filter((item) =>
-      selectedIds.includes(item.id),
-    );
+    const objects = selectedObjects(document, selectedIds);
     if (
       objects.length < 2 ||
       objects.some((item) => item.type !== "connector" && isFrame(item)) ||
       this.selectionLocked() ||
-      objects.every((item) => item.groupId && item.groupId === objects[0]!.groupId)
+      commonGroupId(objects)
     )
       return;
     const groupId = this.makeId();
     if (
-      objects.some((item) => item.id === groupId) ||
       [...document.shapes, ...document.connectors].some(
         (item) => item.groupId === groupId || item.id === groupId,
       )
@@ -573,13 +571,9 @@ export class Editor {
     this.finishTextEditing();
     this.cancelGesture();
     const objects = [...this.snapshot.document.shapes, ...this.snapshot.document.connectors];
-    const lockedGroups = new Set(
-      objects.filter((item) => item.locked && item.groupId).map((item) => item.groupId),
-    );
+    const locked = lockedObjectIds(this.snapshot.document);
     this.publish({
-      selectedIds: objects
-        .filter((item) => !item.locked && (!item.groupId || !lockedGroups.has(item.groupId)))
-        .map((item) => item.id),
+      selectedIds: objects.filter((item) => !locked.has(item.id)).map((item) => item.id),
       tool: "select",
     });
   }
@@ -626,15 +620,6 @@ export class Editor {
   }
 
   alignSelection(alignment: Alignment): void {
-    if (
-      this.selectionLocked() ||
-      [...this.snapshot.document.shapes, ...this.snapshot.document.connectors].some(
-        (item) =>
-          this.snapshot.selectedIds.includes(item.id) &&
-          (item.groupId || (item.type !== "connector" && isFrame(item))),
-      )
-    )
-      return;
     this.documentSession.assertWritable();
     this.finishTextEditing();
     this.cancelGesture();
@@ -644,15 +629,6 @@ export class Editor {
   }
 
   distributeSelection(axis: DistributionAxis): void {
-    if (
-      this.selectionLocked() ||
-      [...this.snapshot.document.shapes, ...this.snapshot.document.connectors].some(
-        (item) =>
-          this.snapshot.selectedIds.includes(item.id) &&
-          (item.groupId || (item.type !== "connector" && isFrame(item))),
-      )
-    )
-      return;
     this.documentSession.assertWritable();
     this.finishTextEditing();
     this.cancelGesture();

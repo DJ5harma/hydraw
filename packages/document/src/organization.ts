@@ -2,15 +2,13 @@ import type { BoardDocument, Connector, Shape } from "./model.ts";
 import { updateObjectsTransaction } from "./selection-operations.ts";
 import type { DocumentTransaction } from "./transactions.ts";
 
-export type SceneObject = Shape | Connector;
 export type OrderDirection = "front" | "back" | "forward" | "backward";
 
-import { sceneObjects, expandGroups } from "./object-scene.ts";
-export { sceneObjects, expandGroups } from "./object-scene.ts";
+import { sceneObjects, expandGroups, selectedObjects } from "./object-scene.ts";
+import type { SceneObject } from "./object-scene.ts";
 
 function expandedObjects(document: BoardDocument, ids: readonly string[]): readonly SceneObject[] {
-  const selected = new Set(expandGroups(document, ids));
-  return [...document.connectors, ...document.shapes].filter((object) => selected.has(object.id));
+  return selectedObjects(document, expandGroups(document, ids));
 }
 
 function locked(objects: readonly SceneObject[]): boolean {
