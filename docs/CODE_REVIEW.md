@@ -39,6 +39,6 @@ Verification completed on 20 October 2026:
 
 This closes the findings in this review; it does not establish that every possible
 bug has been eliminated. Large-board latency/memory measurements, broader input
-and accessibility QA, and the product roadmap remain separate work. The 80 MB
-file envelope accommodates the existing record limits; it is not a performance
-claim for maximum-size documents.
+and accessibility QA, and the product roadmap remain separate work. The current
+200 MB file envelope accommodates the supported record limits; it is not a
+performance claim for maximum-size documents.

@@ -1,6 +1,6 @@
 # Current implementation
 
-Updated 24 October 2026. Git history records the development milestones.
+Updated 25 October 2026. Git history records the development milestones.
 
 Hydraw is a local canvas editor for architecture diagrams. It supports geometric
 shapes, attached labels, standalone text, bound straight and elbow connectors, embedded
@@ -31,10 +31,10 @@ connectors and freehand ink. A shared picker stages edits until Apply, accepts
 short HEX input and keeps eight recent colors in browser-local preferences.
 Transparency remains a separate fill choice. Invalid CSS never reaches records.
 
+Freehand strokes and images preserve their orientation when resize handles cross
+the opposite edge. Image reflections remain consistent through crop editing, reset,
+history and canvas/SVG/PNG rendering; text and labels remain readable.
+
 Resizing freehand ink across its opposite edge reflects its normalized points.
 The fixed edge stays anchored, drag handles follow the crossing, and moving back
 restores the source orientation before committing one undo step.
-
-Images reflect when resizing past their anchored edges, preserving original pixels
-and source-relative crops. Canvas, SVG/PNG, crop editing, reset, reload and history
-use the same orientation. Ordinary text and shape labels remain readable.

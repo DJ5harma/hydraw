@@ -1,6 +1,7 @@
 # The next useful Hydraw release
 
-Updated 21 October 2026 after implementing the canvas-first workspace. This refines
+Updated 25 October 2026 after completing connector routing, image reflection fixes,
+custom colors, image crops and the personal library. This refines
 PLAN.md; the owned-engine boundaries and broader direction remain in force.
 
 ## Product focus
@@ -10,11 +11,11 @@ without rebuilding them elsewhere. Finish that workflow before expanding into a
 general whiteboard, workshop platform or design suite.
 
 Today rectangles/ellipses/diamonds, attached node and connector labels, standalone
-text, bound straight/elbow connectors, multiselection, alignment, duplication, native
-clipboard, SVG/PNG export, smart translation guides, flat groups, locks, stacking, named frames, three editable presets,
-history, JSON and local recovery work. The local
-named-diagram workflow is implemented; interaction quality and larger-board
-organization are the next focus.
+text, bound straight/elbow connectors, images and crops, freehand ink, multiselection,
+alignment, duplication, native clipboard, SVG/PNG export, smart translation guides,
+flat groups, locks, stacking, named frames, three editable presets, a personal library,
+board styles, history, JSON and local recovery work. The local named-diagram workflow
+is implemented; interaction quality and larger-board organization are the next focus.
 
 ## Ordered increments
 
@@ -74,8 +75,8 @@ Include keyboard, 200% browser zoom, high DPI, IME and another browser engine.
 Smart placement, flat groups, locking and front/back ordering are implemented in
 ADR 0010. Named frames and three architecture presets are implemented in ADR 0011
 (current native format). Frames use spatial containment and exclude partially contained
-groups. Nested frames and presentation mode remain future work. Elbow routing
-needs a concrete routing contract first. Defer broad shape
+groups. Nested frames and presentation mode remain future work. Straight and elbow
+routing are implemented; custom ports and self-loops remain future work. Defer broad shape
 catalog expansion, templates, sketch styles, AI, presentation,
 cloud dashboards and realtime presence until observed use supports them. Cloud
 saving needs its own correctness prototype: authorized durable admission,
